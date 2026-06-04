@@ -8,5 +8,6 @@
     "cors": "^2.8.5"
     "nodemailer": "^6.9.0",
     "crypto": "^1.0.1"
+    "nodemailer": "^6.9.0"
   }
 }
