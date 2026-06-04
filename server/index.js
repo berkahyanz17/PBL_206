@@ -53,6 +53,50 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// POST /api/forgot-password
+app.post('/api/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+  if (rows.length === 0) {
+    return res.json({ success: true, message: 'Jika email terdaftar, link reset telah dikirim.' });
+  }
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const expires = new Date(Date.now() + 3600000); // 1 jam
+  await db.query(
+    'INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)',
+    [email, token, expires]
+  );
+
+  const resetLink = `http://192.168.56.10/reset-password?token=${token}`;
+  await transporter.sendMail({
+    from: process.env.MAIL_USER,
+    to: email,
+    subject: 'Reset Password',
+    html: `<p>Klik link berikut untuk reset password (berlaku 1 jam):</p>
+           <a href="${resetLink}">${resetLink}</a>`
+  });
+
+  res.json({ success: true, message: 'Link reset telah dikirim ke email kamu.' });
+});
+
+// POST /api/reset-password
+app.post('/api/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+  const [rows] = await db.query(
+    'SELECT * FROM password_resets WHERE token = ? AND used = 0 AND expires_at > NOW()',
+    [token]
+  );
+  if (rows.length === 0) {
+    return res.status(400).json({ success: false, message: 'Token tidak valid atau sudah expired.' });
+  }
+
+  await db.query('UPDATE users SET password = ? WHERE email = ?', [newPassword, rows[0].email]);
+  await db.query('UPDATE password_resets SET used = 1 WHERE token = ?', [token]);
+
+  res.json({ success: true, message: 'Password berhasil direset.' });
+});
+
 connectDB().then(() => {
   app.listen(3001, () => console.log('Server jalan di port 3001'));
 });
