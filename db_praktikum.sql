@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL
 );
 
+ALTER TABLE users ADD COLUMN email VARCHAR(255) UNIQUE;
+-- atau langsung di CREATE TABLE-nya tambah kolom email
+
 CREATE TABLE IF NOT EXISTS password_resets (
   id INT AUTO_INCREMENT PRIMARY KEY,
   email VARCHAR(255) NOT NULL,
@@ -15,4 +18,4 @@ CREATE TABLE IF NOT EXISTS password_resets (
   used TINYINT(1) DEFAULT 0
 );
 
-INSERT INTO users (username, password) VALUES ('admin', 'rahasia123');
+INSERT INTO users (username, password, email) VALUES ('berkah', 'berkah', 'berkahyanuarzulhiansyah@gmail.com');
