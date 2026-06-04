@@ -72,7 +72,7 @@ app.post('/api/forgot-password', async (req, res) => {
 
   const resetLink = `http://192.168.56.10/reset-password?token=${token}`;
   await transporter.sendMail({
-    from: process.env.MAIL_USER,
+    from: 'onboarding@resend.dev',
     to: email,
     subject: 'Reset Password',
     html: `<p>Klik link berikut untuk reset password (berlaku 1 jam):</p>
