@@ -19,6 +19,8 @@ services:
       DB_USER: root
       DB_PASSWORD: secret
       DB_NAME: db_praktikum
+      MAIL_USER: emailkamu@gmail.com   # ← tambah ini
+      MAIL_PASS: xxxx xxxx xxxx xxxx   # ← Gmail App Password
     depends_on:
       - db
     networks:
