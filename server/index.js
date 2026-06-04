@@ -10,10 +10,12 @@ const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.resend.com',
+  port: 465,
+  secure: true,
   auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS  // Gmail App Password, bukan password biasa
+    user: 'resend',
+    pass: process.env.MAIL_PASS
   }
 });
 
