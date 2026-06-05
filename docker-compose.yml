@@ -5,7 +5,6 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_DATABASE: db_praktikum
-      HCAPTCHA_SECRET: REDACTED
     volumes:
       - db_data:/var/lib/mysql
       - ./db_praktikum.sql:/docker-entrypoint-initdb.d/init.sql
@@ -21,6 +20,7 @@ services:
       DB_PASSWORD: secret
       DB_NAME: db_praktikum
       MAIL_PASS: re_cvGyzqBh_6Vzpa1Ygg2tZ9HkyMngBqu6X
+      HCAPTCHA_SECRET: REDACTED
     depends_on:
       - db
     networks:
