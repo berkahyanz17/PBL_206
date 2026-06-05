@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
 
 export default function ForgotPassword() {
