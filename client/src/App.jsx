@@ -8,6 +8,7 @@ export default function App() {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [captchaToken, setCaptchaToken] = useState(null);
+  const captchaRef = useRef(null);
   async function handleLogin() {
     const res = await fetch('/api/login', {
       method: 'POST',
