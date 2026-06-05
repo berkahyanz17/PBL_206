@@ -19,6 +19,16 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+async function verifyCaptcha(token) {
+  const res = await fetch('https://api.hcaptcha.com/siteverify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `response=${token}&secret=${process.env.REDACTED}`
+  });
+  const data = await res.json();
+  return data.success;
+}
+
 let db;
 async function connectDB() {
   while (true) {
@@ -43,7 +53,13 @@ app.get('/api/users', async (req, res) => {
 });
 
 app.post('/api/login', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, captchaToken } = req.body;
+
+  const valid = await verifyCaptcha(captchaToken);
+  if (!valid) {
+    return res.status(400).json({ success: false, message: 'CAPTCHA tidak valid.' });
+  }
+  
   const [rows] = await db.query(
     'SELECT * FROM users WHERE username = ? AND password = ?',
     [username, password]
@@ -57,7 +73,12 @@ app.post('/api/login', async (req, res) => {
 
 // POST /api/forgot-password
 app.post('/api/forgot-password', async (req, res) => {
-  const { email } = req.body;
+  const { email, captchaToken } = req.body;
+
+  const valid = await verifyCaptcha(captchaToken);
+  if (!valid) {
+    return res.status(400).json({ success: false, message: 'CAPTCHA tidak valid.' });
+  }
   const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
   if (rows.length === 0) {
     return res.json({ success: true, message: 'Jika email terdaftar, link reset telah dikirim.' });
