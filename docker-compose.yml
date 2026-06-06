@@ -4,6 +4,10 @@ services:
     restart: always
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
       - ./client/dist:/usr/share/nginx/html
+      - /etc/ssl/certs/server.crt:/etc/ssl/certs/server.crt
+      - /etc/ssl/private/server.key:/etc/ssl/private/server.key:ro
+      - /etc/ssl/certs/ca-chain.crt:/etc/ssl/certs/ca-chain.crt
