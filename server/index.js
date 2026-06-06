@@ -1,13 +1,12 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-const nodemailer = require('nodemailer');
-const crypto = require('crypto');
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.resend.com',
@@ -26,7 +25,7 @@ async function verifyCaptcha(token) {
     body: `response=${token}&secret=${process.env.HCAPTCHA_SECRET}`
   });
   const data = await res.json();
-  console.log('hCaptcha response:', JSON.stringify(data));  // ← tambah ini
+  console.log('hCaptcha response:', JSON.stringify(data));
   return data.success;
 }
 
@@ -40,7 +39,8 @@ async function connectDB() {
         password: process.env.DB_PASSWORD,
         database: process.env.DB_NAME
       });
-      console.log('DB connected'); break;
+      console.log('DB connected');
+      break;
     } catch (err) {
       console.log('DB not ready, retrying in 3s...');
       await new Promise(r => setTimeout(r, 3000));
@@ -49,10 +49,11 @@ async function connectDB() {
 }
 
 app.get('/api/users', async (req, res) => {
-  const [rows] = await db.query('SELECT id, username FROM users');
+  const [rows] = await db.query('SELECT id, username, role FROM users');
   res.json(rows);
 });
 
+// POST /api/login — returns role for frontend redirect
 app.post('/api/login', async (req, res) => {
   const { username, password, captchaToken } = req.body;
 
@@ -60,15 +61,17 @@ app.post('/api/login', async (req, res) => {
   if (!valid) {
     return res.status(400).json({ success: false, message: 'CAPTCHA tidak valid.' });
   }
-  
+
   const [rows] = await db.query(
-    'SELECT * FROM users WHERE username = ? AND password = ?',
+    'SELECT id, username, role FROM users WHERE username = ? AND password = ?',
     [username, password]
   );
+
   if (rows.length > 0) {
-    res.json({ success: true, message: 'Login sukses' });
+    const user = rows[0];
+    res.json({ success: true, message: 'Login sukses', role: user.role, username: user.username });
   } else {
-    res.status(401).json({ success: false, message: 'Login gagal' });
+    res.status(401).json({ success: false, message: 'Username atau password salah.' });
   }
 });
 
@@ -80,23 +83,25 @@ app.post('/api/forgot-password', async (req, res) => {
   if (!valid) {
     return res.status(400).json({ success: false, message: 'CAPTCHA tidak valid.' });
   }
+
   const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
   if (rows.length === 0) {
     return res.json({ success: true, message: 'Jika email terdaftar, link reset telah dikirim.' });
   }
 
   const token = crypto.randomBytes(32).toString('hex');
-  const expires = new Date(Date.now() + 3600000); // 1 jam
+  const expires = new Date(Date.now() + 3600000);
   await db.query(
     'INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)',
     [email, token, expires]
   );
 
-  const resetLink = `http://192.168.56.105/reset-password?token=${token}`;
+  const baseUrl = process.env.BASE_URL || 'http://localhost';
+  const resetLink = `${baseUrl}/reset-password?token=${token}`;
   await transporter.sendMail({
     from: 'onboarding@resend.dev',
     to: email,
-    subject: 'Reset Password',
+    subject: 'Reset Password - HealthSync',
     html: `<p>Klik link berikut untuk reset password (berlaku 1 jam):</p>
            <a href="${resetLink}">${resetLink}</a>`
   });
