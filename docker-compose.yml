@@ -21,6 +21,7 @@ services:
       DB_NAME: db_praktikum
       MAIL_PASS: re_cvGyzqBh_6Vzpa1Ygg2tZ9HkyMngBqu6X
       HCAPTCHA_SECRET: REDACTED
+      BASE_URL: https://192.168.56.105
     depends_on:
       - db
     networks:
