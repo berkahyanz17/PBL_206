@@ -28,7 +28,7 @@ export default function DokterLupa() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'white', fontWeight: 700, fontSize: 16 }}>🩺 Klinik App</div>
       <div style={{ display: 'flex', gap: 8 }}>
         {['1.Input Email', '2.Password Baru'].map((t, i) => (
-          <div key={t} style={{ padding: '7px 20px', borderRadius: 8, border: '1.5px solid rgba(255,255,255,0.4)', color: 'white', fontSize: 13, fontWeight: 600, background: step === i + 1 ? 'white' : 'rgba(255,255,255,0.1)', color: step === i + 1 ? 'var(--green-dark)' : 'white' }}>{t}</div>
+          <div key={t} style={{ padding: '7px 20px', borderRadius: 8, border: '1.5px solid rgba(255,255,255,0.4)', fontSize: 13, fontWeight: 600, background: step === i + 1 ? 'white' : 'rgba(255,255,255,0.1)', color: step === i + 1 ? 'var(--green-dark)' : 'white' }}>{t}</div>
         ))}
       </div>
     </div>
