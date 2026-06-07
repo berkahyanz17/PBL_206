@@ -9,10 +9,6 @@ const initAppts = [
   { id: 3, pasien: 'Megumi', keluhan: 'Muntah, batuk pilek', dokter: 'dr. Kuro Tetsuro', spesialis: 'Umum', tgl: '24 Mei', jam: '13.30', status: 'dikonfirmasi' },
   { id: 4, pasien: 'Natsuki Seba', keluhan: 'Check up rutin', dokter: 'dr. Ichinose Guren', spesialis: 'Spesialis Dalam', tgl: '22 Mei', jam: '10.00', status: 'selesai' },
 ];*/
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import AdminSidebar from '../../components/AdminSidebar';
-
 export default function AdminAppointments() {
   const navigate = useNavigate();
   const [appts, setAppts] = useState([]);
