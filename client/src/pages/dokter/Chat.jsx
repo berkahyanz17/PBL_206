@@ -1,20 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DokterSidebar from '../../components/DokterSidebar';
+import { apiFetch } from '../../utils/api';
 
 export default function DokterChat() {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState([
-    { type: 'received', text: 'Halo Dokter, ada yang bisa dibantu?' },
-    { type: 'sent', text: 'Mohon konfirmasi jadwal besok' },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [adminId, setAdminId] = useState(1);
+  const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
+  const bottomRef = useRef();
 
-  function send() {
-    if (!input.trim()) return;
-    setMessages(prev => [...prev, { type: 'sent', text: input.trim() }]);
-    setInput('');
+  useEffect(() => {
+    loadMessages();
+    const interval = setInterval(loadMessages, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  async function loadMessages() {
+    const res = await apiFetch(`/chat/dokter/${user.id}/admin/${adminId}`);
+    if (res?.success) setMessages(res.data);
   }
+
+  async function send() {
+    if (!input.trim()) return;
+    await apiFetch('/chat', {
+      method: 'POST',
+      body: JSON.stringify({ sender_role: 'dokter', sender_id: user.id, receiver_role: 'admin', receiver_id: adminId, pesan: input.trim() })
+    });
+    setInput('');
+    loadMessages();
+  }
+
+  function logout() { sessionStorage.clear(); navigate('/dokter/login'); }
 
   return (
     <div className="dashboard-layout">
@@ -22,7 +42,7 @@ export default function DokterChat() {
       <div className="main-content">
         <div className="topbar" style={{ background: 'var(--green)' }}>
           <h1>Chat Admin</h1>
-          <div className="topbar-right"><button className="btn-notif">🔔</button><button className="btn-logout" onClick={() => navigate('/dokter/login')}>🚪 Logout</button></div>
+          <div className="topbar-right"><button className="btn-notif">🔔</button><button className="btn-logout" onClick={logout}>🚪 Logout</button></div>
         </div>
         <div className="content-area">
           <div style={{ background: 'white', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
@@ -30,13 +50,20 @@ export default function DokterChat() {
               <div className="avatar" style={{ background: '#22c55e', width: 36, height: 36, fontSize: 13 }}>AK</div>
               <div style={{ fontSize: 15, fontWeight: 700 }}>Admin Klinik</div>
             </div>
-            <div style={{ minHeight: 340, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {messages.map((m, i) => (
-                <div key={i} className={`msg ${m.type}`} style={m.type === 'sent' ? { background: 'var(--green-dark)', color: 'white', alignSelf: 'flex-end', borderRadius: '12px 4px 12px 12px' } : {}}>{m.text}</div>
-              ))}
+            <div style={{ minHeight: 340, maxHeight: 400, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {messages.map((m, i) => {
+                const isSent = m.sender_role === 'dokter';
+                return (
+                  <div key={i} className={`msg ${isSent ? 'sent' : 'received'}`}
+                    style={isSent ? { background: 'var(--green-dark)', color: 'white', alignSelf: 'flex-end', borderRadius: '12px 4px 12px 12px' } : {}}>
+                    {m.pesan}
+                  </div>
+                );
+              })}
+              <div ref={bottomRef} />
             </div>
             <div className="chat-input-row">
-              <input className="chat-input" placeholder="Ketik disini" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} style={{ borderColor: 'var(--border)' }} onFocus={e => e.target.style.borderColor = 'var(--green)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+              <input className="chat-input" placeholder="Ketik disini" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} />
               <button onClick={send} style={{ padding: '10px 20px', background: 'var(--green-dark)', color: 'white', border: 'none', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Kirim</button>
             </div>
           </div>
