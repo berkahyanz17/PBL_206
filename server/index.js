@@ -549,6 +549,111 @@ app.post('/api/chat', verifyToken, async (req, res) => {
   }
 });
 
+// Mamoru Route js
+// ════════════════════════════════════════════════════════════════════════════
+// MAMORU — AI Chatbot (Gemini Flash + Telegram Notification)
+// ════════════════════════════════════════════════════════════════════════════
+
+const GEMINI_API_KEY   = process.env.GEMINI_API_KEY;
+const TELEGRAM_TOKEN   = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+
+// Kirim notif ke Telegram admin
+async function notifyTelegram(pasienNama, pesan) {
+  if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) return;
+  const text =
+    `🔔 *Pesan Masuk — Mamoru Chatbot*\n` +
+    `👤 Pasien: *${pasienNama}*\n` +
+    `💬 Pesan: ${pesan}\n` +
+    `🕐 ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}`;
+  await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: TELEGRAM_CHAT_ID,
+      text,
+      parse_mode: 'Markdown'
+    })
+  }).catch(err => console.error('Telegram error:', err));
+}
+
+// Deteksi apakah pesan perlu notif admin
+function isAdminNotifyNeeded(pesan) {
+  const keywords = [
+    'booking', 'darurat', 'urgent', 'gawat', 'emergency',
+    'tidak bisa', 'gagal', 'error', 'komplain', 'keluhan',
+    'hubungi', 'telepon', 'bantuan', 'help'
+  ];
+  return keywords.some(k => pesan.toLowerCase().includes(k));
+}
+
+// POST /api/mamoru
+app.post('/api/mamoru', verifyToken, async (req, res) => {
+  try {
+    const { pesan, history = [] } = req.body;
+    const pasienNama = req.user.nama || 'Pasien';
+
+    if (!pesan || !pesan.trim()) {
+      return res.status(400).json({ success: false, message: 'Pesan tidak boleh kosong.' });
+    }
+
+    if (!GEMINI_API_KEY) {
+      return res.status(500).json({ success: false, message: 'Gemini API key belum dikonfigurasi.' });
+    }
+
+    // Bangun history untuk Gemini (max 10 pesan terakhir agar hemat token)
+    const recentHistory = history.slice(-10).map(m => ({
+      role: m.type === 'user' ? 'user' : 'model',
+      parts: [{ text: m.text }]
+    }));
+
+    const systemInstruction = `Kamu adalah Mamoru, asisten kesehatan virtual dari HealthSync Clinic. 
+Tugasmu membantu pasien dengan informasi seputar layanan klinik: booking dokter, jadwal, riwayat konsultasi, profil, dan pertanyaan umum kesehatan.
+Jawab dalam Bahasa Indonesia, ramah, singkat, dan profesional. 
+Jangan pernah memberikan diagnosis medis. Jika darurat, selalu arahkan ke tenaga medis.
+Nama pasien yang sedang chat: ${pasienNama}.`;
+
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemInstruction }] },
+          contents: [
+            ...recentHistory,
+            { role: 'user', parts: [{ text: pesan }] }
+          ],
+          generationConfig: {
+            maxOutputTokens: 512,
+            temperature: 0.7
+          }
+        })
+      }
+    );
+
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text();
+      console.error('Gemini error:', errText);
+      return res.status(502).json({ success: false, message: 'Gagal menghubungi AI. Coba lagi.' });
+    }
+
+    const geminiData = await geminiRes.json();
+    const reply = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text
+      || 'Maaf, saya tidak bisa menjawab saat ini. Silakan coba lagi.';
+
+    // Kirim notif Telegram jika pesan mengandung kata kunci penting
+    if (isAdminNotifyNeeded(pesan)) {
+      notifyTelegram(pasienNama, pesan); // fire-and-forget, tidak block response
+    }
+
+    res.json({ success: true, reply });
+  } catch (err) {
+    console.error('Mamoru error:', err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
 // ════════════════════════════════════════════════════════════════════════════
 // START
 // ════════════════════════════════════════════════════════════════════════════
