@@ -5,15 +5,34 @@ export default function PasienDaftar() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ nama: '', email: '', hp: '', pass: '', konfirm: '' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   function set(field, val) { setForm(prev => ({ ...prev, [field]: val })); }
 
-  function daftar() {
+  async function daftar() {
     if (!form.nama || !form.email || !form.hp || !form.pass || !form.konfirm) { setError('Semua kolom harus diisi.'); return; }
     if (form.pass.length < 8) { setError('Password minimal 8 karakter.'); return; }
     if (form.pass !== form.konfirm) { setError('Konfirmasi password tidak cocok.'); return; }
-    sessionStorage.setItem('pasienNama', form.nama);
-    navigate('/pasien/home');
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/pasien/daftar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nama: form.nama, email: form.email, no_hp: form.hp, password: form.pass })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('✅ Pendaftaran berhasil! Silakan login.');
+        navigate('/pasien/login');
+      } else {
+        setError(data.message || 'Pendaftaran gagal.');
+      }
+    } catch {
+      setError('Tidak dapat terhubung ke server.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -29,7 +48,9 @@ export default function PasienDaftar() {
         <div className="form-group"><label>No.Hp</label><input type="tel" placeholder="08XXXXXXXXXX" value={form.hp} onChange={e => set('hp', e.target.value)} /></div>
         <div className="form-group"><label>Password</label><input type="password" placeholder="Min 8 karakter" value={form.pass} onChange={e => set('pass', e.target.value)} /></div>
         <div className="form-group"><label>Konfirmasi Password</label><input type="password" placeholder="Ulangi password" value={form.konfirm} onChange={e => set('konfirm', e.target.value)} /></div>
-        <button onClick={daftar} style={{ width: '100%', padding: 14, background: '#4B8A8C', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', marginTop: 8 }}>Daftar</button>
+        <button onClick={daftar} disabled={loading} style={{ width: '100%', padding: 14, background: loading ? '#6B7280' : '#4B8A8C', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'inherit', cursor: loading ? 'not-allowed' : 'pointer', marginTop: 8 }}>
+          {loading ? 'Mendaftar...' : 'Daftar'}
+        </button>
       </div>
     </div>
   );
