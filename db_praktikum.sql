@@ -89,3 +89,15 @@ INSERT IGNORE INTO admins (username, password) VALUES (
   'admin',
   '$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa'
 );
+-- default account untuk dokter
+-- password: admin123
+INSERT INTO dokters (nama, email, password, spesialis, no_str, harga) VALUES
+('dr. Kuro Tetsuro', 'kuro@klinik.com', '\$2b\$10\$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa', 'Umum', 'STR-2025-1111', 150000),
+('dr. Ichinose Guren', 'guren@klinik.com', '\$2b\$10\$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa', 'Spesialis Dalam', 'STR-2025-2222', 200000),
+('dr. Dazai Osamu', 'dazai@klinik.com', '\$2b\$10\$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa', 'Anak', 'STR-2025-3333', 100000);
+-- default account untuk pasien
+-- password: admin123
+INSERT INTO pasiens (nama, email, password, no_hp) VALUES
+('Andi Yohee', 'andi@gmail.com', '\$2b\$10\$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa', '08111111111'),
+('Budiman', 'budiman@gmail.com', '\$2b\$10\$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa', '08222222222'),
+('Megumi Fushiguro', 'megumi@gmail.com', '\$2b\$10\$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa', '08333333333');
