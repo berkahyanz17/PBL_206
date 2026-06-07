@@ -25,7 +25,7 @@ services:
       # ── Mamoru Chatbot ──────────────────────────────
       GEMINI_API_KEY: REDACTED
       TELEGRAM_BOT_TOKEN: REDACTED
-      TELEGRAM_CHAT_ID: 6439460366
+      TELEGRAM_CHAT_ID: 5022288086
     depends_on:
       - db
     networks:
