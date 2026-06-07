@@ -1,16 +1,55 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PasienSidebar from '../../components/PasienSidebar';
+import { apiFetch } from '../../utils/api';
 
 export default function PasienProfil() {
   const navigate = useNavigate();
+  const [form, setForm] = useState({ nama: '', email: '', no_hp: '', nik: '', tgl_lahir: '', gender: '', alamat: '', riwayat_penyakit: '', alergi: '' });
   const [foto, setFoto] = useState(null);
+  const [saving, setSaving] = useState(false);
   const fileRef = useRef();
+  const user = JSON.parse(sessionStorage.getItem('pasienUser') || '{}');
+
+  useEffect(() => {
+    async function load() {
+      const res = await apiFetch(`/pasien/${user.id}/profil`);
+      if (res?.success) {
+        const d = res.data;
+        setForm({
+          nama: d.nama || '', email: d.email || '', no_hp: d.no_hp || '',
+          nik: d.nik || '', tgl_lahir: d.tgl_lahir?.slice(0,10) || '',
+          gender: d.gender || '', alamat: d.alamat || '',
+          riwayat_penyakit: d.riwayat_penyakit || '', alergi: d.alergi || ''
+        });
+        if (d.foto) setFoto(d.foto);
+      }
+    }
+    load();
+  }, []);
 
   function previewFoto(e) {
     const file = e.target.files[0];
     if (file) { const r = new FileReader(); r.onload = ev => setFoto(ev.target.result); r.readAsDataURL(file); }
   }
+
+  async function simpan() {
+    setSaving(true);
+    const formData = new FormData();
+    Object.entries(form).forEach(([k, v]) => formData.append(k, v));
+    if (fileRef.current?.files[0]) formData.append('foto', fileRef.current.files[0]);
+
+    const res = await fetch(`/api/pasien/${user.id}/profil`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${sessionStorage.getItem('token')}` },
+      body: formData
+    });
+    const data = await res.json();
+    setSaving(false);
+    if (data.success) alert('Profil berhasil disimpan!');
+  }
+
+  function logout() { sessionStorage.clear(); navigate('/pasien/login'); }
 
   return (
     <div className="dashboard-layout">
@@ -20,7 +59,7 @@ export default function PasienProfil() {
           <h1 style={{ color: '#1e3a5f' }}>Profil Saya</h1>
           <div className="topbar-right">
             <button className="btn-notif" style={{ background: 'rgba(255,255,255,0.4)' }}>🔔</button>
-            <button className="btn-logout" style={{ background: 'rgba(255,255,255,0.4)', color: '#1e3a5f', borderColor: 'rgba(255,255,255,0.5)' }} onClick={() => navigate('/pasien/login')}>🚪 Logout</button>
+            <button className="btn-logout" style={{ background: 'rgba(255,255,255,0.4)', color: '#1e3a5f', borderColor: 'rgba(255,255,255,0.5)' }} onClick={logout}>🚪 Logout</button>
           </div>
         </div>
         <div className="content-area">
@@ -33,15 +72,30 @@ export default function PasienProfil() {
               <input type="file" ref={fileRef} accept="image/*" style={{ display: 'none' }} onChange={previewFoto} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-              {[['Nama Lengkap','text'],['NIK','text'],['Tanggal Lahir','date'],['Telepon','tel'],['Email','email']].map(([label, type]) => (
-                <div className="form-group" key={label}><label>{label}</label><input type={type} placeholder={type === 'date' ? undefined : 'Ketik disini'} /></div>
+              {[['nama','Nama Lengkap','text'],['nik','NIK','text'],['tgl_lahir','Tanggal Lahir','date'],['no_hp','Telepon','tel'],['email','Email','email']].map(([key, label, type]) => (
+                <div className="form-group" key={key}>
+                  <label>{label}</label>
+                  <input type={type} placeholder={type === 'date' ? undefined : 'Ketik disini'} value={form[key]} onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))} />
+                </div>
               ))}
-              <div className="form-group"><label>Gender</label><select><option>Pilih Gender</option><option>Laki-laki</option><option>Perempuan</option></select></div>
+              <div className="form-group">
+                <label>Gender</label>
+                <select value={form.gender} onChange={e => setForm(p => ({ ...p, gender: e.target.value }))}>
+                  <option value="">Pilih Gender</option>
+                  <option>Laki-laki</option>
+                  <option>Perempuan</option>
+                </select>
+              </div>
             </div>
-            {['Alamat','Riwayat Penyakit','Alergi'].map(label => (
-              <div className="form-group" key={label}><label>{label}</label><textarea placeholder="Ketik disini" /></div>
+            {[['alamat','Alamat'],['riwayat_penyakit','Riwayat Penyakit'],['alergi','Alergi']].map(([key, label]) => (
+              <div className="form-group" key={key}>
+                <label>{label}</label>
+                <textarea placeholder="Ketik disini" value={form[key]} onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))} />
+              </div>
             ))}
-            <button onClick={() => alert('Profil berhasil disimpan!')} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 24px', background: '#4B8A8C', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', marginTop: 8 }}>💾 Simpan Profil</button>
+            <button onClick={simpan} disabled={saving} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 24px', background: saving ? '#6B7280' : '#4B8A8C', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', marginTop: 8 }}>
+              {saving ? 'Menyimpan...' : '💾 Simpan Profil'}
+            </button>
           </div>
         </div>
       </div>
