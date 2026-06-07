@@ -8,12 +8,32 @@ export default function AdminLogin() {
   const [robot, setRobot] = useState(false);
   const [error, setError] = useState('');
   const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  function handleLogin() {
+  async function handleLogin() {
     if (!username || !password) { setError('Username dan password harus diisi.'); return; }
     if (!robot) { setError("⚠️ Harap centang \"I'm not a robot\" terlebih dahulu."); return; }
     setError('');
-    navigate('/admin/dashboard');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (data.success) {
+        sessionStorage.setItem('token', data.token);
+        sessionStorage.setItem('adminUser', JSON.stringify(data.user));
+        navigate('/admin/dashboard');
+      } else {
+        setError(data.message || 'Login gagal.');
+      }
+    } catch {
+      setError('Tidak dapat terhubung ke server.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -41,7 +61,9 @@ export default function AdminLogin() {
           <label htmlFor="robot" style={{ fontSize: 14, color: 'var(--text-muted)', cursor: 'pointer' }}>I'm not a robot</label>
         </div>
         {error && <div style={{ background: '#FEE2E2', color: '#991B1B', borderRadius: 8, padding: '10px 14px', fontSize: 13, fontWeight: 600, marginBottom: 14, textAlign: 'center' }}>{error}</div>}
-        <button onClick={handleLogin} style={{ width: '100%', padding: 14, background: 'var(--navy)', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>Login</button>
+        <button onClick={handleLogin} disabled={loading} style={{ width: '100%', padding: 14, background: loading ? '#6B7280' : 'var(--navy)', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'inherit', cursor: loading ? 'not-allowed' : 'pointer' }}>
+          {loading ? 'Memproses...' : 'Login'}
+        </button>
       </div>
     </div>
   );
