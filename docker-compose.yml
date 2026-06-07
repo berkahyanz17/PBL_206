@@ -19,7 +19,7 @@ services:
       DB_USER: root
       DB_PASSWORD: secret
       DB_NAME: db_praktikum
-      JWT_SECRET: healthsync_jwt_secret_ganti_ini
+      JWT_SECRET: REDACTED
       MAIL_PASS: your_resend_api_key
       HCAPTCHA_SECRET: your_hcaptcha_secret
       # ── Mamoru Chatbot ──────────────────────────────
