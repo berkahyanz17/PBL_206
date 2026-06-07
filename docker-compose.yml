@@ -26,6 +26,7 @@ services:
 
   client:
     build: ./client
+    restart: always
     networks:
       - app_network
 
