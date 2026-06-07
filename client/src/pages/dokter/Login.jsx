@@ -7,12 +7,32 @@ export default function DokterLogin() {
   const [password, setPassword] = useState('');
   const [twofa, setTwofa] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  function handleLogin() {
+  async function handleLogin() {
     if (!email || !password) { setError('Email/No.STR dan password harus diisi.'); return; }
     if (!twofa) { setError('⚠️ Harap aktifkan 2FA terlebih dahulu untuk keamanan akun.'); return; }
     setError('');
-    navigate('/dokter/jadwal');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/dokter/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (data.success) {
+        sessionStorage.setItem('token', data.token);
+        sessionStorage.setItem('dokterUser', JSON.stringify(data.user));
+        navigate('/dokter/jadwal');
+      } else {
+        setError(data.message || 'Login gagal.');
+      }
+    } catch {
+      setError('Tidak dapat terhubung ke server.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -32,7 +52,9 @@ export default function DokterLogin() {
           <span style={{ fontSize: 13, color: 'var(--green)', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/dokter/lupa-password')}>Lupa password?</span>
         </div>
         {error && <div style={{ background: '#FEE2E2', color: '#991B1B', borderRadius: 8, padding: '10px 14px', fontSize: 13, fontWeight: 600, marginBottom: 14, textAlign: 'center' }}>{error}</div>}
-        <button onClick={handleLogin} style={{ width: '100%', padding: 14, background: 'var(--green-dark)', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>Login</button>
+        <button onClick={handleLogin} disabled={loading} style={{ width: '100%', padding: 14, background: loading ? '#6B7280' : 'var(--green-dark)', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'inherit', cursor: loading ? 'not-allowed' : 'pointer' }}>
+          {loading ? 'Memproses...' : 'Login'}
+        </button>
       </div>
     </div>
   );
