@@ -50,7 +50,12 @@ async function connectDB() {
         host: process.env.DB_HOST,
         user: process.env.DB_USER,
         password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME
+        database: process.env.DB_NAME,
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0,
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 0
       });
       console.log('DB connected');
       break;
@@ -95,8 +100,8 @@ async function verifyCaptcha(token) {
 app.post('/api/admin/login', async (req, res) => {
   try {
     const { username, password, captchaToken } = req.body;
-    const valid = await verifyCaptcha(captchaToken);
-    if (!valid) return res.status(400).json({ success: false, message: 'CAPTCHA tidak valid.' });
+    //const valid = await verifyCaptcha(captchaToken);
+    //if (!valid) return res.status(400).json({ success: false, message: 'CAPTCHA tidak valid.' });
 
     const [rows] = await db.query('SELECT * FROM admins WHERE username = ?', [username]);
     if (rows.length === 0) return res.status(401).json({ success: false, message: 'Username atau password salah.' });
@@ -116,8 +121,8 @@ app.post('/api/admin/login', async (req, res) => {
 app.post('/api/dokter/login', async (req, res) => {
   try {
     const { email, password, captchaToken } = req.body;
-    const valid = await verifyCaptcha(captchaToken);
-    if (!valid) return res.status(400).json({ success: false, message: 'CAPTCHA tidak valid.' });
+    //const valid = await verifyCaptcha(captchaToken);
+    //if (!valid) return res.status(400).json({ success: false, message: 'CAPTCHA tidak valid.' });
 
     const [rows] = await db.query('SELECT * FROM dokters WHERE email = ? OR no_str = ?', [email, email]);
     if (rows.length === 0) return res.status(401).json({ success: false, message: 'Email/STR atau password salah.' });
@@ -137,8 +142,8 @@ app.post('/api/dokter/login', async (req, res) => {
 app.post('/api/pasien/login', async (req, res) => {
   try {
     const { email, password, captchaToken } = req.body;
-    const valid = await verifyCaptcha(captchaToken);
-    if (!valid) return res.status(400).json({ success: false, message: 'CAPTCHA tidak valid.' });
+    //const valid = await verifyCaptcha(captchaToken);
+    //if (!valid) return res.status(400).json({ success: false, message: 'CAPTCHA tidak valid.' });
 
     const [rows] = await db.query('SELECT * FROM pasiens WHERE email = ? OR no_hp = ?', [email, email]);
     if (rows.length === 0) return res.status(401).json({ success: false, message: 'Email/HP atau password salah.' });
