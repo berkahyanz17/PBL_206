@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Index
 import Index from './pages/Index';
@@ -31,6 +32,10 @@ import PasienCari from './pages/pasien/CariDokter';
 import PasienRiwayat from './pages/pasien/Riwayat';
 import PasienProfil from './pages/pasien/Profil';
 
+const A = ({ children }) => <ProtectedRoute role="admin">{children}</ProtectedRoute>;
+const D = ({ children }) => <ProtectedRoute role="dokter">{children}</ProtectedRoute>;
+const P = ({ children }) => <ProtectedRoute role="pasien">{children}</ProtectedRoute>;
+
 export default function App() {
   return (
     <Routes>
@@ -38,31 +43,31 @@ export default function App() {
 
       {/* Admin */}
       <Route path="/admin/login" element={<AdminLogin />} />
-      <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      <Route path="/admin/appointments" element={<AdminAppointments />} />
-      <Route path="/admin/dokter" element={<AdminDokter />} />
-      <Route path="/admin/pasien" element={<AdminPasien />} />
-      <Route path="/admin/chat" element={<AdminChat />} />
+      <Route path="/admin/dashboard" element={<A><AdminDashboard /></A>} />
+      <Route path="/admin/appointments" element={<A><AdminAppointments /></A>} />
+      <Route path="/admin/dokter" element={<A><AdminDokter /></A>} />
+      <Route path="/admin/pasien" element={<A><AdminPasien /></A>} />
+      <Route path="/admin/chat" element={<A><AdminChat /></A>} />
 
       {/* Dokter */}
       <Route path="/dokter/login" element={<DokterLogin />} />
       <Route path="/dokter/lupa-password" element={<DokterLupa />} />
-      <Route path="/dokter/jadwal" element={<DokterJadwal />} />
-      <Route path="/dokter/riwayat" element={<DokterRiwayat />} />
-      <Route path="/dokter/rekam-medis" element={<DokterRekam />} />
-      <Route path="/dokter/kelola-jadwal" element={<DokterKelola />} />
-      <Route path="/dokter/chat" element={<DokterChat />} />
-      <Route path="/dokter/profil" element={<DokterProfil />} />
+      <Route path="/dokter/jadwal" element={<D><DokterJadwal /></D>} />
+      <Route path="/dokter/riwayat" element={<D><DokterRiwayat /></D>} />
+      <Route path="/dokter/rekam-medis" element={<D><DokterRekam /></D>} />
+      <Route path="/dokter/kelola-jadwal" element={<D><DokterKelola /></D>} />
+      <Route path="/dokter/chat" element={<D><DokterChat /></D>} />
+      <Route path="/dokter/profil" element={<D><DokterProfil /></D>} />
 
       {/* Pasien */}
       <Route path="/pasien/login" element={<PasienLogin />} />
       <Route path="/pasien/daftar" element={<PasienDaftar />} />
       <Route path="/pasien/lupa-password" element={<PasienLupa />} />
       <Route path="/pasien/reset-password" element={<PasienReset />} />
-      <Route path="/pasien/home" element={<PasienHome />} />
-      <Route path="/pasien/cari-dokter" element={<PasienCari />} />
-      <Route path="/pasien/riwayat" element={<PasienRiwayat />} />
-      <Route path="/pasien/profil" element={<PasienProfil />} />
+      <Route path="/pasien/home" element={<P><PasienHome /></P>} />
+      <Route path="/pasien/cari-dokter" element={<P><PasienCari /></P>} />
+      <Route path="/pasien/riwayat" element={<P><PasienRiwayat /></P>} />
+      <Route path="/pasien/profil" element={<P><PasienProfil /></P>} />
 
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
