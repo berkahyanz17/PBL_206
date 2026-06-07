@@ -7,14 +7,32 @@ export default function PasienLogin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  function handleLogin() {
+  async function handleLogin() {
     if (!email || !password) { setError('Email/No.Hp dan password harus diisi.'); return; }
     setError('');
-    const nama = email.includes('@') ? email.split('@')[0] : email;
-    sessionStorage.setItem('token', data.token);      // ← add this
-    sessionStorage.setItem('pasienNama', nama.charAt(0).toUpperCase() + nama.slice(1));
-    navigate('/pasien/home');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/pasien/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (data.success) {
+        sessionStorage.setItem('token', data.token);
+        sessionStorage.setItem('pasienUser', JSON.stringify(data.user));
+        sessionStorage.setItem('pasienNama', data.user.nama);
+        navigate('/pasien/home');
+      } else {
+        setError(data.message || 'Login gagal.');
+      }
+    } catch {
+      setError('Tidak dapat terhubung ke server.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -34,7 +52,9 @@ export default function PasienLogin() {
           </div>
         </div>
         <span onClick={() => navigate('/pasien/lupa-password')} style={{ fontSize: 13, color: 'var(--blue)', fontWeight: 600, cursor: 'pointer', display: 'block', marginBottom: 20 }}>Lupa Password?</span>
-        <button onClick={handleLogin} style={{ width: '100%', padding: 14, background: '#4B8A8C', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', marginBottom: 14 }}>Login</button>
+        <button onClick={handleLogin} disabled={loading} style={{ width: '100%', padding: 14, background: loading ? '#6B7280' : '#4B8A8C', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'inherit', cursor: loading ? 'not-allowed' : 'pointer', marginBottom: 14 }}>
+          {loading ? 'Memproses...' : 'Login'}
+        </button>
         <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>Belum punya akun? <span onClick={() => navigate('/pasien/daftar')} style={{ color: 'var(--blue)', fontWeight: 600, cursor: 'pointer' }}>Daftar Sekarang</span></div>
       </div>
     </div>
