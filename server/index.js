@@ -180,7 +180,6 @@ app.post('/api/forgot-password', async (req, res) => {
     const valid = await verifyCaptcha(captchaToken);
     if (!valid) return res.status(400).json({ success: false, message: 'CAPTCHA tidak valid.' });
 
-    // Cek di semua tabel
     const [dokter] = await db.query('SELECT email FROM dokters WHERE email = ?', [email]);
     const [pasien] = await db.query('SELECT email FROM pasiens WHERE email = ?', [email]);
     if (dokter.length === 0 && pasien.length === 0) {
@@ -234,7 +233,6 @@ app.post('/api/reset-password', async (req, res) => {
 // ADMIN — DOKTER
 // ════════════════════════════════════════════════════════════════════════════
 
-// GET /api/dokter
 app.get('/api/dokter', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query('SELECT id, nama, email, spesialis, no_str, harga, foto FROM dokters');
@@ -244,7 +242,6 @@ app.get('/api/dokter', verifyToken, async (req, res) => {
   }
 });
 
-// POST /api/dokter
 app.post('/api/dokter', verifyToken, async (req, res) => {
   try {
     const { nama, email, password, spesialis, no_str, harga } = req.body;
@@ -260,7 +257,6 @@ app.post('/api/dokter', verifyToken, async (req, res) => {
   }
 });
 
-// DELETE /api/dokter/:id
 app.delete('/api/dokter/:id', verifyToken, async (req, res) => {
   try {
     await db.query('DELETE FROM dokters WHERE id = ?', [req.params.id]);
@@ -274,7 +270,6 @@ app.delete('/api/dokter/:id', verifyToken, async (req, res) => {
 // ADMIN — PASIEN
 // ════════════════════════════════════════════════════════════════════════════
 
-// GET /api/pasien
 app.get('/api/pasien', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query('SELECT id, nama, email, no_hp, nik FROM pasiens');
@@ -284,7 +279,6 @@ app.get('/api/pasien', verifyToken, async (req, res) => {
   }
 });
 
-// DELETE /api/pasien/:id
 app.delete('/api/pasien/:id', verifyToken, async (req, res) => {
   try {
     await db.query('DELETE FROM pasiens WHERE id = ?', [req.params.id]);
@@ -298,7 +292,6 @@ app.delete('/api/pasien/:id', verifyToken, async (req, res) => {
 // APPOINTMENTS
 // ════════════════════════════════════════════════════════════════════════════
 
-// GET /api/appointments
 app.get('/api/appointments', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(`
@@ -314,7 +307,6 @@ app.get('/api/appointments', verifyToken, async (req, res) => {
   }
 });
 
-// POST /api/appointments
 app.post('/api/appointments', verifyToken, async (req, res) => {
   try {
     const { dokter_id, keluhan, tgl, jam } = req.body;
@@ -329,7 +321,6 @@ app.post('/api/appointments', verifyToken, async (req, res) => {
   }
 });
 
-// PATCH /api/appointments/:id/status
 app.patch('/api/appointments/:id/status', verifyToken, async (req, res) => {
   try {
     const { status } = req.body;
@@ -340,7 +331,6 @@ app.patch('/api/appointments/:id/status', verifyToken, async (req, res) => {
   }
 });
 
-// GET /api/appointments/pasien/:id
 app.get('/api/appointments/pasien/:id', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(`
@@ -356,7 +346,6 @@ app.get('/api/appointments/pasien/:id', verifyToken, async (req, res) => {
   }
 });
 
-// GET /api/appointments/dokter/:id
 app.get('/api/appointments/dokter/:id', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(`
@@ -376,7 +365,6 @@ app.get('/api/appointments/dokter/:id', verifyToken, async (req, res) => {
 // REKAM MEDIS
 // ════════════════════════════════════════════════════════════════════════════
 
-// GET /api/rekam-medis/dokter/:id
 app.get('/api/rekam-medis/dokter/:id', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(`
@@ -393,7 +381,6 @@ app.get('/api/rekam-medis/dokter/:id', verifyToken, async (req, res) => {
   }
 });
 
-// POST /api/rekam-medis
 app.post('/api/rekam-medis', verifyToken, async (req, res) => {
   try {
     const { appointment_id, diagnosa, resep, catatan } = req.body;
@@ -412,7 +399,6 @@ app.post('/api/rekam-medis', verifyToken, async (req, res) => {
 // JADWAL DOKTER
 // ════════════════════════════════════════════════════════════════════════════
 
-// GET /api/jadwal/:dokter_id
 app.get('/api/jadwal/:dokter_id', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query('SELECT * FROM jadwal_dokter WHERE dokter_id = ?', [req.params.dokter_id]);
@@ -422,7 +408,6 @@ app.get('/api/jadwal/:dokter_id', verifyToken, async (req, res) => {
   }
 });
 
-// POST /api/jadwal
 app.post('/api/jadwal', verifyToken, async (req, res) => {
   try {
     const { dokter_id, hari, jam_mulai, jam_selesai } = req.body;
@@ -436,7 +421,6 @@ app.post('/api/jadwal', verifyToken, async (req, res) => {
   }
 });
 
-// DELETE /api/jadwal/:id
 app.delete('/api/jadwal/:id', verifyToken, async (req, res) => {
   try {
     await db.query('DELETE FROM jadwal_dokter WHERE id = ?', [req.params.id]);
@@ -450,7 +434,6 @@ app.delete('/api/jadwal/:id', verifyToken, async (req, res) => {
 // PROFIL
 // ════════════════════════════════════════════════════════════════════════════
 
-// GET /api/dokter/:id/profil
 app.get('/api/dokter/:id/profil', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -464,7 +447,6 @@ app.get('/api/dokter/:id/profil', verifyToken, async (req, res) => {
   }
 });
 
-// PUT /api/dokter/:id/profil
 app.put('/api/dokter/:id/profil', verifyToken, upload.single('foto'), async (req, res) => {
   try {
     const { nama, spesialis, no_str, harga, bio, email } = req.body;
@@ -482,7 +464,6 @@ app.put('/api/dokter/:id/profil', verifyToken, upload.single('foto'), async (req
   }
 });
 
-// GET /api/pasien/:id/profil
 app.get('/api/pasien/:id/profil', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -496,7 +477,6 @@ app.get('/api/pasien/:id/profil', verifyToken, async (req, res) => {
   }
 });
 
-// PUT /api/pasien/:id/profil
 app.put('/api/pasien/:id/profil', verifyToken, upload.single('foto'), async (req, res) => {
   try {
     const { nama, email, no_hp, nik, tgl_lahir, gender, alamat, riwayat_penyakit, alergi } = req.body;
@@ -515,10 +495,9 @@ app.put('/api/pasien/:id/profil', verifyToken, upload.single('foto'), async (req
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-// CHAT
+// CHAT (pasien ↔ dokter)
 // ════════════════════════════════════════════════════════════════════════════
 
-// GET /api/chat/:sender_role/:sender_id/:receiver_role/:receiver_id
 app.get('/api/chat/:sender_role/:sender_id/:receiver_role/:receiver_id', verifyToken, async (req, res) => {
   try {
     const { sender_role, sender_id, receiver_role, receiver_id } = req.params;
@@ -535,7 +514,6 @@ app.get('/api/chat/:sender_role/:sender_id/:receiver_role/:receiver_id', verifyT
   }
 });
 
-// POST /api/chat
 app.post('/api/chat', verifyToken, async (req, res) => {
   try {
     const { sender_role, sender_id, receiver_role, receiver_id, pesan } = req.body;
@@ -548,44 +526,6 @@ app.post('/api/chat', verifyToken, async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
-
-// Mamoru Route js
-// ════════════════════════════════════════════════════════════════════════════
-// MAMORU — AI Chatbot (Gemini Flash + Telegram Notification)
-// ════════════════════════════════════════════════════════════════════════════
-
-const GEMINI_API_KEY   = process.env.GEMINI_API_KEY;
-const TELEGRAM_TOKEN   = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-
-// Kirim notif ke Telegram admin
-async function notifyTelegram(pasienNama, pesan) {
-  if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) return;
-  const text =
-    `🔔 *Pesan Masuk — Mamoru Chatbot*\n` +
-    `👤 Pasien: *${pasienNama}*\n` +
-    `💬 Pesan: ${pesan}\n` +
-    `🕐 ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}`;
-  await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: TELEGRAM_CHAT_ID,
-      text,
-      parse_mode: 'Markdown'
-    })
-  }).catch(err => console.error('Telegram error:', err));
-}
-
-// Deteksi apakah pesan perlu notif admin
-function isAdminNotifyNeeded(pesan) {
-  const keywords = [
-    'booking', 'darurat', 'urgent', 'gawat', 'emergency',
-    'tidak bisa', 'gagal', 'error', 'komplain', 'keluhan',
-    'hubungi', 'telepon', 'bantuan', 'help'
-  ];
-  return keywords.some(k => pesan.toLowerCase().includes(k));
-}
 
 // ════════════════════════════════════════════════════════════════════════════
 // MAMORU — AI Chatbot (Gemini Flash + Telegram Notification)
@@ -605,7 +545,6 @@ async function notifyTelegram(pasienNama, pesan) {
     `👤 Pasien: *${pasienNama}*\n` +
     `💬 Pesan: ${pesan}\n` +
     `🕐 ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}`;
-
   try {
     const tgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
       method: 'POST',
@@ -632,10 +571,9 @@ function isAdminNotifyNeeded(pesan) {
   return keywords.some(k => pesan.toLowerCase().includes(k));
 }
 
-// POST /api/mamoru
+// POST /api/mamoru  — no auth required (public chatbot)
 app.post('/api/mamoru', async (req, res) => {
   console.log('[Mamoru] 📨 Request received:', JSON.stringify(req.body).slice(0, 200));
-
   try {
     const { pesan, history = [], pasienNama = 'Pasien' } = req.body;
 
@@ -650,7 +588,6 @@ app.post('/api/mamoru', async (req, res) => {
     }
 
     console.log('[Mamoru] 🔑 Gemini key found:', GEMINI_API_KEY.slice(0, 8) + '...');
-    console.log('[Mamoru] 🗂️  History length:', history.length);
     console.log('[Mamoru] 💬 Sending to Gemini:', pesan);
 
     const recentHistory = history.slice(-10).map(m => ({
@@ -658,9 +595,9 @@ app.post('/api/mamoru', async (req, res) => {
       parts: [{ text: m.text }]
     }));
 
-    const systemInstruction = `Kamu adalah Mamoru, asisten kesehatan virtual dari HealthSync Clinic. 
+    const systemInstruction = `Kamu adalah Mamoru, asisten kesehatan virtual dari HealthSync Clinic.
 Tugasmu membantu pasien dengan informasi seputar layanan klinik: booking dokter, jadwal, riwayat konsultasi, profil, dan pertanyaan umum kesehatan.
-Jawab dalam Bahasa Indonesia, ramah, singkat, dan profesional. 
+Jawab dalam Bahasa Indonesia, ramah, singkat, dan profesional.
 Jangan pernah memberikan diagnosis medis. Jika darurat, selalu arahkan ke tenaga medis.
 Nama pasien yang sedang chat: ${pasienNama}.`;
 
@@ -696,13 +633,11 @@ Nama pasien yang sedang chat: ${pasienNama}.`;
 
     console.log('[Mamoru] ✅ Reply:', reply.slice(0, 100));
 
-    // Telegram
     const needsNotif = isAdminNotifyNeeded(pesan);
     console.log('[Mamoru] 📣 Needs Telegram notif?', needsNotif);
     if (needsNotif) await notifyTelegram(pasienNama, pesan);
 
     res.json({ success: true, reply });
-
   } catch (err) {
     console.error('[Mamoru] 💥 Unexpected error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
