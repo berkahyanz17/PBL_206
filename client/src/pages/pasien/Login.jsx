@@ -12,6 +12,7 @@ export default function PasienLogin() {
     if (!email || !password) { setError('Email/No.Hp dan password harus diisi.'); return; }
     setError('');
     const nama = email.includes('@') ? email.split('@')[0] : email;
+    sessionStorage.setItem('token', data.token);      // ← add this
     sessionStorage.setItem('pasienNama', nama.charAt(0).toUpperCase() + nama.slice(1));
     navigate('/pasien/home');
   }
