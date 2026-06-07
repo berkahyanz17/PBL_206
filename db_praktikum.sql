@@ -87,5 +87,5 @@ CREATE TABLE IF NOT EXISTS password_resets (
 -- password: admin123 (bcrypt hash)
 INSERT IGNORE INTO admins (username, password) VALUES (
   'admin',
-  '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL57vp9e'
+  '$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa'
 );
