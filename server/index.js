@@ -587,21 +587,72 @@ function isAdminNotifyNeeded(pesan) {
   return keywords.some(k => pesan.toLowerCase().includes(k));
 }
 
-// POST /api/mamoru
-app.post('/api/mamoru', verifyToken, async (req, res) => {
+// ════════════════════════════════════════════════════════════════════════════
+// MAMORU — AI Chatbot (Gemini Flash + Telegram Notification)
+// ════════════════════════════════════════════════════════════════════════════
+
+const GEMINI_API_KEY   = process.env.GEMINI_API_KEY;
+const TELEGRAM_TOKEN   = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+
+async function notifyTelegram(pasienNama, pesan) {
+  if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) {
+    console.log('[Mamoru] ⚠️  Telegram env not set, skipping notification.');
+    return;
+  }
+  const text =
+    `🔔 *Pesan Masuk — Mamoru Chatbot*\n` +
+    `👤 Pasien: *${pasienNama}*\n` +
+    `💬 Pesan: ${pesan}\n` +
+    `🕐 ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}`;
+
   try {
-    const { pesan, history = [] } = req.body;
-    const pasienNama = req.user.nama || 'Pasien';
+    const tgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text, parse_mode: 'Markdown' })
+    });
+    const tgData = await tgRes.json();
+    if (tgData.ok) {
+      console.log('[Mamoru] ✅ Telegram notification sent.');
+    } else {
+      console.error('[Mamoru] ❌ Telegram error:', JSON.stringify(tgData));
+    }
+  } catch (err) {
+    console.error('[Mamoru] ❌ Telegram fetch failed:', err.message);
+  }
+}
+
+function isAdminNotifyNeeded(pesan) {
+  const keywords = [
+    'booking', 'darurat', 'urgent', 'gawat', 'emergency',
+    'tidak bisa', 'gagal', 'error', 'komplain', 'keluhan',
+    'hubungi', 'telepon', 'bantuan', 'help'
+  ];
+  return keywords.some(k => pesan.toLowerCase().includes(k));
+}
+
+// POST /api/mamoru
+app.post('/api/mamoru', async (req, res) => {
+  console.log('[Mamoru] 📨 Request received:', JSON.stringify(req.body).slice(0, 200));
+
+  try {
+    const { pesan, history = [], pasienNama = 'Pasien' } = req.body;
 
     if (!pesan || !pesan.trim()) {
+      console.log('[Mamoru] ⚠️  Empty message received.');
       return res.status(400).json({ success: false, message: 'Pesan tidak boleh kosong.' });
     }
 
     if (!GEMINI_API_KEY) {
+      console.error('[Mamoru] ❌ GEMINI_API_KEY is not set!');
       return res.status(500).json({ success: false, message: 'Gemini API key belum dikonfigurasi.' });
     }
 
-    // Bangun history untuk Gemini (max 10 pesan terakhir agar hemat token)
+    console.log('[Mamoru] 🔑 Gemini key found:', GEMINI_API_KEY.slice(0, 8) + '...');
+    console.log('[Mamoru] 🗂️  History length:', history.length);
+    console.log('[Mamoru] 💬 Sending to Gemini:', pesan);
+
     const recentHistory = history.slice(-10).map(m => ({
       role: m.type === 'user' ? 'user' : 'model',
       parts: [{ text: m.text }]
@@ -624,32 +675,36 @@ Nama pasien yang sedang chat: ${pasienNama}.`;
             ...recentHistory,
             { role: 'user', parts: [{ text: pesan }] }
           ],
-          generationConfig: {
-            maxOutputTokens: 512,
-            temperature: 0.7
-          }
+          generationConfig: { maxOutputTokens: 512, temperature: 0.7 }
         })
       }
     );
 
+    console.log('[Mamoru] 📡 Gemini HTTP status:', geminiRes.status);
+
     if (!geminiRes.ok) {
       const errText = await geminiRes.text();
-      console.error('Gemini error:', errText);
+      console.error('[Mamoru] ❌ Gemini error response:', errText);
       return res.status(502).json({ success: false, message: 'Gagal menghubungi AI. Coba lagi.' });
     }
 
     const geminiData = await geminiRes.json();
+    console.log('[Mamoru] 📦 Gemini raw response:', JSON.stringify(geminiData).slice(0, 300));
+
     const reply = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text
       || 'Maaf, saya tidak bisa menjawab saat ini. Silakan coba lagi.';
 
-    // Kirim notif Telegram jika pesan mengandung kata kunci penting
-    if (isAdminNotifyNeeded(pesan)) {
-      notifyTelegram(pasienNama, pesan); // fire-and-forget, tidak block response
-    }
+    console.log('[Mamoru] ✅ Reply:', reply.slice(0, 100));
+
+    // Telegram
+    const needsNotif = isAdminNotifyNeeded(pesan);
+    console.log('[Mamoru] 📣 Needs Telegram notif?', needsNotif);
+    if (needsNotif) await notifyTelegram(pasienNama, pesan);
 
     res.json({ success: true, reply });
+
   } catch (err) {
-    console.error('Mamoru error:', err);
+    console.error('[Mamoru] 💥 Unexpected error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
