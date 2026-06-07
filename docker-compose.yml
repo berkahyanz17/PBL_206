@@ -19,10 +19,15 @@ services:
       DB_USER: root
       DB_PASSWORD: secret
       DB_NAME: db_praktikum
+      JWT_SECRET: healthsync_jwt_secret_ganti_ini
+      MAIL_PASS: your_resend_api_key
+      HCAPTCHA_SECRET: your_hcaptcha_secret
     depends_on:
       - db
     networks:
       - app_network
+    volumes:
+      - uploads_data:/app/uploads
 
   client:
     build: ./client
@@ -49,6 +54,7 @@ services:
 
 volumes:
   db_data:
+  uploads_data:
 
 networks:
   app_network:
