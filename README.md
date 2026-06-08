@@ -1,33 +1,41 @@
 # PBL_206
 Secure Mini Enterprise Infrastructure Deployment
 
-## fitur cepat update dari github + jalanin server
+fitur cepat update dari github + jalanin server
+```
 git pull --rebase && docker compose down && docker compose up --build -d
-
-## akses ke browser
+```
+akses ke browser
+```
 https://192.168.56.105
-
-## nambahin fitur dari vm server
+```
+nambahin fitur dari vm server
+```
 git add .
 git commit -m "PESAN_BUAT COMMIT"
 git pull --rebase
 git push
-
-## ambil update dari github
+```
+ambil update dari github
+```
 git pull --rebase
-
-## jalanin server
+```
+jalanin server
+```
 docker compose up -d
-
-## jalanin server + build
+```
+jalanin server + build
+```
 docker compose up --build -d
-
-## matiin server
+```
+matiin server
+```
 docker compose down
-
-## matiin server + reset database
+```
+matiin server + reset database
+```
 docker compose down -v
-
+```
 # HealthSync Clinic
 
 Frontend-only React app served by Nginx via Docker.
