@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PasienSidebar from '../../components/PasienSidebar';
-import MamoruChat from '../../components/MamoruChat';
+import MamoruChat from './Mamoruchat';
 import { apiFetch } from '../../utils/api';
 
 export default function PasienRiwayat() {
