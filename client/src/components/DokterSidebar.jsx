@@ -2,8 +2,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 const navItems = [
   { icon: '📅', label: 'Jadwal', path: '/dokter/jadwal' },
-  { icon: '📋', label: 'Riwayat', path: '/dokter/riwayat' },
-  { icon: '🗒️', label: 'Rekam Medis', path: '/dokter/rekam-medis' },
+  { icon: '📋', label: 'Riwayat Konsultasi', path: '/dokter/riwayat' },
+  { icon: '🩺', label: 'Rekam Medis', path: '/dokter/rekam-medis' },
   { icon: '🗓️', label: 'Kelola Jadwal', path: '/dokter/kelola-jadwal' },
   { icon: '💬', label: 'Chat', path: '/dokter/chat' },
   { icon: '👤', label: 'Profil', path: '/dokter/profil' },
@@ -31,11 +31,6 @@ export default function DokterSidebar() {
           </div>
         ))}
       </nav>
-      <div style={{ padding: '16px 12px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-        <div className="nav-item" onClick={() => { sessionStorage.clear(); navigate('/dokter/login'); }} style={{ color: '#fca5a5' }}>
-          <span className="nav-icon">🚪</span>Logout
-        </div>
-      </div>
     </div>
   );
 }
