@@ -75,6 +75,7 @@ function verifyToken(req, res, next) {
     req.user = jwt.verify(token, JWT_SECRET);
     next();
   } catch {
+    console.log('Verify error:', err.message); // ← tambah ini
     res.status(401).json({ success: false, message: 'Token tidak valid.' });
   }
   // Tambah sementara di verifyToken
