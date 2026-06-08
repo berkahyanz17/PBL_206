@@ -17,7 +17,7 @@ export default function DokterSidebar() {
   return (
     <div className="sidebar" style={{ background: 'var(--green-dark)' }}>
       <div className="sidebar-brand">
-        <div className="sidebar-brand-icon" style={{ background: 'rgba(255,255,255,0.2)' }}>🩺</div>
+        <div className="sidebar-brand-icon" style={{ background: 'var(--green-light)' }}>🩺</div>
         <div>
           <span style={{ fontSize: 13 }}>{user.nama || 'Dokter'}</span>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{user.spesialis || ''}</div>
