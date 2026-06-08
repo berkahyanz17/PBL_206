@@ -53,7 +53,7 @@ export default function AdminLogin() {
           <div style={{ position: 'relative' }}>
             <input type={showPw ? 'text' : 'password'} placeholder="Masukkan Password" value={password} onChange={e => setPassword(e.target.value)}
               style={{ paddingRight: 44, borderColor: 'var(--border)' }} onFocus={e => e.target.style.borderColor = 'var(--navy)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
-            <button type="button" onClick={() => setShowPw(!showPw)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }}>👁️</button>
+            <button type="button" onClick={() => setShowPw(!showPw)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }}></button>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22 }}>
