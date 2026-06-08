@@ -47,7 +47,11 @@ export default function PasienProfil() {
     });
     const data = await res.json();
     setSaving(false);
-    if (data.success) alert('Profil berhasil disimpan!');
+    if (data.success) {
+      alert('Profil berhasil disimpan!');
+      const res2 = await apiFetch(`/pasien/${user.id}/profil`);
+      if (res2?.success && res2.data.foto) setFoto(res2.data.foto);
+    }
   }
 
   function logout() { sessionStorage.clear(); navigate('/pasien/login'); }
