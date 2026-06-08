@@ -81,13 +81,13 @@ export default function DokterJadwal() {
           )}
           {aktif.map(j => (
             <div key={j.id} style={{ background: 'white', borderRadius: 12, padding: '18px 22px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-              <div style={{ width: 80, flexShrink: 0 }}>
+              <div style={{ width: 110, flexShrink: 0 }}>
                 <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--green)' }}>{j.jam}</div>
                 <div style={{ fontSize: 11, fontWeight: 600, marginTop: 2, color: statusColor[j.status] }}>{statusLabel[j.status]}</div>
               </div>
+              <div style={{ width: 3, height: 50, background: 'var(--border)', borderRadius: 4, flexShrink: 0 }}></div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 18, fontWeight: 700 }}>{j.pasien_nama}</div>
-                <div style={{ width: 3, height: 50, background: 'var(--border)', borderRadius: 4, flexShrink: 0 }}></div>
                 <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>Keluhan: {j.keluhan}</div>
               </div>
               {j.status === 'dikonfirmasi' && (
