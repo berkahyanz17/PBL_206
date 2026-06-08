@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PasienSidebar from '../../components/PasienSidebar';
+import MamoruChat from '../../components/MamoruChat';
 import { apiFetch } from '../../utils/api';
 
 export default function PasienProfil() {
@@ -99,6 +100,7 @@ export default function PasienProfil() {
           </div>
         </div>
       </div>
+      <MamoruChat />
     </div>
   );
 }
