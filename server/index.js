@@ -77,6 +77,9 @@ function verifyToken(req, res, next) {
   } catch {
     res.status(401).json({ success: false, message: 'Token tidak valid.' });
   }
+  // Tambah sementara di verifyToken
+  console.log('JWT_SECRET:', JWT_SECRET)
+  console.log('Token received:', token)
 }
 
 // ─── hCaptcha ────────────────────────────────────────────────────────────────
