@@ -15,7 +15,7 @@ export default function DokterSidebar() {
   const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
 
   return (
-    <div className="sidebar" style={{ background: 'var(--green-light)' }}>
+    <div className="sidebar" style={{ background: 'var(--green)' }}>
       <div className="sidebar-brand">
         <div className="sidebar-brand-icon" style={{ background: 'rgba(255,255,255,0.2)' }}>🩺</div>
         <div>
