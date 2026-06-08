@@ -48,7 +48,7 @@ export default function PasienLogin() {
           <label>Password</label>
           <div style={{ position: 'relative' }}>
             <input type={showPw ? 'text' : 'password'} placeholder="Masukkan Password" value={password} onChange={e => setPassword(e.target.value)} style={{ paddingRight: 44 }} />
-            <button type="button" onClick={() => setShowPw(!showPw)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }}>👁️</button>
+            <button type="button" onClick={() => setShowPw(!showPw)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }}></button>
           </div>
         </div>
         <span onClick={() => navigate('/pasien/lupa-password')} style={{ fontSize: 13, color: 'var(--blue)', fontWeight: 600, cursor: 'pointer', display: 'block', marginBottom: 20 }}>Lupa Password?</span>
