@@ -162,9 +162,7 @@ app.post('/api/pasien/login', async (req, res) => {
 // POST /api/pasien/daftar
 app.post('/api/pasien/daftar', async (req, res) => {
   try {
-    const { nama, email, no_hp, password, captchaToken } = req.body;
-    const valid = await verifyCaptcha(captchaToken);
-    if (!valid) return res.status(400).json({ success: false, message: 'CAPTCHA tidak valid.' });
+    const { nama, email, no_hp, password } = req.body;
 
     const [exist] = await db.query('SELECT id FROM pasiens WHERE email = ?', [email]);
     if (exist.length > 0) return res.status(400).json({ success: false, message: 'Email sudah terdaftar.' });
