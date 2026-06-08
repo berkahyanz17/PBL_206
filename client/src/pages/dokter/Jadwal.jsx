@@ -81,7 +81,7 @@ export default function DokterJadwal() {
           )}
           {aktif.map(j => (
             <div key={j.id} style={{ background: 'white', borderRadius: 12, padding: '18px 22px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-              <div style={{ width: 115, flexShrink: 0 }}>
+              <div style={{ width: 110, flexShrink: 0 }}>
                 <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--green)' }}>{j.jam}</div>
                 <div style={{ fontSize: 11, fontWeight: 600, marginTop: 2, color: statusColor[j.status] }}>{statusLabel[j.status]}</div>
               </div>
