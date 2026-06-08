@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PasienSidebar from '../../components/PasienSidebar';
+import MamoruChat from '../../components/MamoruChat';
 import { apiFetch } from '../../utils/api';
 
 export default function PasienCari() {
@@ -112,6 +113,7 @@ export default function PasienCari() {
           </div>
         </div>
       )}
+      <MamoruChat />
     </div>
   );
 }
