@@ -45,13 +45,9 @@
   .section { display: none !important; pointer-events: none !important; }
   .section.active { display: block !important; pointer-events: auto !important; }
   .section:not(.active) * { pointer-events: none !important; }
-  /* modal-appt-detail is inside section-admin but uses inline style — ensure hidden outside admin */
-  #section-admin:not(.active) #modal-appt-detail { display: none !important; pointer-events: none !important; }
   /* Dokter modals must not bleed into pasien section */
   #section-dokter:not(.active) .modal-overlay { display: none !important; pointer-events: none !important; }
   #section-dokter:not(.active) .fab-chat { display: none !important; pointer-events: none !important; }
-  #modal-appt-detail { display: none; }
-  #modal-appt-detail.open { display: flex; }
 /* ========== ADMIN CSS ========== */
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1069,14 +1065,12 @@
 </div>
 
 
-
-</div>
-<!-- MODAL DETAIL APPOINTMENT ADMIN -->
-<div class="modal-overlay" id="modal-appt-detail" style="z-index:999;">
-  <div style="background:white;border-radius:20px;padding:28px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,0.25);max-height:90vh;overflow-y:auto;animation:slideUp 0.3s ease;">
+<!-- MODAL DETAIL APPOINTMENT ADMIN (inside section-admin) -->
+<div id="modal-appt-detail" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:20px;padding:28px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,0.25);max-height:90vh;overflow-y:auto;animation:slideUp 0.3s ease;margin:16px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
       <h3 style="font-size:18px;font-weight:800;color:#111827;">Detail Appointment</h3>
-      <button onclick="document.getElementById('modal-appt-detail').classList.remove('open'); document.getElementById('modal-appt-detail').style.display=''" style="background:#F3F4F6;border:none;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      <button onclick="tutupModalAppt()" style="background:#F3F4F6;border:none;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
     </div>
     <div style="background:linear-gradient(135deg,#0D1B4B,#1a2a6c);border-radius:14px;padding:20px 24px;margin-bottom:18px;color:white;display:flex;align-items:center;gap:16px;">
       <div id="appt-det-avatar" style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;flex-shrink:0;">A</div>
@@ -1085,7 +1079,7 @@
         <div id="appt-det-dokter" style="font-size:13px;opacity:0.8;margin-top:3px;"></div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
       <div style="background:#F9FAFB;border-radius:10px;padding:14px;">
         <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Tanggal & Jam</div>
         <div id="appt-det-tgl" style="font-size:14px;font-weight:600;color:#111827;"></div>
@@ -1095,7 +1089,7 @@
         <div id="appt-det-status" style="font-size:14px;font-weight:700;"></div>
       </div>
       <div style="background:#F9FAFB;border-radius:10px;padding:14px;grid-column:1/-1;">
-        <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Keluhan Pasien</div>
+        <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Keluhan / Penyakit</div>
         <div id="appt-det-keluhan" style="font-size:14px;color:#374151;line-height:1.6;"></div>
       </div>
       <div style="background:#F9FAFB;border-radius:10px;padding:14px;grid-column:1/-1;">
@@ -1103,11 +1097,11 @@
         <div id="appt-det-spesialis" style="font-size:14px;font-weight:600;color:#111827;"></div>
       </div>
     </div>
-    <button onclick="document.getElementById('modal-appt-detail').classList.remove('open'); document.getElementById('modal-appt-detail').style.display=''" style="width:100%;padding:13px;background:#F3F4F6;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Tutup</button>
+    <button onclick="tutupModalAppt()" style="width:100%;padding:13px;background:#F3F4F6;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Tutup</button>
   </div>
 </div>
 
-
+</div>
 <!-- ========== SECTION: DOKTER ========== -->
 <div id="section-dokter" class="section">
 
@@ -1207,8 +1201,8 @@
       <div class="sidebar-brand"><div class="sidebar-brand-icon">🩺</div><span>Dokter Panel</span></div>
       <nav class="sidebar-nav">
         <div class="nav-item active" onclick="showPage('d-page-jadwal')"><span class="nav-icon">📅</span> Jadwal Hari Ini</div>
-        <div class="nav-item" onclick="showPage('d-page-riwayat')"><span class="nav-icon">📋</span> Riwayat Konsultasi</div>
-        <div class="nav-item" onclick="showPage('d-page-rekam')"><span class="nav-icon">🩺</span> Rekam Medis</div>
+        <div class="nav-item" onclick="showPage('d-page-riwayat')"><span class="nav-icon">📋</span> Rekam Medis</div>
+        <div class="nav-item" onclick="showPage('d-page-rekam')"><span class="nav-icon">🩺</span> Riwayat Konsultasi</div>
         <div class="nav-item" onclick="showPage('d-page-kelola')"><span class="nav-icon">🕐</span> Kelola Jadwal</div>
         <div class="nav-item" onclick="showPage('d-page-chat')"><span class="nav-icon">💬</span> Chat Admin</div>
         <div class="nav-item" onclick="showPage('d-page-profil')"><span class="nav-icon">👤</span> Profil Saya</div>
@@ -1276,15 +1270,15 @@
       <div class="sidebar-brand"><div class="sidebar-brand-icon">🩺</div><span>Dokter Panel</span></div>
       <nav class="sidebar-nav">
         <div class="nav-item" onclick="showPage('d-page-jadwal')"><span class="nav-icon">📅</span> Jadwal Hari Ini</div>
-        <div class="nav-item active" onclick="showPage('d-page-riwayat')"><span class="nav-icon">📋</span> Riwayat Konsultasi</div>
-        <div class="nav-item" onclick="showPage('d-page-rekam')"><span class="nav-icon">🩺</span> Rekam Medis</div>
+        <div class="nav-item active" onclick="showPage('d-page-riwayat')"><span class="nav-icon">📋</span> Rekam Medis</div>
+        <div class="nav-item" onclick="showPage('d-page-rekam')"><span class="nav-icon">🩺</span> Riwayat Konsultasi</div>
         <div class="nav-item" onclick="showPage('d-page-kelola')"><span class="nav-icon">🕐</span> Kelola Jadwal</div>
         <div class="nav-item" onclick="showPage('d-page-chat')"><span class="nav-icon">💬</span> Chat Admin</div>
         <div class="nav-item" onclick="showPage('d-page-profil')"><span class="nav-icon">👤</span> Profil Saya</div>
       </nav>
     </aside>
     <div class="main-content">
-      <div class="topbar"><h1>Riwayat Konsultasi</h1><div class="topbar-right"><button class="btn-notif">🔔</button><button class="btn-logout" onclick="showPage('d-page-login')">🚪 Logout</button></div></div>
+      <div class="topbar"><h1>Rekam Medis</h1><div class="topbar-right"><button class="btn-notif">🔔</button><button class="btn-logout" onclick="showPage('d-page-login')">🚪 Logout</button></div></div>
       <div class="content-area">
         <div class="search-box"><span>🔍</span><input type="text" id="search-riwayat" placeholder="Cari nama pasien..." oninput="filterRiwayat(this.value)"></div>
         <div class="card" style="padding:0;overflow:hidden;">
@@ -1328,15 +1322,15 @@
       <div class="sidebar-brand"><div class="sidebar-brand-icon">🩺</div><span>Dokter Panel</span></div>
       <nav class="sidebar-nav">
         <div class="nav-item" onclick="showPage('d-page-jadwal')"><span class="nav-icon">📅</span> Jadwal Hari Ini</div>
-        <div class="nav-item" onclick="showPage('d-page-riwayat')"><span class="nav-icon">📋</span> Riwayat Konsultasi</div>
-        <div class="nav-item active" onclick="showPage('d-page-rekam')"><span class="nav-icon">🩺</span> Rekam Medis</div>
+        <div class="nav-item" onclick="showPage('d-page-riwayat')"><span class="nav-icon">📋</span> Rekam Medis</div>
+        <div class="nav-item active" onclick="showPage('d-page-rekam')"><span class="nav-icon">🩺</span> Riwayat Konsultasi</div>
         <div class="nav-item" onclick="showPage('d-page-kelola')"><span class="nav-icon">🕐</span> Kelola Jadwal</div>
         <div class="nav-item" onclick="showPage('d-page-chat')"><span class="nav-icon">💬</span> Chat Admin</div>
         <div class="nav-item" onclick="showPage('d-page-profil')"><span class="nav-icon">👤</span> Profil Saya</div>
       </nav>
     </aside>
     <div class="main-content">
-      <div class="topbar"><h1>Rekam Medis</h1><div class="topbar-right"><button class="btn-notif">🔔</button><button class="btn-logout" onclick="showPage('d-page-login')">🚪 Logout</button></div></div>
+      <div class="topbar"><h1>Riwayat Konsultasi</h1><div class="topbar-right"><button class="btn-notif">🔔</button><button class="btn-logout" onclick="showPage('d-page-login')">🚪 Logout</button></div></div>
       <div class="content-area">
         <div class="rekam-layout">
           <div class="rekam-sidebar">
@@ -1371,8 +1365,8 @@
       <div class="sidebar-brand"><div class="sidebar-brand-icon">🩺</div><span>Dokter Panel</span></div>
       <nav class="sidebar-nav">
         <div class="nav-item" onclick="showPage('d-page-jadwal')"><span class="nav-icon">📅</span> Jadwal Hari Ini</div>
-        <div class="nav-item" onclick="showPage('d-page-riwayat')"><span class="nav-icon">📋</span> Riwayat Konsultasi</div>
-        <div class="nav-item" onclick="showPage('d-page-rekam')"><span class="nav-icon">🩺</span> Rekam Medis</div>
+        <div class="nav-item" onclick="showPage('d-page-riwayat')"><span class="nav-icon">📋</span> Rekam Medis</div>
+        <div class="nav-item" onclick="showPage('d-page-rekam')"><span class="nav-icon">🩺</span> Riwayat Konsultasi</div>
         <div class="nav-item active" onclick="showPage('d-page-kelola')"><span class="nav-icon">🕐</span> Kelola Jadwal</div>
         <div class="nav-item" onclick="showPage('d-page-chat')"><span class="nav-icon">💬</span> Chat Admin</div>
         <div class="nav-item" onclick="showPage('d-page-profil')"><span class="nav-icon">👤</span> Profil Saya</div>
@@ -1394,8 +1388,8 @@
       <div class="sidebar-brand"><div class="sidebar-brand-icon">🩺</div><span>Dokter Panel</span></div>
       <nav class="sidebar-nav">
         <div class="nav-item" onclick="showPage('d-page-jadwal')"><span class="nav-icon">📅</span> Jadwal Hari Ini</div>
-        <div class="nav-item" onclick="showPage('d-page-riwayat')"><span class="nav-icon">📋</span> Riwayat Konsultasi</div>
-        <div class="nav-item" onclick="showPage('d-page-rekam')"><span class="nav-icon">🩺</span> Rekam Medis</div>
+        <div class="nav-item" onclick="showPage('d-page-riwayat')"><span class="nav-icon">📋</span> Rekam Medis</div>
+        <div class="nav-item" onclick="showPage('d-page-rekam')"><span class="nav-icon">🩺</span> Riwayat Konsultasi</div>
         <div class="nav-item" onclick="showPage('d-page-kelola')"><span class="nav-icon">🕐</span> Kelola Jadwal</div>
         <div class="nav-item active" onclick="showPage('d-page-chat')"><span class="nav-icon">💬</span> Chat Admin</div>
         <div class="nav-item" onclick="showPage('d-page-profil')"><span class="nav-icon">👤</span> Profil Saya</div>
@@ -1427,8 +1421,8 @@
       <div class="sidebar-brand"><div class="sidebar-brand-icon">🩺</div><span>Dokter Panel</span></div>
       <nav class="sidebar-nav">
         <div class="nav-item" onclick="showPage('d-page-jadwal')"><span class="nav-icon">📅</span> Jadwal Hari Ini</div>
-        <div class="nav-item" onclick="showPage('d-page-riwayat')"><span class="nav-icon">📋</span> Riwayat Konsultasi</div>
-        <div class="nav-item" onclick="showPage('d-page-rekam')"><span class="nav-icon">🩺</span> Rekam Medis</div>
+        <div class="nav-item" onclick="showPage('d-page-riwayat')"><span class="nav-icon">📋</span> Rekam Medis</div>
+        <div class="nav-item" onclick="showPage('d-page-rekam')"><span class="nav-icon">🩺</span> Riwayat Konsultasi</div>
         <div class="nav-item" onclick="showPage('d-page-kelola')"><span class="nav-icon">🕐</span> Kelola Jadwal</div>
         <div class="nav-item" onclick="showPage('d-page-chat')"><span class="nav-icon">💬</span> Chat Admin</div>
         <div class="nav-item active" onclick="showPage('d-page-profil')"><span class="nav-icon">👤</span> Profil Saya</div>
@@ -1478,7 +1472,7 @@
 <div class="modal-overlay" id="modal-detail">
   <div class="modal-box-lg">
     <div class="modal-close-row">
-      <h3>Detail Riwayat Konsultasi</h3>
+      <h3>Detail Rekam Medis</h3>
       <button class="btn-close-modal" onclick="closeDetail()">✕</button>
     </div>
     <div class="detail-header">
@@ -1942,7 +1936,7 @@ function togglePw(id, btn) {
 function switchSection(name) {
   // Reset admin modal supaya tidak block section lain
   const apptModal = document.getElementById('modal-appt-detail');
-  if (apptModal) { apptModal.classList.remove('open'); apptModal.style.display = ''; }
+  if (apptModal) { apptModal.style.display = 'none'; }
   if (name === 'index') {
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.getElementById('section-index').classList.add('active');
@@ -1999,9 +1993,13 @@ function lihatApptDetail(btn) {
   document.getElementById('appt-det-status').textContent = status;
   document.getElementById('appt-det-keluhan').textContent = keluhan;
   document.getElementById('appt-det-spesialis').textContent = spesialis;
+
   const modal = document.getElementById('modal-appt-detail');
-  modal.style.display = '';
-  modal.classList.add('open');
+  modal.style.display = 'flex';
+}
+
+function tutupModalAppt() {
+  document.getElementById('modal-appt-detail').style.display = 'none';
 }
 
 // Data percakapan per dokter
@@ -2294,11 +2292,107 @@ function d_openHasil(nama, jam) {
 }
 function d_closeHasil() { document.getElementById('d-modal-hasil').classList.remove('open'); }
 function d_submitHasil() {
-  const d = document.getElementById('d-input-diagnosa').value.trim();
-  const c = document.getElementById('d-input-catatan').value.trim();
-  if (!d) { alert('Isi diagnosa dulu!'); return; }
-  closeHasil();
-  alert('✅ Hasil konsultasi berhasil dikirim ke pasien!');
+  const diagnosa = document.getElementById('d-input-diagnosa').value.trim();
+  const catatan = document.getElementById('d-input-catatan').value.trim();
+  const resep = document.getElementById('d-input-resep').value.trim();
+  const label = document.getElementById('d-modal-pasien-label').textContent; // e.g. "Wulan - 10:00"
+  const parts = label.split(' - ');
+  const namaPasien = parts[0] || 'Pasien';
+  const jam = parts[1] || '-';
+
+  if (!diagnosa) { alert('Isi diagnosa dulu!'); return; }
+
+  // Tanggal hari ini
+  const now = new Date();
+  const tglStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+  const tglShort = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '/');
+
+  // ── Tambah ke Riwayat Konsultasi ──
+  const tbody = document.getElementById('tbody-riwayat');
+  if (tbody) {
+    const badgeColor = 'green';
+    const noRM = 'RM-' + now.getFullYear() + '-' + String(Math.floor(Math.random()*900)+100);
+    const newRow = document.createElement('tr');
+    newRow.className = 'riwayat-row';
+    newRow.dataset.nama = namaPasien;
+    const dataObj = {
+      nama: namaPasien, tanggal: tglStr, usia: '-', jenisKelamin: '-',
+      noRM: noRM, keluhan: '-', diagnosis: diagnosa,
+      badge: badgeColor, catatan: catatan || '-', resep: resep || 'Tidak ada resep.',
+      tindakLanjut: 'Kontrol sesuai kebutuhan.'
+    };
+    const dataJson = JSON.stringify(dataObj).replace(/'/g, "\\'");
+    newRow.innerHTML = `
+      <td style="font-weight:600">${tglShort}</td>
+      <td style="font-weight:600">${namaPasien}</td>
+      <td><span class="badge-pill badge-green" style="padding:4px 12px">${diagnosa}</span></td>
+      <td style="color:var(--text-muted)">${catatan ? catatan.substring(0,40) + (catatan.length>40?'...':'') : '-'}</td>
+      <td><button class="btn-action" style="background:#F3F4F6;color:#374151" onclick='lihatDetail(${JSON.stringify(dataObj)})'>Lihat Detail</button></td>`;
+    tbody.insertBefore(newRow, tbody.firstChild);
+  }
+
+  // ── Tambah ke Rekam Medis ──
+  const rekamMain = document.querySelector('.rekam-main');
+  if (rekamMain) {
+    // Cek apakah pasien sudah ada di sidebar rekam medis
+    const rekamSidebar = document.querySelector('.rekam-sidebar');
+    const inisial = namaPasien.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2);
+    const colors = ['#a855f7','#3b82f6','#22c55e','#f59e0b','#ef4444','#0891b2'];
+    const warna = colors[Math.floor(Math.random()*colors.length)];
+
+    // Tambah pasien ke sidebar jika belum ada
+    if (rekamSidebar) {
+      const existing = Array.from(rekamSidebar.querySelectorAll('.pasien-name')).find(el => el.textContent === namaPasien);
+      if (!existing) {
+        const newPasienItem = document.createElement('div');
+        newPasienItem.className = 'pasien-item';
+        newPasienItem.style.cursor = 'pointer';
+        newPasienItem.innerHTML = `<div class="avatar" style="background:${warna}">${inisial}</div><div><div class="pasien-name">${namaPasien}</div><div class="pasien-sub">1 Kunjungan</div></div>`;
+        newPasienItem.onclick = () => tampilRekamPasien(namaPasien, inisial, warna);
+        rekamSidebar.appendChild(newPasienItem);
+      } else {
+        // Update jumlah kunjungan
+        const subEl = existing.parentElement.querySelector('.pasien-sub');
+        if (subEl) {
+          const n = parseInt(subEl.textContent) || 1;
+          subEl.textContent = (n + 1) + ' Kunjungan';
+        }
+      }
+    }
+
+    // Simpan data rekam medis ke array global
+    if (!window.rekamData) window.rekamData = {};
+    if (!window.rekamData[namaPasien]) window.rekamData[namaPasien] = { inisial, warna, entries: [] };
+    window.rekamData[namaPasien].entries.unshift({ tanggal: tglStr, jam, diagnosa, catatan, resep });
+
+    // Tampilkan otomatis ke panel rekam medis
+    tampilRekamPasien(namaPasien, inisial, warna);
+  }
+
+  d_closeHasil();
+  alert('✅ Hasil konsultasi berhasil disimpan ke Riwayat Konsultasi & Rekam Medis!');
+}
+
+function tampilRekamPasien(namaPasien, inisial, warna) {
+  const rekamMain = document.querySelector('.rekam-main');
+  if (!rekamMain || !window.rekamData || !window.rekamData[namaPasien]) return;
+  const data = window.rekamData[namaPasien];
+  let entriesHtml = data.entries.map(e => `
+    <div class="rekam-entry">
+      <div class="rekam-date">📅 ${e.tanggal} · ${e.jam}</div>
+      <div class="rekam-diagnosis">${e.diagnosa}</div>
+      <div class="rekam-note">${e.catatan ? e.catatan.replace(/\n/g,'<br>') : '-'}${e.resep ? '<br><strong>Resep:</strong> ' + e.resep : ''}</div>
+    </div>`).join('');
+  rekamMain.innerHTML = `
+    <div class="pasien-header">
+      <div class="avatar" style="background:${warna};width:44px;height:44px;font-size:14px">${inisial}</div>
+      <div><div class="pasien-detail-name">${namaPasien}</div><div class="pasien-detail-sub">${data.entries.length} Kunjungan</div></div>
+    </div>
+    <div class="tab-row">
+      <button class="tab-btn active">Riwayat Medis</button>
+      <button class="tab-btn">Resep Obat</button>
+    </div>
+    ${entriesHtml}`;
 }
 
 // CHAT
