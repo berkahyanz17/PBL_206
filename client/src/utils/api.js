@@ -14,7 +14,11 @@ export async function apiFetch(path, options = {}) {
   });
   if (res.status === 401) {
     sessionStorage.clear();
-    window.location.href = '/admin/login';
+    // detect role dari path atau sessionStorage
+    const path = window.location.pathname;
+    if (path.startsWith('/dokter')) window.location.href = '/dokter/login';
+    else if (path.startsWith('/pasien')) window.location.href = '/pasien/login';
+    else window.location.href = '/admin/login';
     return;
   }
   return res.json();
