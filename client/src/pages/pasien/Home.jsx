@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PasienSidebar from '../../components/PasienSidebar';
 import { apiFetch } from '../../utils/api';
+import MamoruChat from '../../components/MamoruChat';
 
 const QUICK_REPLIES = [
   { label: '📅 Cara Booking Dokter', text: 'Bagaimana cara booking dokter?' },
