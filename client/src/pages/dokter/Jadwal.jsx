@@ -87,6 +87,7 @@ export default function DokterJadwal() {
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 18, fontWeight: 700 }}>{j.pasien_nama}</div>
+                <div style={{ width: 3, height: 50, background: 'var(--border)', borderRadius: 4, flexShrink: 0 }}></div>
                 <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>Keluhan: {j.keluhan}</div>
               </div>
               {j.status === 'dikonfirmasi' && (
