@@ -5,29 +5,22 @@ import { apiFetch } from '../../utils/api';
 
 export default function DokterRekam() {
   const navigate = useNavigate();
-  const [rekamList, setRekamList] = useState([]);
-  const [pasienList, setPasienList] = useState([]);
-  const [active, setActive] = useState(null);
-  const [tab, setTab] = useState('riwayat');
+  const [riwayat, setRiwayat] = useState([]);
+  const [search, setSearch] = useState('');
+  const [detail, setDetail] = useState(null);
   const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
 
   useEffect(() => {
     async function load() {
       const res = await apiFetch(`/rekam-medis/dokter/${user.id}`);
-      if (res?.success) {
-        setRekamList(res.data);
-        const unique = [...new Map(res.data.map(r => [r.pasien_nama, r])).values()];
-        setPasienList(unique);
-        if (unique.length > 0) setActive(unique[0].pasien_nama);
-      }
+      if (res?.success) setRiwayat(res.data);
     }
     load();
   }, []);
 
-  function logout() { sessionStorage.clear(); navigate('/dokter/login'); }
+  const filtered = riwayat.filter(r => r.pasien_nama?.toLowerCase().includes(search.toLowerCase()));
 
-  const activeRekam = rekamList.filter(r => r.pasien_nama === active);
-  const colors = ['#a855f7', '#3b82f6', '#22c55e', '#f59e0b', '#ec4899'];
+  function logout() { sessionStorage.clear(); navigate('/dokter/login'); }
 
   return (
     <div className="dashboard-layout">
@@ -38,48 +31,50 @@ export default function DokterRekam() {
           <div className="topbar-right"><button className="btn-notif">🔔</button><button className="btn-logout" onClick={logout}>🚪 Logout</button></div>
         </div>
         <div className="content-area">
-          <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 18 }}>
-            <div style={{ background: 'white', borderRadius: 14, padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 12 }}>👥 Daftar Pasien</div>
-              {pasienList.length === 0 && <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Belum ada rekam medis.</div>}
-              {pasienList.map((p, i) => (
-                <div key={p.pasien_nama} onClick={() => setActive(p.pasien_nama)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 10, borderRadius: 10, cursor: 'pointer', background: active === p.pasien_nama ? '#F0FDF4' : '', borderLeft: active === p.pasien_nama ? '3px solid var(--green)' : '3px solid transparent' }}>
-                  <div className="avatar" style={{ background: colors[i % colors.length] }}>{p.pasien_nama?.charAt(0)}</div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>{p.pasien_nama}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{rekamList.filter(r => r.pasien_nama === p.pasien_nama).length} Kunjungan</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div style={{ background: 'white', borderRadius: 14, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-              {active ? (
-                <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18, paddingBottom: 14, borderBottom: '1px solid var(--border)' }}>
-                    <div className="avatar" style={{ background: '#a855f7', width: 44, height: 44, fontSize: 14 }}>{active?.charAt(0)}</div>
-                    <div style={{ fontSize: 16, fontWeight: 700 }}>{active}</div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                    {['riwayat', 'resep'].map(t => (
-                      <button key={t} onClick={() => setTab(t)} style={{ padding: '8px 18px', borderRadius: 20, border: tab === t ? 'none' : '1.5px solid var(--border)', background: tab === t ? 'var(--text-dark)' : 'white', color: tab === t ? 'white' : 'var(--text-muted)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                        {t === 'riwayat' ? 'Riwayat Medis' : 'Resep Obat'}
-                      </button>
-                    ))}
-                  </div>
-                  {activeRekam.map((r, i) => (
-                    <div key={i} style={{ background: '#F9FAFB', borderRadius: 10, padding: '14px 16px', marginBottom: 10 }}>
-                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>📅 {new Date(r.created_at).toLocaleDateString('id-ID')}</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{r.diagnosa}</div>
-                      <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{tab === 'riwayat' ? r.catatan : r.resep || 'Tidak ada resep.'}</div>
-                    </div>
-                  ))}
-                </>
-              ) : <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Pilih pasien di kiri.</div>}
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#F9FAFB', border: '1.5px solid var(--border)', borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
+            <span>🔍</span>
+            <input type="text" placeholder="Cari nama pasien..." style={{ flex: 1, border: 'none', background: 'none', fontSize: 13, fontFamily: 'inherit', outline: 'none' }} value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <table>
+              <thead><tr><th>Tanggal</th><th>Pasien</th><th>Diagnosa</th><th>Aksi</th></tr></thead>
+              <tbody>
+                {filtered.length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>Tidak ada data.</td></tr>}
+                {filtered.map((r, i) => (
+                  <tr key={i}>
+                    <td style={{ fontWeight: 600 }}>{r.tgl ? new Date(r.tgl).toLocaleDateString('id-ID') : new Date(r.created_at).toLocaleDateString('id-ID')}</td>
+                    <td style={{ fontWeight: 600 }}>{r.pasien_nama}</td>
+                    <td><span className="badge-pill badge-green" style={{ padding: '4px 12px' }}>{r.diagnosa}</span></td>
+                    <td><button className="btn-action btn-detail" onClick={() => setDetail(r)}>Lihat Detail</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
+
+      {detail && (
+        <div className="modal-overlay open" onClick={() => setDetail(null)}>
+          <div style={{ background: 'white', borderRadius: 20, padding: 28, width: '100%', maxWidth: 560, animation: 'slideUp 0.3s ease', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ fontSize: 17, fontWeight: 800 }}>Detail Rekam Medis</h3>
+              <button onClick={() => setDetail(null)} style={{ background: '#F3F4F6', border: 'none', width: 32, height: 32, borderRadius: '50%', fontSize: 16, cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ background: 'linear-gradient(135deg,var(--green-dark),var(--green))', borderRadius: 14, padding: '22px 24px', marginBottom: 20, color: 'white', display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ width: 54, height: 54, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800 }}>{detail.pasien_nama?.charAt(0)}</div>
+              <div><div style={{ fontSize: 20, fontWeight: 800 }}>{detail.pasien_nama}</div><div style={{ fontSize: 13, opacity: 0.8, marginTop: 2 }}>Keluhan: {detail.keluhan}</div></div>
+            </div>
+            {[['Diagnosa', detail.diagnosa], ['Catatan Dokter', detail.catatan], ['Resep Obat', detail.resep]].map(([label, val]) => (
+              <div key={label} style={{ background: '#F9FAFB', borderRadius: 10, padding: '14px 16px', marginBottom: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
+                <div style={{ fontSize: 14, color: '#374151', lineHeight: 1.6 }}>{val || '-'}</div>
+              </div>
+            ))}
+            <button onClick={() => setDetail(null)} className="btn-batal" style={{ width: '100%' }}>Tutup</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
