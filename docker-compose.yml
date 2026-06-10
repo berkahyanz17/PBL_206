@@ -10,6 +10,11 @@ services:
       - ./db_praktikum.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - app_network
+  redis:
+    image: redis:7-alpine
+    restart: always
+    networks:
+      - app_network
 
   server:
     build: ./server
@@ -22,12 +27,14 @@ services:
       JWT_SECRET: REDACTED
       MAIL_PASS: your_resend_api_key
       HCAPTCHA_SECRET: your_hcaptcha_secret
+      REDIS_URL: redis://redis:6379
       # ── Mamoru Chatbot ──────────────────────────────
       GEMINI_API_KEY: REDACTED
       TELEGRAM_BOT_TOKEN: REDACTED
       TELEGRAM_CHAT_ID: -5022288086
     depends_on:
       - db
+      - redis
     networks:
       - app_network
     volumes:
