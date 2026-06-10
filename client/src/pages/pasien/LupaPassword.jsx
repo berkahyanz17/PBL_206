@@ -7,9 +7,17 @@ export default function PasienLupa() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
 
-  function kirim() {
+  async function kirim() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError('Masukkan email yang valid.'); return; }
-    setError(''); setSent(true);
+    setError('');
+    const res = await fetch('/api/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (data.success) setSent(true);
+    else setError(data.message || 'Gagal mengirim email.');
   }
 
   const Left = () => (
@@ -36,7 +44,6 @@ export default function PasienLupa() {
           <div className="form-group"><label>Alamat Email</label><input type="email" placeholder="email@example.com" value={email} onChange={e => setEmail(e.target.value)} /></div>
           {error && <div style={{ background: '#FEE2E2', color: '#991B1B', borderRadius: 8, padding: '10px 14px', fontSize: 13, fontWeight: 600, marginBottom: 12 }}>{error}</div>}
           <button onClick={kirim} style={{ width: '100%', padding: 12, background: 'white', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>✉️ Kirim Link Reset</button>
-          {sent && <button onClick={() => navigate('/pasien/reset-password')} style={{ width: '100%', padding: 12, background: '#D1FAE5', border: '1.5px solid #22c55e', borderRadius: 10, fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', marginBottom: 10, color: '#065F46' }}>➡️ Lanjut Isi Password Baru</button>}
           <button onClick={() => navigate('/pasien/login')} style={{ width: '100%', padding: 12, background: 'white', border: '1.5px solid var(--border)', borderRadius: 10, fontSize: 14, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>← Kembali Login</button>
         </div>
       </div>
