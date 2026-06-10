@@ -1,18 +1,33 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export default function PasienReset() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [pw, setPw] = useState('');
   const [konfirm, setKonfirm] = useState('');
   const [error, setError] = useState('');
 
-  function simpan() {
+  async function simpan() {
     if (!pw || !konfirm) { setError('Semua kolom harus diisi.'); return; }
     if (pw.length < 8) { setError('Password minimal 8 karakter.'); return; }
     if (pw !== konfirm) { setError('Konfirmasi password tidak cocok.'); return; }
-    alert('✅ Password berhasil diubah! Silakan login.');
-    navigate('/pasien/login');
+
+    const token = searchParams.get('token');
+    if (!token) { setError('Token tidak valid.'); return; }
+
+    const res = await fetch('/api/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, password: pw })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert('✅ Password berhasil diubah! Silakan login.');
+      navigate('/pasien/login');
+    } else {
+      setError(data.message || 'Gagal reset password.');
+    }
   }
 
   return (
