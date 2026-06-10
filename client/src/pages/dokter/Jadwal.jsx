@@ -63,7 +63,7 @@ export default function DokterJadwal() {
                 <tbody>
                   {pending.map(a => (
                     <tr key={a.id}>
-                      <td style={{ fontWeight: 600 }}>{a.pasien_nama}</td>
+                      <td>{new Date(a.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} · {a.jam?.slice(0, 5)}</td>
                       <td>{a.keluhan}</td>
                       <td>{a.tgl} · {a.jam}</td>
                       <td>
@@ -82,7 +82,7 @@ export default function DokterJadwal() {
           {aktif.map(j => (
             <div key={j.id} style={{ background: 'white', borderRadius: 12, padding: '18px 22px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
               <div style={{ width: 110, flexShrink: 0 }}>
-                <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--green)' }}>{j.jam}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--green)' }}>{j.jam?.slice(0, 5)}</div>
                 <div style={{ fontSize: 11, fontWeight: 600, marginTop: 2, color: statusColor[j.status] }}>{statusLabel[j.status]}</div>
               </div>
               <div style={{ width: 3, height: 50, background: 'var(--border)', borderRadius: 4, flexShrink: 0 }}></div>
