@@ -19,7 +19,7 @@ export default function PasienReset() {
     const res = await fetch('/api/reset-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, password: pw })
+      body: JSON.stringify({ token, newPassword: pw })
     });
     const data = await res.json();
     if (data.success) {
