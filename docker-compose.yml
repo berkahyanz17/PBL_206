@@ -25,7 +25,7 @@ services:
       DB_PASSWORD: secret
       DB_NAME: db_praktikum
       JWT_SECRET: REDACTED
-      MAIL_PASS: your_resend_api_key
+      MAIL_PASS: REDACTED
       HCAPTCHA_SECRET: your_hcaptcha_secret
       REDIS_URL: redis://redis:6379
       # ── Mamoru Chatbot ──────────────────────────────
