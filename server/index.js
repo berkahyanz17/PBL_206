@@ -193,9 +193,7 @@ app.post('/api/pasien/daftar', async (req, res) => {
 app.post('/api/forgot-password', async (req, res) => {
   try {
     const { email, captchaToken } = req.body;
-    const valid = await verifyCaptcha(captchaToken);
-    if (!valid) return res.status(400).json({ success: false, message: 'CAPTCHA tidak valid.' });
-
+    
     const [dokter] = await db.query('SELECT email FROM dokters WHERE email = ?', [email]);
     const [pasien] = await db.query('SELECT email FROM pasiens WHERE email = ?', [email]);
     if (dokter.length === 0 && pasien.length === 0) {
