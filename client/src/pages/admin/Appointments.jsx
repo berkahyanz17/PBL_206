@@ -77,7 +77,10 @@ export default function AdminAppointments() {
                       <tr key={a.id}>
                         <td><div style={{ fontWeight: 600 }}>{a.pasien_nama}</div><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{a.keluhan}</div></td>
                         <td><div style={{ fontWeight: 600 }}>{a.dokter_nama}</div><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{a.spesialis}</div></td>
-                        <td><div style={{ fontWeight: 600 }}>{a.tgl}</div><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{a.jam}</div></td>
+                        <td>
+                          <div style={{ fontWeight: 600 }}>{new Date(a.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{a.jam?.slice(0, 5)}</div>
+                        </td>
                         <td><span className={`badge ${a.status === 'ditolak' ? 'tolak' : a.status}`}>{statusLabel[a.status]}</span></td>
                         <td>
                           {a.status === 'menunggu' ? (<>
@@ -109,7 +112,10 @@ export default function AdminAppointments() {
               <div><div style={{ fontSize: 20, fontWeight: 800 }}>{detail.pasien_nama}</div><div style={{ fontSize: 13, opacity: 0.8, marginTop: 3 }}>{detail.dokter_nama} · {detail.spesialis}</div></div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-              <div style={{ background: '#F9FAFB', borderRadius: 10, padding: 14 }}><div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>Tanggal &amp; Jam</div><div style={{ fontSize: 14, fontWeight: 600 }}>{detail.tgl} · {detail.jam}</div></div>
+              <div style={{ background: '#F9FAFB', borderRadius: 10, padding: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>Tanggal &amp; Jam</div>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>{new Date(detail.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} · {detail.jam?.slice(0, 5)}</div>
+              </div>
               <div style={{ background: '#F9FAFB', borderRadius: 10, padding: 14 }}><div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>Status</div><div style={{ fontSize: 14, fontWeight: 700 }}>{statusLabel[detail.status]}</div></div>
               <div style={{ background: '#F9FAFB', borderRadius: 10, padding: 14, gridColumn: '1/-1' }}><div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>Keluhan</div><div style={{ fontSize: 14, color: '#374151', lineHeight: 1.6 }}>{detail.keluhan}</div></div>
             </div>
