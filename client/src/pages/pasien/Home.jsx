@@ -48,7 +48,9 @@ export default function PasienHome() {
             <div key={a.id} style={{ background: '#EFF6FF', borderRadius: 12, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600 }}>{a.dokter_nama} - {a.spesialis}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{a.tgl} · {a.jam}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                  {new Date(a.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} · {a.jam?.slice(0, 5)}
+                </div>
               </div>
               <span style={{ background: '#1d4ed8', color: 'white', padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>{a.status === 'dikonfirmasi' ? 'Terkonfirmasi' : 'Menunggu'}</span>
             </div>
