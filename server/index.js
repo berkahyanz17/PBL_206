@@ -8,6 +8,8 @@ const crypto = require('crypto');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const Redis = require('ioredis');
+const redis = new Redis(process.env.REDIS_URL || 'redis://redis:6379');
 
 const app = express();
 app.use(cors());
@@ -93,12 +95,22 @@ async function verifyCaptcha(token) {
   return data.success;
 }
 
+// ─── Rate limiter middleware ─────────────────────────────────────────────
+async function rateLimiter(req, res, next) {
+  const ip = req.headers['x-real-ip'] || req.ip;
+  const key = `rl:${ip}:${req.path}`;
+  const count = await redis.incr(key);
+  if (count === 1) await redis.expire(key, 60); // window 60s
+  if (count > 10) return res.status(429).json({ success: false, message: 'Terlalu banyak percobaan. Coba lagi nanti.' });
+  next();
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // AUTH
 // ════════════════════════════════════════════════════════════════════════════
 
 // POST /api/admin/login
-app.post('/api/admin/login', async (req, res) => {
+app.post('/api/admin/login', rateLimiter, async (req, res) => {
   try {
     const { username, password, captchaToken } = req.body;
     //const valid = await verifyCaptcha(captchaToken);
@@ -119,7 +131,7 @@ app.post('/api/admin/login', async (req, res) => {
 });
 
 // POST /api/dokter/login
-app.post('/api/dokter/login', async (req, res) => {
+app.post('/api/dokter/login', rateLimiter, async (req, res) => {
   try {
     const { email, password, captchaToken } = req.body;
     //const valid = await verifyCaptcha(captchaToken);
@@ -140,7 +152,7 @@ app.post('/api/dokter/login', async (req, res) => {
 });
 
 // POST /api/pasien/login
-app.post('/api/pasien/login', async (req, res) => {
+app.post('/api/pasien/login', rateLimiter, async (req, res) => {
   try {
     const { email, password, captchaToken } = req.body;
     //const valid = await verifyCaptcha(captchaToken);
@@ -239,7 +251,9 @@ app.post('/api/reset-password', async (req, res) => {
 
 app.get('/api/dokter', verifyToken, async (req, res) => {
   try {
+    const cached = await redis.get('cache:dokter');
     const [rows] = await db.query('SELECT id, nama, email, spesialis, no_str, harga, foto FROM dokters');
+    await redis.setex('cache:dokter', 300, JSON.stringify({ success: true, data: rows }));
     res.json({ success: true, data: rows });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -462,6 +476,7 @@ app.put('/api/dokter/:id/profil', verifyToken, upload.single('foto'), async (req
     if (foto) fields.push(foto);
     fields.push(req.params.id);
     await db.query(query, fields);
+    await redis.del('cache:dokter');
     res.json({ success: true, message: 'Profil berhasil diupdate.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
