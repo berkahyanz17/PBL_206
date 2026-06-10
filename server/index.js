@@ -553,6 +553,46 @@ app.post('/api/chat', verifyToken, async (req, res) => {
 const GEMINI_API_KEY   = process.env.GEMINI_API_KEY;
 const TELEGRAM_TOKEN   = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+const GEMINI_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-3-flash',
+  'gemini-3.1-flash-lite',
+  'gemini-3.5-flash'
+];
+
+async function callGemini(contents, systemInstruction) {
+  for (const model of GEMINI_MODELS) {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemInstruction }] },
+          contents,
+          generationConfig: { maxOutputTokens: 512, temperature: 0.7 }
+        })
+      }
+    );
+    if (res.status === 429) {
+      console.log(`[Mamoru] ⚠️ ${model} rate limited, trying next...`);
+      continue;
+    }
+    if (!res.ok) {
+      const err = await res.text();
+      console.error(`[Mamoru] ❌ ${model} error:`, err);
+      continue;
+    }
+    const data = await res.json();
+    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (reply) {
+      console.log(`[Mamoru] ✅ Answered by ${model}`);
+      return reply;
+    }
+  }
+  return null;
+}
 
 async function notifyTelegram(pasienNama, pesan) {
   if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) {
@@ -620,36 +660,10 @@ Jawab dalam Bahasa Indonesia, ramah, singkat, dan profesional.
 Jangan pernah memberikan diagnosis medis. Jika darurat, selalu arahkan ke tenaga medis.
 Nama pasien yang sedang chat: ${pasienNama}.`;
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemInstruction }] },
-          contents: [
-            ...recentHistory,
-            { role: 'user', parts: [{ text: pesan }] }
-          ],
-          generationConfig: { maxOutputTokens: 512, temperature: 0.7 }
-        })
-      }
-    );
-
-    console.log('[Mamoru] 📡 Gemini HTTP status:', geminiRes.status);
-
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      console.error('[Mamoru] ❌ Gemini error response:', errText);
-      return res.status(502).json({ success: false, message: 'Gagal menghubungi AI. Coba lagi.' });
-    }
-
-    const geminiData = await geminiRes.json();
-    console.log('[Mamoru] 📦 Gemini raw response:', JSON.stringify(geminiData).slice(0, 300));
-
-    const reply = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text
-      || 'Maaf, saya tidak bisa menjawab saat ini. Silakan coba lagi.';
-
+    const reply = await callGemini(
+      [...recentHistory, { role: 'user', parts: [{ text: pesan }] }],
+      systemInstruction
+    ) || 'Maaf, saya tidak bisa menjawab saat ini. Silakan coba lagi.';
     console.log('[Mamoru] ✅ Reply:', reply.slice(0, 100));
 
     const needsNotif = isAdminNotifyNeeded(pesan);
