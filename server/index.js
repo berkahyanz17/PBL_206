@@ -327,6 +327,35 @@ app.post('/api/appointments', verifyToken, async (req, res) => {
   try {
     const { dokter_id, keluhan, tgl, jam } = req.body;
     const pasien_id = req.user.id;
+
+    // Cek hari sesuai jadwal dokter
+    const hariMap = ['Minggu','Senin','Selasa','Rabu',"Kamis","Jum'at",'Sabtu'];
+    const hariTgl = hariMap[new Date(tgl).getDay()];
+    const [jadwal] = await db.query(
+      'SELECT * FROM jadwal_dokter WHERE dokter_id = ? AND hari = ?',
+      [dokter_id, hariTgl]
+    );
+    if (jadwal.length === 0) {
+      return res.status(400).json({ success: false, message: `Dokter tidak praktik pada hari ${hariTgl}.` });
+    }
+
+    // Cek jam dalam range
+    const jamBook = jam.slice(0,5);
+    const mulai = jadwal[0].jam_mulai.slice(0,5);
+    const selesai = jadwal[0].jam_selesai.slice(0,5);
+    if (jamBook < mulai || jamBook >= selesai) {
+      return res.status(400).json({ success: false, message: `Jam praktik dokter ${mulai}–${selesai}.` });
+    }
+
+    // Cek slot collision
+    const [exist] = await db.query(
+      'SELECT id FROM appointments WHERE dokter_id = ? AND tgl = ? AND jam = ? AND status != "ditolak"',
+      [dokter_id, tgl, jam]
+    );
+    if (exist.length > 0) {
+      return res.status(400).json({ success: false, message: 'Jam tersebut sudah dibooking pasien lain.' });
+    }
+    
     await db.query(
       'INSERT INTO appointments (pasien_id, dokter_id, keluhan, tgl, jam) VALUES (?, ?, ?, ?, ?)',
       [pasien_id, dokter_id, keluhan, tgl, jam]
@@ -441,6 +470,15 @@ app.delete('/api/jadwal/:id', verifyToken, async (req, res) => {
   try {
     await db.query('DELETE FROM jadwal_dokter WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: 'Jadwal berhasil dihapus.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+app.get('/api/jadwal-publik/:dokter_id', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM jadwal_dokter WHERE dokter_id = ?', [req.params.dokter_id]);
+    res.json({ success: true, data: rows });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
   }
