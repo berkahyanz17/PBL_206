@@ -66,28 +66,7 @@ export default function AdminAppointments() {
         <div className="topbar" style={{ background: 'var(--navy)' }}>
           <h1>Appointments</h1>
           <div className="topbar-right">
-            <div ref={notifRef} style={{ position: 'relative' }}>
-  <button className="btn-notif" onClick={() => setShowNotif(v => !v)} style={{ position: 'relative' }}>
-    🔔{unread > 0 && <span className="notif-badge">{unread}</span>}
-  </button>
-  {showNotif && (
-    <div className="notif-popup open" style={{ position: 'absolute', top: 48, right: 0, left: 'auto' }}>
-      <div className="notif-popup-header">
-        { bellButton }
-        <button className="notif-popup-close" onClick={() => setShowNotif(false)}>✕</button>
-      </div>
-      <div className="notif-list">
-        {notifList.map(n => (
-          <div key={n.id} className={`notif-item${n.unread ? ' unread' : ''}`}
-            onClick={() => setNotifList(l => l.map(x => x.id === n.id ? { ...x, unread: false } : x))}>
-            <div className={`notif-icon ${n.iconClass}`}>{n.icon}</div>
-            <div><div className="notif-text">{n.title}</div><div className="notif-time">{n.time}</div></div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )}
-</div>
+            {bellButton}
             <button className="btn-logout" onClick={logout}>🚪 Logout</button>
           </div>
         </div>
@@ -156,7 +135,7 @@ export default function AdminAppointments() {
           </div>
         </div>
       )}
-      { popup }
+      {popup}
     </div>
   );
 }
