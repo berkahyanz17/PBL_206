@@ -52,8 +52,7 @@ export default function DokterJadwal() {
         <div className="topbar" style={{ background: 'var(--green)' }}>
           <h1>Jadwal Hari Ini</h1>
           <div className="topbar-right">
-            { bellButton }
-            <button className="btn-logout" onClick={logout}>🚪 Logout</button>
+            {bellButton}<button className="btn-logout" onClick={logout}>🚪 Logout</button>
           </div>
         </div>
         <div className="content-area">
@@ -115,7 +114,7 @@ export default function DokterJadwal() {
           </div>
         </div>
       )}
-      { popup }
+      {popup}
     </div>
   );
 }
