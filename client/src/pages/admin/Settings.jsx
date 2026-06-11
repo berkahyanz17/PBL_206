@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '../../components/AdminSidebar';
+import { apiFetch } from '../../utils/api';
 
 export default function AdminSettings() {
   const navigate = useNavigate();
@@ -9,12 +10,16 @@ export default function AdminSettings() {
   const [pwKonfirm, setPwKonfirm] = useState('');
   const [notif, setNotif] = useState({ pasienBaru: true, appointment: true, chatDokter: false });
 
-  function simpanPassword() {
+  async function simpanPassword() {
     if (!pwLama) return alert('Masukkan password lama.');
     if (pwBaru.length < 8) return alert('Password baru minimal 8 karakter.');
     if (pwBaru !== pwKonfirm) return alert('Konfirmasi password tidak cocok.');
-    alert('✅ Password berhasil diubah!');
-    setPwLama(''); setPwBaru(''); setPwKonfirm('');
+    const res = await apiFetch('/admin/password', {
+      method: 'PATCH',
+      body: JSON.stringify({ pwLama, pwBaru })
+    });
+    if (res?.success) { alert('✅ Password berhasil diubah!'); setPwLama(''); setPwBaru(''); setPwKonfirm(''); }
+    else alert(res?.message || 'Gagal mengubah password.');
   }
 
   function logout() { sessionStorage.clear(); navigate('/admin/login'); }
