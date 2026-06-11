@@ -583,6 +583,52 @@ app.post('/api/chat', verifyToken, async (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════════════════════
+// SETTINGS
+// ════════════════════════════════════════════════════════════════════════════
+
+// PATCH /api/admin/password
+app.patch('/api/admin/password', verifyToken, async (req, res) => {
+  try {
+    const { pwLama, pwBaru } = req.body;
+    const [rows] = await db.query('SELECT password FROM admins WHERE id = ?', [req.user.id]);
+    if (!rows.length) return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
+    const match = await bcrypt.compare(pwLama, rows[0].password);
+    if (!match) return res.status(401).json({ success: false, message: 'Password lama salah.' });
+    const hashed = await bcrypt.hash(pwBaru, SALT_ROUNDS);
+    await db.query('UPDATE admins SET password = ? WHERE id = ?', [hashed, req.user.id]);
+    res.json({ success: true, message: 'Password berhasil diubah.' });
+  } catch (err) { res.status(500).json({ success: false, message: 'Server error.' }); }
+});
+
+// PATCH /api/dokter/password
+app.patch('/api/dokter/password', verifyToken, async (req, res) => {
+  try {
+    const { pwLama, pwBaru } = req.body;
+    const [rows] = await db.query('SELECT password FROM dokters WHERE id = ?', [req.user.id]);
+    if (!rows.length) return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
+    const match = await bcrypt.compare(pwLama, rows[0].password);
+    if (!match) return res.status(401).json({ success: false, message: 'Password lama salah.' });
+    const hashed = await bcrypt.hash(pwBaru, SALT_ROUNDS);
+    await db.query('UPDATE dokters SET password = ? WHERE id = ?', [hashed, req.user.id]);
+    res.json({ success: true, message: 'Password berhasil diubah.' });
+  } catch (err) { res.status(500).json({ success: false, message: 'Server error.' }); }
+});
+
+// PATCH /api/pasien/password
+app.patch('/api/pasien/password', verifyToken, async (req, res) => {
+  try {
+    const { pwLama, pwBaru } = req.body;
+    const [rows] = await db.query('SELECT password FROM pasiens WHERE id = ?', [req.user.id]);
+    if (!rows.length) return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
+    const match = await bcrypt.compare(pwLama, rows[0].password);
+    if (!match) return res.status(401).json({ success: false, message: 'Password lama salah.' });
+    const hashed = await bcrypt.hash(pwBaru, SALT_ROUNDS);
+    await db.query('UPDATE pasiens SET password = ? WHERE id = ?', [hashed, req.user.id]);
+    res.json({ success: true, message: 'Password berhasil diubah.' });
+  } catch (err) { res.status(500).json({ success: false, message: 'Server error.' }); }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
 // MAMORU — AI Chatbot (Gemini Flash + Telegram Notification)
 // ════════════════════════════════════════════════════════════════════════════
 
