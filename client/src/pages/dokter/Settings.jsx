@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DokterSidebar from '../../components/DokterSidebar';
+import { apiFetch } from '../../utils/api';
 
 export default function DokterSettings() {
   const navigate = useNavigate();
@@ -9,12 +10,16 @@ export default function DokterSettings() {
   const [pwKonfirm, setPwKonfirm] = useState('');
   const [notif, setNotif] = useState({ chatAdmin: true, appointment: true });
 
-  function simpanPassword() {
+  async function simpanPassword() {
     if (!pwLama) return alert('Masukkan password lama.');
     if (pwBaru.length < 8) return alert('Password baru minimal 8 karakter.');
     if (pwBaru !== pwKonfirm) return alert('Konfirmasi password tidak cocok.');
-    alert('✅ Password berhasil diubah!');
-    setPwLama(''); setPwBaru(''); setPwKonfirm('');
+    const res = await apiFetch('/admin/password', {
+      method: 'PATCH',
+      body: JSON.stringify({ pwLama, pwBaru })
+    });
+    if (res?.success) { alert('✅ Password berhasil diubah!'); setPwLama(''); setPwBaru(''); setPwKonfirm(''); }
+    else alert(res?.message || 'Gagal mengubah password.');
   }
 
   function logout() { sessionStorage.clear(); navigate('/dokter/login'); }
