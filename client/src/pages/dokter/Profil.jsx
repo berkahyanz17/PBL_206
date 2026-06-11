@@ -2,12 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DokterSidebar from '../../components/DokterSidebar';
 import { apiFetch } from '../../utils/api';
+import { useNotif, DOKTER_NOTIFS } from '../../components/NotifPopup';
 
 export default function DokterProfil() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ nama: '', spesialis: '', no_str: '', email: '', harga: '', bio: '' });
   const [foto, setFoto] = useState(null);
   const [saving, setSaving] = useState(false);
+  const { bellButton, popup } = useNotif('notif-dokter', DOKTER_NOTIFS);
   const fileRef = useRef();
   const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
 
@@ -52,7 +54,7 @@ export default function DokterProfil() {
       <div className="main-content">
         <div className="topbar" style={{ background: 'var(--green)' }}>
           <h1>Profil Dokter</h1>
-          <div className="topbar-right"><button className="btn-notif">🔔</button><button className="btn-logout" onClick={logout}>🚪 Logout</button></div>
+          { bellButton }<button className="btn-logout" onClick={logout}>🚪 Logout</button></div>
         </div>
         <div className="content-area">
           <div style={{ background: 'white', borderRadius: 14, padding: 28, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
@@ -78,6 +80,7 @@ export default function DokterProfil() {
           </div>
         </div>
       </div>
+      { popup }
     </div>
   );
 }
