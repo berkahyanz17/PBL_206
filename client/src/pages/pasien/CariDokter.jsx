@@ -47,7 +47,8 @@ export default function PasienCari() {
     setTanggal(tgl);
     setJam('');
     const hariMap = ['Minggu','Senin','Selasa','Rabu',"Kamis","Jum'at",'Sabtu'];
-    const hari = hariMap[new Date(tgl).getDay()];
+    const [y, m, d] = tgl.split('-').map(Number);
+    const hari = hariMap[new Date(y, m - 1, d).getDay()];
     const jadwalHari = jadwalDokter.find(j => j.hari === hari);
     if (!jadwalHari) { setJamOptions([]); return; }
     const mulai = parseInt(jadwalHari.jam_mulai.slice(0,2));
@@ -77,7 +78,7 @@ export default function PasienCari() {
   const spesialisList = ['semua', 'tersedia', ...new Set(dokters.map(d => d.spesialis).filter(Boolean))];
   const filtered = dokters.filter(d => {
     if (filter === 'semua') return true;
-    if (filter === 'tersedia') return true;
+    if (filter === 'tersedia') return tersediaMap[d.id] === true;
     return d.spesialis?.toLowerCase() === filter.toLowerCase();
   });
 
