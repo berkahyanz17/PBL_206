@@ -1,18 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 
-export function useNotif(id, items = []) {
+export function useNotif(id, items = [], buttonStyle = {}) {
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const popupRef = useRef(null);
   const unreadCount = items.filter(i => i.unread).length;
   const showBadge = unreadCount > 0 && !dismissed;
-  const bellButton = (
-    <button className="btn-notif" data-notif-btn={id} onClick={toggle}
-      style={{ position: 'relative', ...buttonStyle }}>
-      🔔
-      {showBadge && <span className="notif-badge">{unreadCount}</span>}
-    </button>
-  );
 
   // close on outside click
   useEffect(() => {
@@ -32,12 +25,8 @@ export function useNotif(id, items = []) {
   }
 
   const bellButton = (
-    <button
-      className="btn-notif"
-      data-notif-btn={id}
-      onClick={toggle}
-      style={{ position: 'relative' }}
-    >
+    <button className="btn-notif" data-notif-btn={id} onClick={toggle}
+      style={{ position: 'relative', ...buttonStyle }}>
       🔔
       {showBadge && <span className="notif-badge">{unreadCount}</span>}
     </button>
