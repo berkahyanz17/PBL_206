@@ -51,7 +51,7 @@ export default function PasienSettings() {
                   </div>
                 ))}
               </div>
-              <button onClick={simpanPassword} style={{ marginTop: 16, padding: '10px 22px', background: 'var(--sky)', color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button onClick={simpanPassword} style={{ marginTop: 16, padding: '10px 22px', background: '#0d1b4b', color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                 💾 Simpan Perubahan
               </button>
             </div>
