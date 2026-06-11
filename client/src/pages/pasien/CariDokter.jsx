@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import PasienSidebar from '../../components/PasienSidebar';
 import MamoruChat from './Mamoruchat';
 import { apiFetch } from '../../utils/api';
+import { useNotif, ADMIN_NOTIFS } from '../../components/NotifPopup';
 
 export default function PasienCari() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function PasienCari() {
   const [jadwalDokter, setJadwalDokter] = useState([]);
   const [jamOptions, setJamOptions] = useState([]);
   const [tersediaMap, setTersediaMap] = useState({});
+  const { bellButton, popup } = useNotif('notif-admin', ADMIN_NOTIFS);
   const user = JSON.parse(sessionStorage.getItem('pasienUser') || '{}');
 
   useEffect(() => {
@@ -91,7 +93,7 @@ export default function PasienCari() {
         <div className="topbar" style={{ background: 'linear-gradient(90deg,#7dd3fc,#38bdf8)' }}>
           <h1 style={{ color: '#1e3a5f' }}>Cari Dokter</h1>
           <div className="topbar-right">
-            <button className="btn-notif" style={{ background: 'rgba(255,255,255,0.4)' }}>🔔</button>
+            {bellButton}
             <button className="btn-logout" style={{ background: 'rgba(255,255,255,0.4)', color: '#1e3a5f', borderColor: 'rgba(255,255,255,0.5)' }} onClick={() => { sessionStorage.clear(); navigate('/pasien/login'); }}>🚪 Logout</button>
           </div>
         </div>
@@ -156,6 +158,7 @@ export default function PasienCari() {
         </div>
       )}
       <MamoruChat />
+      {popup}
     </div>
   );
 }
