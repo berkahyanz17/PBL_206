@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DokterSidebar from '../../components/DokterSidebar';
 import { apiFetch } from '../../utils/api';
+import { useNotif, DOKTER_NOTIFS } from '../../components/NotifPopup';
 
 export default function DokterRekam() {
   const navigate = useNavigate();
   const [riwayat, setRiwayat] = useState([]);
   const [search, setSearch] = useState('');
   const [detail, setDetail] = useState(null);
+  const { bellButton, popup } = useNotif('notif-dokter', DOKTER_NOTIFS);
   const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
 
   useEffect(() => {
@@ -28,7 +30,7 @@ export default function DokterRekam() {
       <div className="main-content">
         <div className="topbar" style={{ background: 'var(--green)' }}>
           <h1>Rekam Medis</h1>
-          <div className="topbar-right"><button className="btn-notif">🔔</button><button className="btn-logout" onClick={logout}>🚪 Logout</button></div>
+          { bellButton }<button className="btn-logout" onClick={logout}>🚪 Logout</button></div>
         </div>
         <div className="content-area">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#F9FAFB', border: '1.5px solid var(--border)', borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
@@ -75,6 +77,7 @@ export default function DokterRekam() {
           </div>
         </div>
       )}
+      { popup }
     </div>
   );
 }
