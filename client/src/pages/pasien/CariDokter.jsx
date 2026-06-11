@@ -119,8 +119,8 @@ export default function PasienCari() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: tersediaMap[d.id] ? '#22c55e' : '#ef4444' }}>
-                      {tersediaMap[d.id] ? '● Tersedia' : '● Tidak Tersedia'}
+                    <span style={{ fontSize: 13, fontWeight: 600, color: tersediaMap[d.id] === undefined ? '#9CA3AF' : tersediaMap[d.id] ? '#22c55e' : '#ef4444' }}>
+                      {tersediaMap[d.id] === undefined ? '● Memuat...' : tersediaMap[d.id] ? '● Tersedia' : '● Tidak Tersedia'}
                     </span>
                     <button onClick={() => bukaBooking(d)}
                       style={{ padding: '8px 20px', background: '#1d4ed8', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Booking</button>
