@@ -498,8 +498,11 @@
   #section-pasien .link-detail:hover { text-decoration:underline; }
 
   /* FAB CHAT */
-  #section-pasien .fab-chat { position:fixed; bottom:28px; right:28px; width:52px; height:52px; border-radius:50%; background:var(--sky-bg); border:2px solid #7dd3fc; display:flex; align-items:center; justify-content:center; font-size:22px; cursor:pointer; z-index:200; box-shadow:0 4px 16px rgba(56,189,248,0.3); transition:transform 0.2s; }
+  #section-pasien .fab-chat { position:fixed; bottom:28px; right:28px; width:52px; height:52px; border-radius:50%; background:var(--sky-bg); border:2px solid #7dd3fc; display:none; align-items:center; justify-content:center; font-size:22px; cursor:pointer; z-index:200; box-shadow:0 4px 16px rgba(56,189,248,0.3); transition:transform 0.2s; }
   #section-pasien .fab-chat:hover { transform:scale(1.1); }
+  #section-pasien #p-page-login .fab-chat,
+  #section-pasien #p-page-daftar .fab-chat,
+  #section-pasien #p-page-lupa .fab-chat { display:none !important; }
 
   /* CHATBOT */
   #section-pasien .chatbot-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.2); z-index:300; display:none; align-items:flex-end; justify-content:flex-end; padding:28px; }
@@ -578,6 +581,124 @@
   #section-pasien .card { background:white; border-radius:14px; padding:20px 22px; box-shadow:0 1px 4px rgba(0,0,0,0.06); margin-bottom:18px; }
 
 
+  #section-pasien #p-booking-jam option:disabled { color: #9CA3AF; background: #F3F4F6; }
+  #section-pasien #p-booking-jam option:not(:disabled) { color: #111827; font-weight: 600; }
+
+  /* ===== SETTINGS PAGE ===== */
+  .settings-card {
+    background: white; border-radius: 14px; width: 100%; overflow: hidden;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.09);
+  }
+  .settings-block { padding: 24px 28px; border-bottom: 1px solid #F3F4F6; }
+  .settings-block:last-child { border-bottom: none; }
+  .settings-section-title {
+    font-size: 11px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: .1em; color: #9CA3AF; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  /* Password fields — override all parent form-group styles */
+  .settings-pw-grid { display: flex; flex-direction: column; gap: 12px; max-width: 480px; }
+  .settings-field { display: flex; flex-direction: column; gap: 5px; }
+  .settings-field label {
+    font-size: 13px !important; font-weight: 600 !important; color: #374151 !important;
+    text-transform: none !important; letter-spacing: 0 !important; margin: 0 !important;
+  }
+  .settings-field input {
+    padding: 10px 14px !important; border: 1.5px solid #E5E7EB !important;
+    border-radius: 9px !important; font-size: 14px !important;
+    background: #F9FAFB !important; color: #111827 !important;
+    font-family: inherit !important; outline: none !important;
+    transition: border-color .15s !important; width: 100% !important;
+  }
+  .settings-field input:focus { border-color: #0D1B4B !important; background: white !important; }
+  /* Checkbox notif rows */
+  .settings-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 0; cursor: pointer;
+  }
+  .settings-row + .settings-row { border-top: 1px solid #F3F4F6; }
+  .settings-check {
+    width: 17px !important; height: 17px !important; margin-top: 2px;
+    accent-color: #0D1B4B; cursor: pointer; flex-shrink: 0;
+  }
+  .settings-row-label { flex: 1; }
+  .settings-label { font-size: 14px; font-weight: 600; color: #111827; }
+  .settings-sub { font-size: 12px; color: #9CA3AF; margin-top: 2px; }
+  .btn-settings-save {
+    margin-top: 16px; padding: 10px 22px; background: #0D1B4B; color: white; border: none;
+    border-radius: 9px; font-size: 13px; font-weight: 700; font-family: inherit;
+    cursor: pointer; transition: opacity .2s; display: inline-block;
+  }
+  .btn-settings-save:hover { opacity: .85; }
+
+  /* ===== NOTIF POPUP (ambang / floating) ===== */
+  .notif-popup { position:fixed; top:64px; right:24px; width:320px; background:white; border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,0.18); z-index:99999; overflow:hidden; display:none; animation:slideDown .2s ease; }
+  .notif-popup.open { display:block; }
+  @keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+  .notif-popup-header { display:flex; align-items:center; justify-content:space-between; padding:14px 16px 10px; border-bottom:1px solid #F3F4F6; }
+  .notif-popup-title { font-size:14px; font-weight:700; color:#111827; }
+  .notif-popup-close { background:none; border:none; font-size:18px; cursor:pointer; color:#6B7280; line-height:1; }
+  .notif-list { max-height:320px; overflow-y:auto; }
+  .notif-item { display:flex; gap:12px; padding:12px 16px; border-bottom:1px solid #F9FAFB; cursor:pointer; transition:background .15s; }
+  .notif-item:hover { background:#F9FAFB; }
+  .notif-item:last-child { border-bottom:none; }
+  .notif-item.unread { background:#EFF6FF; }
+  .notif-icon { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+  .notif-icon.blue { background:#DBEAFE; }
+  .notif-icon.green { background:#D1FAE5; }
+  .notif-icon.orange { background:#FEF3C7; }
+  .notif-text { font-size:13px; font-weight:600; color:#111827; line-height:1.4; }
+  .notif-time { font-size:11px; color:#9CA3AF; margin-top:3px; }
+  .notif-empty { padding:28px 16px; text-align:center; color:#9CA3AF; font-size:13px; }
+  .notif-badge { position:absolute; top:-4px; right:-4px; width:17px; height:17px; background:#ef4444; border-radius:50%; font-size:10px; font-weight:700; color:white; display:flex; align-items:center; justify-content:center; }
+  .btn-notif { position:relative; }
+
+  /* ===== TAMBAH DOKTER MODAL ===== */
+  .modal-tambah-dokter { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; display:none; align-items:center; justify-content:center; }
+  .modal-tambah-dokter.open { display:flex; }
+  .modal-tambah-box {
+    background: white; border-radius: 16px; width: 100%; max-width: 440px;
+    margin: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); animation: slideUp .3s ease; overflow: hidden;
+  }
+  .modal-tambah-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px 14px; border-bottom: 1px solid #F3F4F6;
+  }
+  .modal-tambah-header h3 { font-size: 16px; font-weight: 800; color: #111827; }
+  .modal-tambah-header button {
+    background: #F3F4F6; border: none; width: 30px; height: 30px;
+    border-radius: 50%; cursor: pointer; font-size: 14px; color: #6B7280;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .modal-tambah-header button:hover { background: #E5E7EB; }
+  .modal-tambah-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .modal-tambah-body label {
+    display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 5px;
+  }
+  .modal-tambah-body input,
+  .modal-tambah-body select {
+    width: 100%; padding: 9px 12px; border: 1.5px solid #E5E7EB; border-radius: 8px;
+    font-size: 13px; font-family: inherit; color: #111827; background: #F9FAFB;
+    outline: none; transition: border-color .2s; appearance: none;
+  }
+  .modal-tambah-body input:focus,
+  .modal-tambah-body select:focus { border-color: #0D1B4B; background: white; }
+  .modal-tambah-body .form-group { margin: 0; }
+  .modal-tambah-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-tambah-footer {
+    padding: 14px 20px; border-top: 1px solid #F3F4F6;
+    display: flex; justify-content: flex-end; gap: 8px;
+  }
+  .btn-tambah-batal {
+    padding: 9px 18px; background: #F3F4F6; border: none; border-radius: 8px;
+    font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; color: #374151;
+  }
+  .btn-tambah-batal:hover { background: #E5E7EB; }
+  .btn-tambah-simpan {
+    padding: 9px 18px; background: #0D1B4B; border: none; border-radius: 8px;
+    font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; color: white;
+  }
+  .btn-tambah-simpan:hover { opacity: .88; }
 </style>
 </head>
 <body>
@@ -657,13 +778,14 @@
         <div class="nav-item" onclick="showPage('page-dokter')"><span class="nav-icon">🩺</span> Daftar Dokter</div>
         <div class="nav-item" onclick="showPage('page-pasien')"><span class="nav-icon">👥</span> Data Pasien</div>
         <div class="nav-item" onclick="showPage('page-chat')"><span class="nav-icon">💬</span> Chat Dokter</div>
+        <div class="nav-item" onclick="showPage('page-settings-admin')"><span class="nav-icon">⚙️</span> Pengaturan</div>
       </nav>
     </aside>
     <div class="main-content">
       <div class="topbar">
         <h1>Dashboard</h1>
         <div class="topbar-right">
-          <button class="btn-notif">🔔</button>
+          <button class="btn-notif" onclick="toggleNotif('notif-admin')" style="position:relative">🔔<span class="notif-badge" id="badge-admin">3</span></button>
           <button class="btn-logout" onclick="showPage('page-login')">🚪 Logout</button>
         </div>
       </div>
@@ -808,13 +930,14 @@
         <div class="nav-item" onclick="showPage('page-dokter')"><span class="nav-icon">🩺</span> Daftar Dokter</div>
         <div class="nav-item" onclick="showPage('page-pasien')"><span class="nav-icon">👥</span> Data Pasien</div>
         <div class="nav-item" onclick="showPage('page-chat')"><span class="nav-icon">💬</span> Chat Dokter</div>
+        <div class="nav-item" onclick="showPage('page-settings-admin')"><span class="nav-icon">⚙️</span> Pengaturan</div>
       </nav>
     </aside>
     <div class="main-content">
       <div class="topbar">
         <h1>Appointments</h1>
         <div class="topbar-right">
-          <button class="btn-notif">🔔</button>
+          <button class="btn-notif" onclick="toggleNotif('notif-admin')" style="position:relative">🔔<span class="notif-badge" id="badge-admin-appt">3</span></button>
           <button class="btn-logout" onclick="showPage('page-login')">🚪 Logout</button>
         </div>
       </div>
@@ -886,18 +1009,22 @@
         <div class="nav-item active" onclick="showPage('page-dokter')"><span class="nav-icon">🩺</span> Daftar Dokter</div>
         <div class="nav-item" onclick="showPage('page-pasien')"><span class="nav-icon">👥</span> Data Pasien</div>
         <div class="nav-item" onclick="showPage('page-chat')"><span class="nav-icon">💬</span> Chat Dokter</div>
+        <div class="nav-item" onclick="showPage('page-settings-admin')"><span class="nav-icon">⚙️</span> Pengaturan</div>
       </nav>
     </aside>
     <div class="main-content">
       <div class="topbar">
         <h1>Daftar Dokter</h1>
         <div class="topbar-right">
-          <button class="btn-notif">🔔</button>
+          <button class="btn-notif" onclick="toggleNotif('notif-admin')" style="position:relative">🔔</button>
           <button class="btn-logout" onclick="showPage('page-login')">🚪 Logout</button>
         </div>
       </div>
       <div class="content-area">
-        <div class="section-title">Kelola Dokter</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div class="section-title" style="margin-bottom:0">Kelola Dokter</div>
+          <button class="btn-login" style="width:auto;padding:10px 20px;font-size:13px;display:flex;align-items:center;gap:6px" onclick="bukaModalTambahDokter()">➕ Tambah Dokter</button>
+        </div>
         <div class="filter-row">
           <button class="filter-btn active" onclick="filterDokter(this,'semua')">Semua</button>
           <button class="filter-btn" onclick="filterDokter(this,'umum')">Umum</button>
@@ -952,13 +1079,14 @@
         <div class="nav-item" onclick="showPage('page-dokter')"><span class="nav-icon">🩺</span> Daftar Dokter</div>
         <div class="nav-item active" onclick="showPage('page-pasien')"><span class="nav-icon">👥</span> Data Pasien</div>
         <div class="nav-item" onclick="showPage('page-chat')"><span class="nav-icon">💬</span> Chat Dokter</div>
+        <div class="nav-item" onclick="showPage('page-settings-admin')"><span class="nav-icon">⚙️</span> Pengaturan</div>
       </nav>
     </aside>
     <div class="main-content">
       <div class="topbar">
         <h1>Data Pasien</h1>
         <div class="topbar-right">
-          <button class="btn-notif">🔔</button>
+          <button class="btn-notif" onclick="toggleNotif('notif-admin')" style="position:relative">🔔</button>
           <button class="btn-logout" onclick="showPage('page-login')">🚪 Logout</button>
         </div>
       </div>
@@ -1023,7 +1151,7 @@
       <div class="topbar">
         <h1>Chat Dokter</h1>
         <div class="topbar-right">
-          <button class="btn-notif">🔔</button>
+          <button class="btn-notif" onclick="toggleNotif('notif-admin')" style="position:relative">🔔</button>
           <button class="btn-logout" onclick="showPage('page-login')">🚪 Logout</button>
         </div>
       </div>
@@ -1098,6 +1226,103 @@
       </div>
     </div>
     <button onclick="tutupModalAppt()" style="width:100%;padding:13px;background:#F3F4F6;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Tutup</button>
+  </div>
+</div>
+
+<!-- SETTINGS ADMIN -->
+<div id="page-settings-admin" class="page">
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand"><div class="sidebar-brand-icon">🛡️</div><span>Admin Panel</span></div>
+      <nav class="sidebar-nav">
+        <div class="nav-item" onclick="showPage('page-dashboard')"><span class="nav-icon">⊞</span> Dashboard</div>
+        <div class="nav-item" onclick="showPage('page-appointments')"><span class="nav-icon">📅</span> Appointments</div>
+        <div class="nav-item" onclick="showPage('page-dokter')"><span class="nav-icon">🩺</span> Daftar Dokter</div>
+        <div class="nav-item" onclick="showPage('page-pasien')"><span class="nav-icon">👥</span> Data Pasien</div>
+        <div class="nav-item" onclick="showPage('page-chat')"><span class="nav-icon">💬</span> Chat Dokter</div>
+        <div class="nav-item active" onclick="showPage('page-settings-admin')"><span class="nav-icon">⚙️</span> Pengaturan</div>
+      </nav>
+    </aside>
+    <div class="main-content">
+      <div class="topbar">
+        <h1>Pengaturan</h1>
+        <div class="topbar-right">
+          <button class="btn-notif" onclick="toggleNotif('notif-admin')" style="position:relative">🔔</button>
+          <button class="btn-logout" onclick="showPage('page-login')">🚪 Logout</button>
+        </div>
+      </div>
+      <div class="content-area">
+        <div class="settings-card">
+          <div class="settings-block">
+            <div class="settings-section-title">🔑 Ganti Password</div>
+            <div class="settings-pw-grid">
+              <div class="settings-field"><label>Password Lama</label><input type="password" id="admin-pw-lama" placeholder="Masukkan password lama"></div>
+              <div class="settings-field"><label>Password Baru</label><input type="password" id="admin-pw-baru" placeholder="Min 8 karakter"></div>
+              <div class="settings-field"><label>Konfirmasi Password Baru</label><input type="password" id="admin-pw-konfirm" placeholder="Ulangi password baru"></div>
+            </div>
+            <button class="btn-settings-save" onclick="simpanSettings('admin')">💾 Simpan Perubahan</button>
+          </div>
+          <div class="settings-block">
+            <div class="settings-section-title">🔔 Notifikasi Telegram</div>
+            <div class="settings-row"><input type="checkbox" class="settings-check" checked><div class="settings-row-label"><div class="settings-label">Pasien Baru Mendaftar</div><div class="settings-sub">Notif saat ada pasien baru registrasi ke sistem</div></div></div>
+            <div class="settings-row"><input type="checkbox" class="settings-check" checked><div class="settings-row-label"><div class="settings-label">Appointment Masuk</div><div class="settings-sub">Notif saat pasien membuat booking baru</div></div></div>
+            <div class="settings-row"><input type="checkbox" class="settings-check" ><div class="settings-row-label"><div class="settings-label">Pesan Chat dari Dokter</div><div class="settings-sub">Notif saat dokter mengirim pesan</div></div></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TAMBAH DOKTER -->
+<div class="modal-tambah-dokter" id="modal-tambah-dokter">
+  <div class="modal-tambah-box">
+    <div class="modal-tambah-header">
+      <h3>➕ Tambah Dokter</h3>
+      <button onclick="tutupModalTambahDokter()">✕</button>
+    </div>
+    <div class="modal-tambah-body">
+      <div class="form-group"><label>Nama Lengkap Dokter</label><input type="text" id="tambah-nama" placeholder="Contoh: dr. Budi Santoso"></div>
+      <div class="modal-tambah-row">
+        <div class="form-group"><label>No. STR</label><input type="text" id="tambah-str" placeholder="STR-2025-0001"></div>
+        <div class="form-group"><label>Harga Konsultasi (Rp)</label><input type="number" id="tambah-harga" placeholder="150000"></div>
+      </div>
+      <div class="form-group"><label>Spesialisasi</label>
+        <select id="tambah-spesialis"><option value="umum">Umum</option><option value="spesialis dalam">Spesialis Dalam</option><option value="anak">Anak</option><option value="jantung">Jantung</option><option value="kulit">Kulit</option><option value="mata">Mata</option></select>
+      </div>
+      <div id="tambah-dokter-error" style="display:none;background:#FEE2E2;color:#991B1B;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:600;"></div>
+    </div>
+    <div class="modal-tambah-footer">
+      <button class="btn-tambah-batal" onclick="tutupModalTambahDokter()">Batal</button>
+      <button class="btn-tambah-simpan" onclick="tambahDokterBaru()">Simpan Dokter</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIF POPUP ADMIN -->
+<div class="notif-popup" id="notif-admin">
+  <div class="notif-popup-header">
+    <span class="notif-popup-title">🔔 Notifikasi</span>
+    <button class="notif-popup-close" onclick="tutupNotif('notif-admin')">✕</button>
+  </div>
+  <div class="notif-list">
+    <div class="notif-item unread">
+      <div class="notif-icon orange">👤</div>
+      <div><div class="notif-text">Pasien baru mendaftar: Rina Kartika</div><div class="notif-time">2 menit lalu</div></div>
+    </div>
+    <div class="notif-item unread">
+      <div class="notif-icon blue">📅</div>
+      <div><div class="notif-text">Booking baru masuk dari Budiman ke dr. Kuro</div><div class="notif-time">15 menit lalu</div></div>
+    </div>
+    <div class="notif-item unread">
+      <div class="notif-icon green">👤</div>
+      <div><div class="notif-text">Pasien baru mendaftar: Teguh Prasetyo</div><div class="notif-time">1 jam lalu</div></div>
+    </div>
+    <div class="notif-item">
+      <div class="notif-icon blue">📅</div>
+      <div><div class="notif-text">Booking baru masuk dari Megumi ke dr. Ichinose</div><div class="notif-time">3 jam lalu</div></div>
+    </div>
   </div>
 </div>
 
@@ -1206,6 +1431,7 @@
         <div class="nav-item" onclick="showPage('d-page-kelola')"><span class="nav-icon">🕐</span> Kelola Jadwal</div>
         <div class="nav-item" onclick="showPage('d-page-chat')"><span class="nav-icon">💬</span> Chat Admin</div>
         <div class="nav-item" onclick="showPage('d-page-profil')"><span class="nav-icon">👤</span> Profil Saya</div>
+        <div class="nav-item" onclick="showPage('d-page-settings')"><span class="nav-icon">⚙️</span> Pengaturan</div>
       </nav>
     </aside>
     <div class="main-content">
@@ -1275,10 +1501,11 @@
         <div class="nav-item" onclick="showPage('d-page-kelola')"><span class="nav-icon">🕐</span> Kelola Jadwal</div>
         <div class="nav-item" onclick="showPage('d-page-chat')"><span class="nav-icon">💬</span> Chat Admin</div>
         <div class="nav-item" onclick="showPage('d-page-profil')"><span class="nav-icon">👤</span> Profil Saya</div>
+        <div class="nav-item" onclick="showPage('d-page-settings')"><span class="nav-icon">⚙️</span> Pengaturan</div>
       </nav>
     </aside>
     <div class="main-content">
-      <div class="topbar"><h1>Rekam Medis</h1><div class="topbar-right"><button class="btn-notif">🔔</button><button class="btn-logout" onclick="showPage('d-page-login')">🚪 Logout</button></div></div>
+      <div class="topbar"><h1>Rekam Medis</h1><div class="topbar-right"><button class="btn-notif" onclick="toggleNotif('notif-dokter')" style="position:relative">🔔<span class="notif-badge" id="badge-dokter">2</span></button><button class="btn-logout" onclick="showPage('d-page-login')">🚪 Logout</button></div></div>
       <div class="content-area">
         <div class="search-box"><span>🔍</span><input type="text" id="search-riwayat" placeholder="Cari nama pasien..." oninput="filterRiwayat(this.value)"></div>
         <div class="card" style="padding:0;overflow:hidden;">
@@ -1327,10 +1554,11 @@
         <div class="nav-item" onclick="showPage('d-page-kelola')"><span class="nav-icon">🕐</span> Kelola Jadwal</div>
         <div class="nav-item" onclick="showPage('d-page-chat')"><span class="nav-icon">💬</span> Chat Admin</div>
         <div class="nav-item" onclick="showPage('d-page-profil')"><span class="nav-icon">👤</span> Profil Saya</div>
+        <div class="nav-item" onclick="showPage('d-page-settings')"><span class="nav-icon">⚙️</span> Pengaturan</div>
       </nav>
     </aside>
     <div class="main-content">
-      <div class="topbar"><h1>Riwayat Konsultasi</h1><div class="topbar-right"><button class="btn-notif">🔔</button><button class="btn-logout" onclick="showPage('d-page-login')">🚪 Logout</button></div></div>
+      <div class="topbar"><h1>Riwayat Konsultasi</h1><div class="topbar-right"><button class="btn-notif" onclick="toggleNotif('notif-dokter')" style="position:relative">🔔</button><button class="btn-logout" onclick="showPage('d-page-login')">🚪 Logout</button></div></div>
       <div class="content-area">
         <div class="rekam-layout">
           <div class="rekam-sidebar">
@@ -1370,10 +1598,11 @@
         <div class="nav-item active" onclick="showPage('d-page-kelola')"><span class="nav-icon">🕐</span> Kelola Jadwal</div>
         <div class="nav-item" onclick="showPage('d-page-chat')"><span class="nav-icon">💬</span> Chat Admin</div>
         <div class="nav-item" onclick="showPage('d-page-profil')"><span class="nav-icon">👤</span> Profil Saya</div>
+        <div class="nav-item" onclick="showPage('d-page-settings')"><span class="nav-icon">⚙️</span> Pengaturan</div>
       </nav>
     </aside>
     <div class="main-content">
-      <div class="topbar"><h1>Kelola Jadwal</h1><div class="topbar-right"><button class="btn-notif">🔔</button><button class="btn-logout" onclick="showPage('d-page-login')">🚪 Logout</button></div></div>
+      <div class="topbar"><h1>Kelola Jadwal</h1><div class="topbar-right"><button class="btn-notif" onclick="toggleNotif('notif-dokter')" style="position:relative">🔔</button><button class="btn-logout" onclick="showPage('d-page-login')">🚪 Logout</button></div></div>
       <div class="content-area">
         <div class="card"><div class="card-title">Kelola Jadwal Praktik</div><div id="d-jadwal-rows"></div><button class="btn-save" onclick="alert('Jadwal berhasil disimpan!')">💾 Simpan Jadwal</button></div>
       </div>
@@ -1396,7 +1625,7 @@
       </nav>
     </aside>
     <div class="main-content">
-      <div class="topbar"><h1>Chat Admin</h1><div class="topbar-right"><button class="btn-notif">🔔</button><button class="btn-logout" onclick="showPage('d-page-login')">🚪 Logout</button></div></div>
+      <div class="topbar"><h1>Chat Admin</h1><div class="topbar-right"><button class="btn-notif" onclick="toggleNotif('notif-dokter')" style="position:relative">🔔</button><button class="btn-logout" onclick="showPage('d-page-login')">🚪 Logout</button></div></div>
       <div class="content-area">
         <div class="chat-box">
           <div class="chat-header-bar"><div class="avatar" style="background:#22c55e;width:36px;height:36px;font-size:13px">AK</div><div class="chat-header-name">Admin Klinik</div></div>
@@ -1429,7 +1658,7 @@
       </nav>
     </aside>
     <div class="main-content">
-      <div class="topbar"><h1>Profil Dokter</h1><div class="topbar-right"><button class="btn-notif">🔔</button><button class="btn-logout" onclick="showPage('d-page-login')">🚪 Logout</button></div></div>
+      <div class="topbar"><h1>Profil Dokter</h1><div class="topbar-right"><button class="btn-notif" onclick="toggleNotif('notif-dokter')" style="position:relative">🔔</button><button class="btn-logout" onclick="showPage('d-page-login')">🚪 Logout</button></div></div>
       <div class="content-area">
         <div class="profil-card">
           <div class="profil-photo-row">
@@ -1518,6 +1747,67 @@
   </div>
 </div>
 
+<!-- SETTINGS DOKTER -->
+<div id="d-page-settings" class="page">
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand"><div class="sidebar-brand-icon">🩺</div><span>Dokter Panel</span></div>
+      <nav class="sidebar-nav">
+        <div class="nav-item" onclick="showPage('d-page-jadwal')"><span class="nav-icon">📅</span> Jadwal Hari Ini</div>
+        <div class="nav-item" onclick="showPage('d-page-riwayat')"><span class="nav-icon">📋</span> Rekam Medis</div>
+        <div class="nav-item" onclick="showPage('d-page-rekam')"><span class="nav-icon">🩺</span> Riwayat Konsultasi</div>
+        <div class="nav-item" onclick="showPage('d-page-kelola')"><span class="nav-icon">🕐</span> Kelola Jadwal</div>
+        <div class="nav-item" onclick="showPage('d-page-chat')"><span class="nav-icon">💬</span> Chat Admin</div>
+        <div class="nav-item" onclick="showPage('d-page-profil')"><span class="nav-icon">👤</span> Profil Saya</div>
+        <div class="nav-item active" onclick="showPage('d-page-settings')"><span class="nav-icon">⚙️</span> Pengaturan</div>
+      </nav>
+    </aside>
+    <div class="main-content">
+      <div class="topbar"><h1>Pengaturan</h1><div class="topbar-right"><button class="btn-notif" onclick="toggleNotif('notif-dokter')" style="position:relative">🔔</button><button class="btn-logout" onclick="showPage('d-page-login')">🚪 Logout</button></div></div>
+      <div class="content-area">
+        <div class="settings-card">
+          <div class="settings-block">
+            <div class="settings-section-title">🔑 Ganti Password</div>
+            <div class="settings-pw-grid">
+              <div class="settings-field"><label>Password Lama</label><input type="password" id="d-pw-lama" placeholder="Masukkan password lama"></div>
+              <div class="settings-field"><label>Password Baru</label><input type="password" id="d-pw-baru" placeholder="Min 8 karakter"></div>
+              <div class="settings-field"><label>Konfirmasi Password Baru</label><input type="password" id="d-pw-konfirm" placeholder="Ulangi password baru"></div>
+            </div>
+            <button class="btn-settings-save" onclick="simpanSettings('dokter')">💾 Simpan Perubahan</button></div>
+          </div>
+          <div class="settings-block">
+            <div class="settings-section-title">🔔 Notifikasi Telegram</div>
+            <div class="settings-row"><input type="checkbox" class="settings-check" checked><div class="settings-row-label"><div class="settings-label">Chat Baru dari Admin</div><div class="settings-sub">Notif Telegram saat admin mengirim pesan</div></div></div>
+            <div class="settings-row"><input type="checkbox" class="settings-check" checked><div class="settings-row-label"><div class="settings-label">Appointment Pasien Baru</div><div class="settings-sub">Notif Telegram saat ada pasien booking ke kamu</div></div></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIF POPUP DOKTER -->
+<div class="notif-popup" id="notif-dokter">
+  <div class="notif-popup-header">
+    <span class="notif-popup-title">🔔 Notifikasi</span>
+    <button class="notif-popup-close" onclick="tutupNotif('notif-dokter')">✕</button>
+  </div>
+  <div class="notif-list">
+    <div class="notif-item unread">
+      <div class="notif-icon blue">💬</div>
+      <div><div class="notif-text">Admin: "Mohon konfirmasi jadwal besok"</div><div class="notif-time">10 menit lalu</div></div>
+    </div>
+    <div class="notif-item unread">
+      <div class="notif-icon green">📅</div>
+      <div><div class="notif-text">Pasien baru booking: Budiman · 25 Mei 09:00</div><div class="notif-time">1 jam lalu</div></div>
+    </div>
+    <div class="notif-item">
+      <div class="notif-icon green">📅</div>
+      <div><div class="notif-text">Pasien baru booking: Wulan · 24 Mei 10:00</div><div class="notif-time">3 jam lalu</div></div>
+    </div>
+  </div>
+</div>
 
 
 </div>
@@ -1656,13 +1946,14 @@
         <div class="nav-item" onclick="showPage('p-page-cari')"><span class="nav-icon">🔍</span> Cari Dokter</div>
         <div class="nav-item" onclick="showPage('p-page-riwayat')"><span class="nav-icon">📅</span> Riwayat Konsultasi</div>
         <div class="nav-item" onclick="showPage('p-page-profil')"><span class="nav-icon">👤</span> Profil Saya</div>
+        <div class="nav-item" onclick="showPage('p-page-settings')"><span class="nav-icon">⚙️</span> Pengaturan</div>
       </nav>
     </aside>
     <div class="main-content">
       <div class="topbar">
         <h1>Portal Pasien</h1>
         <div class="topbar-right">
-          <button class="btn-notif">🔔</button>
+          <button class="btn-notif" onclick="toggleNotif('notif-pasien')" style="position:relative">🔔<span class="notif-badge" id="badge-pasien">1</span></button>
           <button class="btn-logout" onclick="showPage('p-page-login')">🚪 Logout</button>
         </div>
       </div>
@@ -1703,13 +1994,14 @@
         <div class="nav-item active" onclick="showPage('p-page-cari')"><span class="nav-icon">🔍</span> Cari Dokter</div>
         <div class="nav-item" onclick="showPage('p-page-riwayat')"><span class="nav-icon">📅</span> Riwayat Konsultasi</div>
         <div class="nav-item" onclick="showPage('p-page-profil')"><span class="nav-icon">👤</span> Profil Saya</div>
+        <div class="nav-item" onclick="showPage('p-page-settings')"><span class="nav-icon">⚙️</span> Pengaturan</div>
       </nav>
     </aside>
     <div class="main-content">
       <div class="topbar">
         <h1>Cari Dokter</h1>
         <div class="topbar-right">
-          <button class="btn-notif">🔔</button>
+          <button class="btn-notif" onclick="toggleNotif('notif-pasien')" style="position:relative">🔔</button>
           <button class="btn-logout" onclick="showPage('p-page-login')">🚪 Logout</button>
         </div>
       </div>
@@ -1801,13 +2093,14 @@
         <div class="nav-item" onclick="showPage('p-page-cari')"><span class="nav-icon">🔍</span> Cari Dokter</div>
         <div class="nav-item active" onclick="showPage('p-page-riwayat')"><span class="nav-icon">📅</span> Riwayat Konsultasi</div>
         <div class="nav-item" onclick="showPage('p-page-profil')"><span class="nav-icon">👤</span> Profil Saya</div>
+        <div class="nav-item" onclick="showPage('p-page-settings')"><span class="nav-icon">⚙️</span> Pengaturan</div>
       </nav>
     </aside>
     <div class="main-content">
       <div class="topbar">
         <h1>Riwayat Konsultasi</h1>
         <div class="topbar-right">
-          <button class="btn-notif">🔔</button>
+          <button class="btn-notif" onclick="toggleNotif('notif-pasien')" style="position:relative">🔔</button>
           <button class="btn-logout" onclick="showPage('p-page-login')">🚪 Logout</button>
         </div>
       </div>
@@ -1837,13 +2130,14 @@
         <div class="nav-item" onclick="showPage('p-page-cari')"><span class="nav-icon">🔍</span> Cari Dokter</div>
         <div class="nav-item" onclick="showPage('p-page-riwayat')"><span class="nav-icon">📅</span> Riwayat Konsultasi</div>
         <div class="nav-item active" onclick="showPage('p-page-profil')"><span class="nav-icon">👤</span> Profil Saya</div>
+        <div class="nav-item" onclick="showPage('p-page-settings')"><span class="nav-icon">⚙️</span> Pengaturan</div>
       </nav>
     </aside>
     <div class="main-content">
       <div class="topbar">
         <h1>Profil Saya</h1>
         <div class="topbar-right">
-          <button class="btn-notif">🔔</button>
+          <button class="btn-notif" onclick="toggleNotif('notif-pasien')" style="position:relative">🔔</button>
           <button class="btn-logout" onclick="showPage('p-page-login')">🚪 Logout</button>
         </div>
       </div>
@@ -1900,9 +2194,10 @@
 <div class="modal-overlay" id="p-booking-modal">
   <div class="modal-box">
     <div class="modal-title" id="p-modal-dokter-name">Booking Dokter</div>
-    <div class="form-group"><label>Tanggal</label><input type="date" id="p-booking-tanggal"></div>
+    <div class="form-group"><label>Tanggal</label><input type="date" id="p-booking-tanggal" onchange="p_updateJam()"></div>
     <div class="form-group"><label>Jam</label>
-      <select id="p-booking-jam"><option>08:00</option><option>09:00</option><option>10:00</option><option>11:00</option><option>13:00</option><option>14:00</option><option>15:00</option></select>
+      <select id="p-booking-jam"></select>
+      <div id="p-jam-info" style="font-size:12px;color:#6B7280;margin-top:6px;display:none;"></div>
     </div>
     <div class="form-group"><label>Keluhan</label><textarea placeholder="Ceritakan keluhan Anda..." id="p-booking-keluhan"></textarea></div>
     <div class="modal-footer">
@@ -1912,12 +2207,166 @@
   </div>
 </div>
 
+<!-- SETTINGS PASIEN -->
+<div id="p-page-settings" class="page">
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand"><div class="sidebar-brand-icon">👤</div><span>Pasien Panel</span></div>
+      <nav class="sidebar-nav">
+        <div class="nav-item" onclick="showPage('p-page-home')"><span class="nav-icon">🏠</span> Home</div>
+        <div class="nav-item" onclick="showPage('p-page-cari')"><span class="nav-icon">🔍</span> Cari Dokter</div>
+        <div class="nav-item" onclick="showPage('p-page-riwayat')"><span class="nav-icon">📅</span> Riwayat Konsultasi</div>
+        <div class="nav-item" onclick="showPage('p-page-profil')"><span class="nav-icon">👤</span> Profil Saya</div>
+        <div class="nav-item active" onclick="showPage('p-page-settings')"><span class="nav-icon">⚙️</span> Pengaturan</div>
+      </nav>
+    </aside>
+    <div class="main-content">
+      <div class="topbar">
+        <h1>Pengaturan</h1>
+        <div class="topbar-right">
+          <button class="btn-notif" onclick="toggleNotif('notif-pasien')" style="position:relative">🔔</button>
+          <button class="btn-logout" onclick="showPage('p-page-login')">🚪 Logout</button>
+        </div>
+      </div>
+      <div class="content-area">
+        <div class="settings-card">
+          <div class="settings-block">
+            <div class="settings-section-title">🔑 Ganti Password</div>
+            <div class="settings-pw-grid">
+              <div class="settings-field"><label>Password Lama</label><input type="password" id="p-pw-lama" placeholder="Masukkan password lama"></div>
+              <div class="settings-field"><label>Password Baru</label><input type="password" id="p-pw-baru" placeholder="Min 8 karakter"></div>
+              <div class="settings-field"><label>Konfirmasi Password Baru</label><input type="password" id="p-pw-konfirm" placeholder="Ulangi password baru"></div>
+            </div>
+            <button class="btn-settings-save" onclick="simpanSettings('pasien')">💾 Simpan Perubahan</button></div>
+          </div>
+          <div class="settings-block">
+            <div class="settings-section-title">🔔 Notifikasi Telegram</div>
+            <div class="settings-row"><input type="checkbox" class="settings-check" checked><div class="settings-row-label"><div class="settings-label">Appointment Disetujui Dokter</div><div class="settings-sub">Notif Telegram saat dokter approve booking kamu</div></div></div>
+            <div class="settings-row"><input type="checkbox" class="settings-check" checked><div class="settings-row-label"><div class="settings-label">Pengingat Jadwal</div><div class="settings-sub">Notif Telegram H-1 sebelum jadwal konsultasi</div></div></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="fab-chat" onclick="p_toggleChat()">💬</div>
+</div>
+
+<!-- NOTIF POPUP PASIEN -->
+<div class="notif-popup" id="notif-pasien">
+  <div class="notif-popup-header">
+    <span class="notif-popup-title">🔔 Notifikasi</span>
+    <button class="notif-popup-close" onclick="tutupNotif('notif-pasien')">✕</button>
+  </div>
+  <div class="notif-list">
+    <div class="notif-item unread">
+      <div class="notif-icon green">✅</div>
+      <div><div class="notif-text">Dr. Sarah Melati menyetujui appointment kamu · 22 Mei 10:00</div><div class="notif-time">30 menit lalu</div></div>
+    </div>
+    <div class="notif-item">
+      <div class="notif-icon blue">📅</div>
+      <div><div class="notif-text">Pengingat: Jadwal konsultasi besok 09:00 WIB</div><div class="notif-time">Kemarin</div></div>
+    </div>
+  </div>
+</div>
 
 
 </div>
 
 <script>
 // ========== GLOBAL NAVIGATION ==========
+
+// ===== NOTIF POPUP =====
+function toggleNotif(id) {
+  const popup = document.getElementById(id);
+  if (!popup) return;
+  const isOpen = popup.classList.contains('open');
+  // close all popups first
+  document.querySelectorAll('.notif-popup').forEach(p => p.classList.remove('open'));
+  if (!isOpen) {
+    popup.classList.add('open');
+    // remove badge
+    document.querySelectorAll('[id^="badge-"]').forEach(b => { if (b) b.style.display='none'; });
+  }
+}
+
+function tutupNotif(id) {
+  const popup = document.getElementById(id);
+  if (popup) popup.classList.remove('open');
+}
+
+// Close notif when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.notif-popup') && !e.target.closest('.btn-notif')) {
+    document.querySelectorAll('.notif-popup').forEach(p => p.classList.remove('open'));
+  }
+});
+
+// ===== SETTINGS =====
+function simpanSettings(role) {
+  let lama, baru, konfirm;
+  if (role === 'admin') {
+    lama = document.getElementById('admin-pw-lama').value.trim();
+    baru = document.getElementById('admin-pw-baru').value.trim();
+    konfirm = document.getElementById('admin-pw-konfirm').value.trim();
+  } else if (role === 'dokter') {
+    lama = document.getElementById('d-pw-lama').value.trim();
+    baru = document.getElementById('d-pw-baru').value.trim();
+    konfirm = document.getElementById('d-pw-konfirm').value.trim();
+  } else {
+    lama = document.getElementById('p-pw-lama').value.trim();
+    baru = document.getElementById('p-pw-baru').value.trim();
+    konfirm = document.getElementById('p-pw-konfirm').value.trim();
+  }
+  if (baru || konfirm || lama) {
+    if (!lama) { alert('Masukkan password lama terlebih dahulu.'); return; }
+    if (baru.length < 8) { alert('Password baru minimal 8 karakter.'); return; }
+    if (baru !== konfirm) { alert('Konfirmasi password tidak cocok.'); return; }
+  }
+  alert('✅ Pengaturan berhasil disimpan!');
+}
+
+// ===== TAMBAH DOKTER =====
+function bukaModalTambahDokter() {
+  document.getElementById('modal-tambah-dokter').classList.add('open');
+  document.getElementById('tambah-nama').value = '';
+  document.getElementById('tambah-str').value = '';
+  document.getElementById('tambah-harga').value = '';
+  document.getElementById('tambah-dokter-error').style.display = 'none';
+}
+
+function tutupModalTambahDokter() {
+  document.getElementById('modal-tambah-dokter').classList.remove('open');
+}
+
+function tambahDokterBaru() {
+  const nama = document.getElementById('tambah-nama').value.trim();
+  const str = document.getElementById('tambah-str').value.trim();
+  const spesialis = document.getElementById('tambah-spesialis').value;
+  const harga = document.getElementById('tambah-harga').value.trim();
+  const errEl = document.getElementById('tambah-dokter-error');
+  if (!nama || !str || !harga) {
+    errEl.textContent = 'Semua field harus diisi.';
+    errEl.style.display = 'block'; return;
+  }
+  errEl.style.display = 'none';
+  const hargaFmt = 'Rp. ' + parseInt(harga).toLocaleString('id-ID');
+  const inisial = nama.replace('dr.','').trim().split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  const colors = ['#22c55e','#3b82f6','#f59e0b','#ec4899','#a855f7','#06b6d4','#f97316'];
+  const warna = colors[Math.floor(Math.random()*colors.length)];
+  const tbody = document.getElementById('dokter-tbody');
+  const tr = document.createElement('tr');
+  tr.className = 'dokter-row';
+  tr.dataset.spesialis = spesialis;
+  tr.innerHTML = `<td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="background:${warna}">${inisial}</div><span class="appt-name">${nama}</span></div></td>
+    <td>${spesialis.charAt(0).toUpperCase()+spesialis.slice(1)}</td>
+    <td style="color:var(--text-muted)">${str}</td>
+    <td style="font-weight:700">${hargaFmt}</td>
+    <td><button class="btn-del" onclick="hapusDokter(this)" title="Hapus">🗑️</button></td>`;
+  tbody.appendChild(tr);
+  tutupModalTambahDokter();
+  alert(`✅ Dokter ${nama} berhasil ditambahkan!`);
+}
 
 function togglePw(id, btn) {
   const input = document.getElementById(id);
@@ -1964,6 +2413,12 @@ function showPage(id) {
   document.getElementById(section).querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const el = document.getElementById(id);
   if (el) { el.classList.add('active'); window.scrollTo(0,0); }
+
+  // kontrol FAB chat pasien — sembunyikan di halaman login/daftar/lupa
+  const pasienLoginPages = ['p-page-login','p-page-daftar','p-page-lupa'];
+  document.querySelectorAll('#section-pasien .fab-chat').forEach(fab => {
+    fab.style.display = pasienLoginPages.includes(id) ? 'none' : 'flex';
+  });
   
   // back to index
   if (id === 'UNUSED_INDEX') {
@@ -2639,8 +3094,99 @@ function p_sendBotMsg() {
   }, 600);
 }
 
+// ========== JADWAL DOKTER ==========
+// hari: 0=Minggu, 1=Sen, 2=Sel, 3=Rab, 4=Kam, 5=Jum, 6=Sab
+const jadwalDokter = {
+  'Dr. Sarah Melati':   { hari: [1,2,3,4,5], jamMulai: '08:00', jamSelesai: '16:00' },
+  'Dr. Kuro Tetsuro':   { hari: [1,2,3,5,6], jamMulai: '09:00', jamSelesai: '15:00' },
+  'Dr. Ichinose Guren': { hari: [1,3,5],     jamMulai: '08:00', jamSelesai: '14:00' },
+  'Dr. Dazai Osamu':    { hari: [2,4],       jamMulai: '08:00', jamSelesai: '12:00' },
+};
+
+const semuaJam = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00'];
+
+const namaHari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+
+let p_currentDokter = '';
+
+function p_updateJam() {
+  const tglVal = document.getElementById('p-booking-tanggal').value;
+  const selectJam = document.getElementById('p-booking-jam');
+  const infoEl = document.getElementById('p-jam-info');
+  selectJam.innerHTML = '';
+
+  if (!tglVal || !p_currentDokter) {
+    semuaJam.forEach(j => {
+      const opt = document.createElement('option');
+      opt.value = j; opt.textContent = j;
+      selectJam.appendChild(opt);
+    });
+    infoEl.style.display = 'none';
+    return;
+  }
+
+  const jadwal = jadwalDokter[p_currentDokter];
+  if (!jadwal) {
+    semuaJam.forEach(j => {
+      const opt = document.createElement('option');
+      opt.value = j; opt.textContent = j;
+      selectJam.appendChild(opt);
+    });
+    infoEl.style.display = 'none';
+    return;
+  }
+
+  const tglObj = new Date(tglVal);
+  const hariTerpilih = tglObj.getDay();
+  const hariLibur = !jadwal.hari.includes(hariTerpilih);
+
+  // Tampilkan info jadwal
+  const hariKerja = jadwal.hari.map(h => namaHari[h]).join(', ');
+  if (hariLibur) {
+    infoEl.textContent = `⛔ Dokter ini libur hari ${namaHari[hariTerpilih]}. Jadwal: ${hariKerja}, ${jadwal.jamMulai}–${jadwal.jamSelesai}`;
+    infoEl.style.color = '#ef4444';
+  } else {
+    infoEl.textContent = `✅ Jadwal praktek: ${hariKerja} · ${jadwal.jamMulai}–${jadwal.jamSelesai}`;
+    infoEl.style.color = '#16a34a';
+  }
+  infoEl.style.display = 'block';
+
+  let adaYangBisa = false;
+  semuaJam.forEach(j => {
+    const opt = document.createElement('option');
+    opt.value = j;
+    // Cek apakah jam ini dalam rentang dokter dan harinya bukan libur
+    const jamInt = parseInt(j.replace(':',''));
+    const mulaiInt = parseInt(jadwal.jamMulai.replace(':',''));
+    const selesaiInt = parseInt(jadwal.jamSelesai.replace(':',''));
+    const boleh = !hariLibur && jamInt >= mulaiInt && jamInt < selesaiInt;
+    if (boleh) {
+      opt.textContent = j;
+      adaYangBisa = true;
+    } else {
+      opt.textContent = j + ' (tidak tersedia)';
+      opt.disabled = true;
+      opt.style.color = '#9CA3AF';
+      opt.style.background = '#F3F4F6';
+    }
+    selectJam.appendChild(opt);
+  });
+
+  // Auto-select ke opsi pertama yang available
+  if (adaYangBisa) {
+    for (let o of selectJam.options) {
+      if (!o.disabled) { o.selected = true; break; }
+    }
+  }
+}
+
 function p_openBooking(nama) {
+  p_currentDokter = nama;
   document.getElementById('p-modal-dokter-name').textContent = 'Booking - ' + nama;
+  document.getElementById('p-booking-tanggal').value = '';
+  document.getElementById('p-booking-keluhan').value = '';
+  document.getElementById('p-jam-info').style.display = 'none';
+  p_updateJam();
   document.getElementById('p-booking-modal').classList.add('open');
 }
 
@@ -2650,12 +3196,31 @@ function p_closeBooking() {
 
 function p_konfirmasiBooking() {
   const tgl = document.getElementById('p-booking-tanggal').value;
-  const jam = document.getElementById('p-booking-jam').value;
+  const selectJam = document.getElementById('p-booking-jam');
+  const jam = selectJam.value;
   const keluhan = document.getElementById('p-booking-keluhan').value.trim();
   if (!tgl) { alert('Pilih tanggal dulu!'); return; }
   if (!keluhan) { alert('Isi keluhan dulu!'); return; }
-  closeBooking();
-  alert('✅ Booking berhasil!\nTanggal: ' + tgl + '\nJam: ' + jam + '\nTunggu konfirmasi dari klinik.');
+
+  // Cek apakah jam yang dipilih valid
+  const selectedOpt = selectJam.options[selectJam.selectedIndex];
+  if (selectedOpt && selectedOpt.disabled) {
+    alert('⚠️ Jam yang dipilih tidak tersedia untuk dokter ini. Silakan pilih jam lain.');
+    return;
+  }
+
+  // Cek hari libur dokter
+  const jadwal = jadwalDokter[p_currentDokter];
+  if (jadwal) {
+    const tglObj = new Date(tgl);
+    if (!jadwal.hari.includes(tglObj.getDay())) {
+      alert('⚠️ Dokter tidak praktek pada hari ini. Silakan pilih tanggal lain.');
+      return;
+    }
+  }
+
+  p_closeBooking();
+  alert('✅ Booking berhasil!\nDokter: ' + p_currentDokter + '\nTanggal: ' + tgl + '\nJam: ' + jam + '\nTunggu konfirmasi dari klinik.');
 }
 
 function p_previewFoto(input) {
