@@ -2,12 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DokterSidebar from '../../components/DokterSidebar';
 import { apiFetch } from '../../utils/api';
+import { useNotif, DOKTER_NOTIFS } from '../../components/NotifPopup';
 
 export default function DokterChat() {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [adminId, setAdminId] = useState(1);
+  const { bellButton, popup } = useNotif('notif-dokter', DOKTER_NOTIFS);
   const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
   const bottomRef = useRef();
 
@@ -42,7 +44,7 @@ export default function DokterChat() {
       <div className="main-content">
         <div className="topbar" style={{ background: 'var(--green)' }}>
           <h1>Chat Admin</h1>
-          <div className="topbar-right"><button className="btn-notif">🔔</button><button className="btn-logout" onClick={logout}>🚪 Logout</button></div>
+          { bellButton }<button className="btn-logout" onClick={logout}>🚪 Logout</button></div>
         </div>
         <div className="content-area">
           <div style={{ background: 'white', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
@@ -69,6 +71,7 @@ export default function DokterChat() {
           </div>
         </div>
       </div>
+      { popup }
     </div>
   );
 }
