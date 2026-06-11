@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-export function useNotif(id, items = []) {
+export function useNotif(id, items = [], buttonStyle = {}) {
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const popupRef = useRef(null);
