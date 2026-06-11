@@ -39,7 +39,9 @@ export default function PasienCari() {
   async function bukaBooking(d) {
     setBooking(d);
     setTanggal(''); setJam(''); setKeluhan('');
-    const res = await fetch(`/api/jadwal-publik/${d.id}`).then(r => r.json());
+    const res = await fetch(`/api/jadwal-publik/${d.id}`, {
+      cache: 'no-store'
+    }).then(r => r.json());
     setJadwalDokter(res.data || []);
   }
   
