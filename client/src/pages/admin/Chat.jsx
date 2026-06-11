@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '../../components/AdminSidebar';
 import { apiFetch } from '../../utils/api';
+import { useNotif, ADMIN_NOTIFS } from '../../components/NotifPopup';
 
 const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#6366f1'];
 
@@ -13,6 +14,7 @@ export default function AdminChat() {
   const [input, setInput] = useState('');
   const adminUser = JSON.parse(sessionStorage.getItem('adminUser') || '{}');
   const bottomRef = useRef();
+  const { bellButton, popup } = useNotif('notif-admin', ADMIN_NOTIFS);
 
   useEffect(() => {
     async function loadDokters() {
@@ -56,7 +58,7 @@ export default function AdminChat() {
         <div className="topbar" style={{ background: 'var(--navy)' }}>
           <h1>Chat Dokter</h1>
           <div className="topbar-right">
-            <button className="btn-notif">🔔</button>
+            { bellButton }
             <button className="btn-logout" onClick={logout}>🚪 Logout</button>
           </div>
         </div>
@@ -99,6 +101,7 @@ export default function AdminChat() {
           </div>
         </div>
       </div>
+      { popup }
     </div>
   );
 }

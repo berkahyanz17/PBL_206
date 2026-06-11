@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '../../components/AdminSidebar';
 import { apiFetch } from '../../utils/api';
+import { useNotif, ADMIN_NOTIFS } from '../../components/NotifPopup';
 
 export default function AdminPasien() {
   const navigate = useNavigate();
   const [pasiens, setPasiens] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const { bellButton, popup } = useNotif('notif-admin', ADMIN_NOTIFS);
 
   useEffect(() => { loadPasiens(); }, []);
 
@@ -35,7 +37,7 @@ export default function AdminPasien() {
         <div className="topbar" style={{ background: 'var(--navy)' }}>
           <h1>Data Pasien</h1>
           <div className="topbar-right">
-            <button className="btn-notif">🔔</button>
+            { bellButton }
             <button className="btn-logout" onClick={logout}>🚪 Logout</button>
           </div>
         </div>
@@ -71,6 +73,7 @@ export default function AdminPasien() {
           </div>
         </div>
       </div>
+      { popup }
     </div>
   );
 }
