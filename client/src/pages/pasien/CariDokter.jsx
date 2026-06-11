@@ -13,16 +13,50 @@ export default function PasienCari() {
   const [jam, setJam] = useState('08:00');
   const [keluhan, setKeluhan] = useState('');
   const [loading, setLoading] = useState(false);
+  const [jadwalDokter, setJadwalDokter] = useState([]);
+  const [jamOptions, setJamOptions] = useState([]);
+  const [tersediaMap, setTersediaMap] = useState({});
   const user = JSON.parse(sessionStorage.getItem('pasienUser') || '{}');
 
   useEffect(() => {
     async function load() {
       const res = await apiFetch('/dokter');
-      if (res?.success) setDokters(res.data);
+      if (!res?.success) return;
+      setDokters(res.data);
+      const hariIniIdx = new Date().getDay();
+      const hariMap = ['Minggu','Senin','Selasa','Rabu',"Kamis","Jum'at",'Sabtu'];
+      const hariSaatIni = hariMap[hariIniIdx];
+      const map = {};
+      for (const d of res.data) {
+        const j = await fetch(`/api/jadwal-publik/${d.id}`).then(r => r.json());
+        map[d.id] = j.data?.length > 0;
+      }
+      setTersediaMap(map);
     }
     load();
   }, []);
-
+  
+  async function bukaBooking(d) {
+    setBooking(d);
+    setTanggal(''); setJam(''); setKeluhan('');
+    const res = await fetch(`/api/jadwal-publik/${d.id}`).then(r => r.json());
+    setJadwalDokter(res.data || []);
+  }
+  
+  function onTanggalChange(tgl) {
+    setTanggal(tgl);
+    setJam('');
+    const hariMap = ['Minggu','Senin','Selasa','Rabu',"Kamis","Jum'at",'Sabtu'];
+    const hari = hariMap[new Date(tgl).getDay()];
+    const jadwalHari = jadwalDokter.find(j => j.hari === hari);
+    if (!jadwalHari) { setJamOptions([]); return; }
+    const mulai = parseInt(jadwalHari.jam_mulai.slice(0,2));
+    const selesai = parseInt(jadwalHari.jam_selesai.slice(0,2));
+    const opts = [];
+    for (let h = mulai; h < selesai; h++) opts.push(`${String(h).padStart(2,'0')}:00`);
+    setJamOptions(opts);
+  }
+  
   async function konfirmasi() {
     if (!tanggal) { alert('Pilih tanggal dulu!'); return; }
     if (!keluhan) { alert('Isi keluhan dulu!'); return; }
@@ -82,7 +116,9 @@ export default function PasienCari() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#22c55e' }}>● Tersedia</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: tersediaMap[d.id] ? '#22c55e' : '#ef4444' }}>
+                      {tersediaMap[d.id] ? '● Tersedia' : '● Tidak Tersedia'}
+                    </span>
                     <button onClick={() => setBooking(d)}
                       style={{ padding: '8px 20px', background: '#1d4ed8', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Booking</button>
                   </div>
@@ -97,10 +133,13 @@ export default function PasienCari() {
         <div className="modal-overlay open" onClick={() => setBooking(null)}>
           <div className="modal-box" onClick={e => e.stopPropagation()}>
             <div className="modal-title">Booking - {booking.nama}</div>
-            <div className="form-group"><label>Tanggal</label><input type="date" value={tanggal} onChange={e => setTanggal(e.target.value)} /></div>
+            <div className="form-group"><label>Tanggal</label>
+              <input type="date" value={tanggal} onChange={e => onTanggalChange(e.target.value)} /></div>
             <div className="form-group"><label>Jam</label>
-              <select value={jam} onChange={e => setJam(e.target.value)}>
-                {['08:00','09:00','10:00','11:00','13:00','14:00','15:00'].map(j => <option key={j}>{j}</option>)}
+              <select value={jam} onChange={e => setJam(e.target.value)} disabled={!tanggal}>
+                <option value="">-- Pilih jam --</option>
+                {jamOptions.length === 0 && tanggal && <option disabled>Dokter tidak praktik hari ini</option>}
+                {jamOptions.map(j => <option key={j} value={j}>{j}</option>)}
               </select>
             </div>
             <div className="form-group"><label>Keluhan</label><textarea placeholder="Ceritakan keluhan Anda..." value={keluhan} onChange={e => setKeluhan(e.target.value)} /></div>
