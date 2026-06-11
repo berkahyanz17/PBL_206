@@ -67,7 +67,7 @@ export default function PasienRiwayat() {
         </div>
       </div>
       <MamoruChat />
-      {bellButton}
+      {popup}
     </div>
   );
 }
