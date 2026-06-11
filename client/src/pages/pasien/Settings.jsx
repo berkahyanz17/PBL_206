@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PasienSidebar from '../../components/PasienSidebar';
 import { apiFetch } from '../../utils/api';
+import { useNotif, PASIEN_NOTIFS } from '../../components/NotifPopup';
 
 export default function PasienSettings() {
   const navigate = useNavigate();
@@ -9,12 +10,13 @@ export default function PasienSettings() {
   const [pwBaru, setPwBaru] = useState('');
   const [pwKonfirm, setPwKonfirm] = useState('');
   const [notif, setNotif] = useState({ approveAppt: true, pengingat: true });
+  const { bellButton, popup } = useNotif('notif-pasien', PASIEN_NOTIFS, { background: 'rgba(255,255,255,0.4)' });
 
   async function simpanPassword() {
     if (!pwLama) return alert('Masukkan password lama.');
     if (pwBaru.length < 8) return alert('Password baru minimal 8 karakter.');
     if (pwBaru !== pwKonfirm) return alert('Konfirmasi password tidak cocok.');
-    const res = await apiFetch('/admin/password', {
+    const res = await apiFetch('/pasien/password', {
       method: 'PATCH',
       body: JSON.stringify({ pwLama, pwBaru })
     });
@@ -29,10 +31,10 @@ export default function PasienSettings() {
       <PasienSidebar />
       <div className="main-content">
         <div className="topbar" style={{ background: 'var(--sky)' }}>
-          <h1>Pengaturan</h1>
+          <h1 style={{ color: '#1e3a5f' }}>Pengaturan</h1>
           <div className="topbar-right">
-            <button className="btn-notif">🔔</button>
-            <button className="btn-logout" onClick={logout}>🚪 Logout</button>
+            {bellButton}
+            <button className="btn-logout" style={{ background: 'rgba(255,255,255,0.4)', color: '#1e3a5f', borderColor: 'rgba(255,255,255,0.5)' }} onClick={logout}>🚪 Logout</button>
           </div>
         </div>
         <div className="content-area">
@@ -71,6 +73,7 @@ export default function PasienSettings() {
           </div>
         </div>
       </div>
+      {popup}
     </div>
   );
 }
