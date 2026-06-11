@@ -1,82 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 
-// ─── Styles (injected once) ───────────────────────────────────────────────────
-const CSS = `
-.notif-popup {
-  position: fixed; top: 64px; right: 24px; width: 320px;
-  background: white; border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-  z-index: 99999; overflow: hidden; display: none;
-  animation: notifSlideDown .2s ease;
-}
-.notif-popup.open { display: block; }
-@keyframes notifSlideDown {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.notif-popup-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px 10px; border-bottom: 1px solid #F3F4F6;
-}
-.notif-popup-title { font-size: 14px; font-weight: 700; color: #111827; }
-.notif-popup-close {
-  background: none; border: none; font-size: 18px;
-  cursor: pointer; color: #6B7280; line-height: 1;
-}
-.notif-list { max-height: 320px; overflow-y: auto; }
-.notif-item {
-  display: flex; gap: 12px; padding: 12px 16px;
-  border-bottom: 1px solid #F9FAFB; cursor: pointer;
-  transition: background .15s;
-}
-.notif-item:hover { background: #F9FAFB; }
-.notif-item:last-child { border-bottom: none; }
-.notif-item.unread { background: #EFF6FF; }
-.notif-icon {
-  width: 36px; height: 36px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px; flex-shrink: 0;
-}
-.notif-icon.blue   { background: #DBEAFE; }
-.notif-icon.green  { background: #D1FAE5; }
-.notif-icon.orange { background: #FEF3C7; }
-.notif-text  { font-size: 13px; font-weight: 600; color: #111827; line-height: 1.4; }
-.notif-time  { font-size: 11px; color: #9CA3AF; margin-top: 3px; }
-.notif-empty { padding: 28px 16px; text-align: center; color: #9CA3AF; font-size: 13px; }
-.notif-badge {
-  position: absolute; top: -4px; right: -4px;
-  width: 17px; height: 17px; background: #ef4444;
-  border-radius: 50%; font-size: 10px; font-weight: 700;
-  color: white; display: flex; align-items: center; justify-content: center;
-}
-`;
-
-if (typeof document !== 'undefined' && !document.getElementById('notif-popup-style')) {
-  const tag = document.createElement('style');
-  tag.id = 'notif-popup-style';
-  tag.textContent = CSS;
-  document.head.appendChild(tag);
-}
-
-// ─── Component ────────────────────────────────────────────────────────────────
-/**
- * NotifPopup
- *
- * Props:
- *   id       – unique popup id, e.g. "notif-admin"
- *   items    – array of { icon, iconColor, text, time, unread }
- *
- * Usage:
- *   const { bellButton, popup } = useNotif('notif-admin', ADMIN_NOTIFS);
- *   // put bellButton in topbar-right, popup anywhere in the page root
- */
 export function useNotif(id, items = []) {
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const popupRef = useRef(null);
-
   const unreadCount = items.filter(i => i.unread).length;
   const showBadge = unreadCount > 0 && !dismissed;
+  const bellButton = (
+    <button className="btn-notif" data-notif-btn={id} onClick={toggle}
+      style={{ position: 'relative', ...buttonStyle }}>
+      🔔
+      {showBadge && <span className="notif-badge">{unreadCount}</span>}
+    </button>
+  );
 
   // close on outside click
   useEffect(() => {
