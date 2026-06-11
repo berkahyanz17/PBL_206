@@ -1,5 +1,4 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-
 const navItems = [
   { icon: '📅', label: 'Jadwal', path: '/dokter/jadwal' },
   { icon: '📋', label: 'Riwayat Konsultasi', path: '/dokter/riwayat' },
@@ -7,13 +6,12 @@ const navItems = [
   { icon: '🗓️', label: 'Kelola Jadwal', path: '/dokter/kelola-jadwal' },
   { icon: '💬', label: 'Chat', path: '/dokter/chat' },
   { icon: '👤', label: 'Profil', path: '/dokter/profil' },
+  { icon: '⚙️', label: 'Pengaturan', path: '/dokter/settings' },
 ];
-
 export default function DokterSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
-
   return (
     <div className="sidebar" style={{ background: 'var(--green)' }}>
       <div className="sidebar-brand">
