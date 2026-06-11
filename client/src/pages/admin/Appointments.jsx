@@ -15,9 +15,20 @@ export default function AdminAppointments() {
   const [filter, setFilter] = useState('semua');
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const [showNotif, setShowNotif] = useState(false);
+  const [notifList, setNotifList] = useState([
+    { id: 1, icon: '👥', iconClass: 'blue', title: 'Pasien baru mendaftar', time: '5 menit lalu', unread: true },
+    { id: 2, icon: '📅', iconClass: 'orange', title: 'Appointment masuk', time: '30 menit lalu', unread: true },
+    { id: 3, icon: '💬', iconClass: 'blue', title: 'Pesan dari Dokter', time: 'Kemarin', unread: false },
+    ]);
+  const notifRef = useRef();
+  const unread = notifList.filter(n => n.unread).length;
   useEffect(() => { loadAppts(); }, []);
-
+  useEffect(() => {
+  function handleClick(e) { if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotif(false); }
+  document.addEventListener('mousedown', handleClick);
+  return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
   async function loadAppts() {
     setLoading(true);
     const res = await apiFetch('/appointments');
@@ -43,20 +54,6 @@ export default function AdminAppointments() {
   }
 
   function logout() { sessionStorage.clear(); navigate('/admin/login'); }
-const NOTIF_DATA = [
-  { id: 1, icon: '👥', iconClass: 'blue', title: 'Pasien baru mendaftar', time: '5 menit lalu', unread: true },
-  { id: 2, icon: '📅', iconClass: 'orange', title: 'Appointment masuk', time: '30 menit lalu', unread: true },
-  { id: 3, icon: '💬', iconClass: 'blue', title: 'Pesan dari Dokter', time: 'Kemarin', unread: false },
-];
-const [showNotif, setShowNotif] = useState(false);
-const [notifList, setNotifList] = useState(NOTIF_DATA);
-const notifRef = useRef();
-const unread = notifList.filter(n => n.unread).length;
-useEffect(() => {
-  function handleClick(e) { if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotif(false); }
-  document.addEventListener('mousedown', handleClick);
-  return () => document.removeEventListener('mousedown', handleClick);
-}, []);
   const filtered = appts.filter(a => filter === 'semua' || a.status === filter);
   const statusLabel = { menunggu: 'Menunggu', dikonfirmasi: 'Dikonfirmasi Dokter', selesai: 'Selesai', ditolak: 'Ditolak' };
 
