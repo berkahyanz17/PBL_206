@@ -107,7 +107,7 @@ export default function PasienProfil() {
         </div>
       </div>
       <MamoruChat />
-      {bellButton}
+      {popup}
     </div>
   );
 }
