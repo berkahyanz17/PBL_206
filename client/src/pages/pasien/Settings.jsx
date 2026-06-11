@@ -31,7 +31,7 @@ export default function PasienSettings() {
     <div className="dashboard-layout">
       <PasienSidebar />
       <div className="main-content">
-        <div className="topbar" style={{ background: 'inear-gradient(90deg,#7dd3fc,#38bdf8)' }}>
+        <div className="topbar" style={{ background: 'linear-gradient(90deg,#7dd3fc,#38bdf8)' }}>
           <h1 style={{ color: '#1e3a5f' }}>Pengaturan</h1>
           <div className="topbar-right">
             {bellButton}
