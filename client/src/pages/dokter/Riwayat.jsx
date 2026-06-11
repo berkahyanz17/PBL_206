@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DokterSidebar from '../../components/DokterSidebar';
 import { apiFetch } from '../../utils/api';
+import { useNotif, DOKTER_NOTIFS } from '../../components/NotifPopup';
 
 export default function DokterRiwayat() {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ export default function DokterRiwayat() {
   const [pasienList, setPasienList] = useState([]);
   const [active, setActive] = useState(null);
   const [tab, setTab] = useState('riwayat');
+  const { bellButton, popup } = useNotif('notif-dokter', DOKTER_NOTIFS);
   const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
 
   useEffect(() => {
@@ -35,7 +37,7 @@ export default function DokterRiwayat() {
       <div className="main-content">
         <div className="topbar" style={{ background: 'var(--green)' }}>
           <h1>Riwayat Konsultasi</h1>
-          <div className="topbar-right"><button className="btn-notif">🔔</button><button className="btn-logout" onClick={logout}>🚪 Logout</button></div>
+          { bellButton }<button className="btn-logout" onClick={logout}>🚪 Logout</button></div>
         </div>
         <div className="content-area">
           <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 18 }}>
@@ -80,6 +82,7 @@ export default function DokterRiwayat() {
           </div>
         </div>
       </div>
+      { popup }
     </div>
   );
 }
