@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DokterSidebar from '../../components/DokterSidebar';
 import { apiFetch } from '../../utils/api';
 
-const hariList = ['Senin','Selasa','Rabu','Kamis',"Jum'at",'Sabtu','Minggu'];
+const hariList = ['Senin','Selasa','Rabu','Kamis',"Jumat",'Sabtu','Minggu'];
 
 export default function DokterKelola() {
   const navigate = useNavigate();
