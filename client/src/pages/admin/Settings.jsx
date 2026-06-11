@@ -1,6 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '../../components/AdminSidebar';
+
+const NOTIF_DATA = [
+  { id: 1, icon: '👥', iconClass: 'blue', title: 'Pasien baru mendaftar', time: '5 menit lalu', unread: true },
+  { id: 2, icon: '📅', iconClass: 'orange', title: 'Appointment masuk', time: '30 menit lalu', unread: true },
+  { id: 3, icon: '💬', iconClass: 'blue', title: 'Pesan dari Dokter', time: 'Kemarin', unread: false },
+];
 
 export default function AdminSettings() {
   const navigate = useNavigate();
@@ -8,6 +14,17 @@ export default function AdminSettings() {
   const [pwBaru, setPwBaru] = useState('');
   const [pwKonfirm, setPwKonfirm] = useState('');
   const [notif, setNotif] = useState({ pasienBaru: true, appointment: true, chatDokter: false });
+  const [showNotif, setShowNotif] = useState(false);
+  const [notifList, setNotifList] = useState(NOTIF_DATA);
+  const notifRef = useRef();
+
+  useEffect(() => {
+    function handleClick(e) { if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotif(false); }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const unread = notifList.filter(n => n.unread).length;
 
   function simpanPassword() {
     if (!pwLama) return alert('Masukkan password lama.');
@@ -26,39 +43,71 @@ export default function AdminSettings() {
         <div className="topbar" style={{ background: 'var(--navy)' }}>
           <h1>Pengaturan</h1>
           <div className="topbar-right">
+            {/* NOTIF BELL */}
+            <div ref={notifRef} style={{ position: 'relative' }}>
+              <button className="btn-notif" onClick={() => setShowNotif(v => !v)} style={{ position: 'relative' }}>
+                🔔
+                {unread > 0 && <span className="notif-badge">{unread}</span>}
+              </button>
+              {showNotif && (
+                <div className="notif-popup open" style={{ position: 'absolute', top: 48, right: 0, left: 'auto' }}>
+                  <div className="notif-popup-header">
+                    <span className="notif-popup-title">🔔 Notifikasi</span>
+                    <button className="notif-popup-close" onClick={() => setShowNotif(false)}>✕</button>
+                  </div>
+                  <div className="notif-list">
+                    {notifList.length === 0 && <div className="notif-empty">Tidak ada notifikasi</div>}
+                    {notifList.map(n => (
+                      <div key={n.id} className={`notif-item${n.unread ? ' unread' : ''}`}
+                        onClick={() => setNotifList(l => l.map(x => x.id === n.id ? { ...x, unread: false } : x))}>
+                        <div className={`notif-icon ${n.iconClass}`}>{n.icon}</div>
+                        <div>
+                          <div className="notif-text">{n.title}</div>
+                          <div className="notif-time">{n.time}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <button className="btn-logout" onClick={logout}>🚪 Logout</button>
           </div>
         </div>
+
         <div className="content-area">
-          <div className="card" style={{ maxWidth: 600, padding: 28 }}>
-            <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', marginBottom: 16 }}>🔑 Ganti Password</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {[['Password Lama', pwLama, setPwLama], ['Password Baru', pwBaru, setPwBaru], ['Konfirmasi Password Baru', pwKonfirm, setPwKonfirm]].map(([label, val, set]) => (
-                  <div key={label}>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>{label}</label>
-                    <input type="password" value={val} onChange={e => set(e.target.value)} placeholder={label}
-                      style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E5E7EB', borderRadius: 9, fontSize: 14, fontFamily: 'inherit', background: '#F9FAFB', outline: 'none' }} />
+          <div className="settings-card">
+            {/* GANTI PASSWORD */}
+            <div className="settings-block">
+              <div className="settings-section-title">🔑 Ganti Password</div>
+              <div className="settings-pw-grid">
+                {[['Password Lama', pwLama, setPwLama, 'Masukkan password lama'],
+                  ['Password Baru', pwBaru, setPwBaru, 'Min 8 karakter'],
+                  ['Konfirmasi Password Baru', pwKonfirm, setPwKonfirm, 'Ulangi password baru']
+                ].map(([label, val, set, ph]) => (
+                  <div key={label} className="settings-field">
+                    <label>{label}</label>
+                    <input type="password" value={val} onChange={e => set(e.target.value)} placeholder={ph} />
                   </div>
                 ))}
               </div>
-              <button onClick={simpanPassword} style={{ marginTop: 16, padding: '10px 22px', background: 'var(--navy)', color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                💾 Simpan Perubahan
-              </button>
+              <button className="btn-settings-save" onClick={simpanPassword}>💾 Simpan Perubahan</button>
             </div>
-            <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 24 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', marginBottom: 16 }}>🔔 Notifikasi Telegram</div>
+
+            {/* NOTIF TELEGRAM */}
+            <div className="settings-block">
+              <div className="settings-section-title">🔔 Notifikasi Telegram</div>
               {[
-                ['pasienBaru', 'Ada Pasien Baru Mendaftar', 'Notif saat ada pasien baru registrasi ke sistem'],
-                ['appointment', 'Appointment Masuk', 'Notif saat pasien membuat booking baru'],
-                ['chatDokter', 'Pesan Chat dari Dokter', 'Notif saat dokter mengirim pesan'],
+                ['pasienBaru', 'Ada Pasien Baru Mendaftar', 'Notif Telegram saat ada pasien baru registrasi ke sistem'],
+                ['appointment', 'Appointment Masuk', 'Notif Telegram saat pasien membuat booking baru'],
+                ['chatDokter', 'Pesan Chat dari Dokter', 'Notif Telegram saat dokter mengirim pesan'],
               ].map(([key, label, sub]) => (
-                <label key={key} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 0', borderBottom: '1px solid #F9FAFB', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={notif[key]} onChange={e => setNotif(p => ({ ...p, [key]: e.target.checked }))}
-                    style={{ width: 16, height: 16, marginTop: 2, accentColor: 'var(--navy)', cursor: 'pointer', flexShrink: 0 }} />
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{label}</div>
-                    <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{sub}</div>
+                <label key={key} className="settings-row">
+                  <input type="checkbox" className="settings-check" checked={notif[key]}
+                    onChange={e => setNotif(p => ({ ...p, [key]: e.target.checked }))} />
+                  <div className="settings-row-label">
+                    <div className="settings-label">{label}</div>
+                    <div className="settings-sub">{sub}</div>
                   </div>
                 </label>
               ))}
