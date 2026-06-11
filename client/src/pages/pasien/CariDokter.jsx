@@ -17,7 +17,7 @@ export default function PasienCari() {
   const [jadwalDokter, setJadwalDokter] = useState([]);
   const [jamOptions, setJamOptions] = useState([]);
   const [tersediaMap, setTersediaMap] = useState({});
-  const { bellButton, popup } = useNotif('notif-admin', PASIEN_NOTIFS);
+  const { bellButton, popup } = useNotif('notif-admin', PASIEN_NOTIFS, { background: 'rgba(255,255,255,0.4)' });
   const user = JSON.parse(sessionStorage.getItem('pasienUser') || '{}');
 
   useEffect(() => {
