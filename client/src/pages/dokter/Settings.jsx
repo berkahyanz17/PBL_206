@@ -72,7 +72,7 @@ export default function DokterSettings() {
           </div>
         </div>
       </div>
-      { popup }
+      {popup}
     </div>
   );
 }
