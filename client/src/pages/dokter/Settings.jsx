@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DokterSidebar from '../../components/DokterSidebar';
 import { apiFetch } from '../../utils/api';
+import { useNotif, DOKTER_NOTIFS } from '../../components/NotifPopup';
 
 export default function DokterSettings() {
   const navigate = useNavigate();
   const [pwLama, setPwLama] = useState('');
   const [pwBaru, setPwBaru] = useState('');
   const [pwKonfirm, setPwKonfirm] = useState('');
+  const { bellButton, popup } = useNotif('notif-dokter', DOKTER_NOTIFS);
   const [notif, setNotif] = useState({ chatAdmin: true, appointment: true });
 
   async function simpanPassword() {
@@ -31,7 +33,7 @@ export default function DokterSettings() {
         <div className="topbar" style={{ background: 'var(--green)' }}>
           <h1>Pengaturan</h1>
           <div className="topbar-right">
-            <button className="btn-notif">🔔</button>
+            { bellButton }
             <button className="btn-logout" onClick={logout}>🚪 Logout</button>
           </div>
         </div>
@@ -71,6 +73,7 @@ export default function DokterSettings() {
           </div>
         </div>
       </div>
+      { popup }
     </div>
   );
 }
