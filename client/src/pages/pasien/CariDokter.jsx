@@ -126,7 +126,7 @@ export default function PasienCari() {
                     <span style={{ fontSize: 13, fontWeight: 600, color: tersediaMap[d.id] ? '#22c55e' : '#ef4444' }}>
                       {tersediaMap[d.id] ? '● Tersedia' : '● Tidak Tersedia'}
                     </span>
-                    <button onClick={() => setBooking(d)}
+                    <button onClick={() => bukaBooking(d)}
                       style={{ padding: '8px 20px', background: '#1d4ed8', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Booking</button>
                   </div>
                 </div>
