@@ -30,7 +30,7 @@ export default function DokterRekam() {
       <div className="main-content">
         <div className="topbar" style={{ background: 'var(--green)' }}>
           <h1>Rekam Medis</h1>
-          { bellButton }<button className="btn-logout" onClick={logout}>🚪 Logout</button></div>
+          {bellButton}<button className="btn-logout" onClick={logout}>🚪 Logout</button></div>
         </div>
         <div className="content-area">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#F9FAFB', border: '1.5px solid var(--border)', borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
@@ -77,7 +77,7 @@ export default function DokterRekam() {
           </div>
         </div>
       )}
-      { popup }
+      {popup}
     </div>
   );
 }
