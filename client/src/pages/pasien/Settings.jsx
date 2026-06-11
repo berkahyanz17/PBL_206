@@ -23,14 +23,15 @@ export default function PasienSettings() {
     <div className="dashboard-layout">
       <PasienSidebar />
       <div className="main-content">
-        <div className="topbar" style={{ background: '#38bdf8' }}>
+        <div className="topbar" style={{ background: var(--sky) }}>
           <h1>Pengaturan</h1>
           <div className="topbar-right">
+            <button className="btn-notif">🔔</button>
             <button className="btn-logout" onClick={logout}>🚪 Logout</button>
           </div>
         </div>
         <div className="content-area">
-          <div className="card" style={{ maxWidth: 600, padding: 28 }}>
+          <div className="card" style={{ maxWidth: 600 }}>
             <div style={{ marginBottom: 28 }}>
               <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', marginBottom: 16 }}>🔑 Ganti Password</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -42,7 +43,7 @@ export default function PasienSettings() {
                   </div>
                 ))}
               </div>
-              <button onClick={simpanPassword} style={{ marginTop: 16, padding: '10px 22px', background: '#0ea5e9', color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button onClick={simpanPassword} style={{ marginTop: 16, padding: '10px 22px', background: var(--sky), color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                 💾 Simpan Perubahan
               </button>
             </div>
@@ -54,7 +55,7 @@ export default function PasienSettings() {
               ].map(([key, label, sub]) => (
                 <label key={key} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 0', borderBottom: '1px solid #F9FAFB', cursor: 'pointer' }}>
                   <input type="checkbox" checked={notif[key]} onChange={e => setNotif(p => ({ ...p, [key]: e.target.checked }))}
-                    style={{ width: 16, height: 16, marginTop: 2, accentColor: '#0ea5e9', cursor: 'pointer', flexShrink: 0 }} />
+                    style={{ width: 16, height: 16, marginTop: 2, accentColor: var(--sky), cursor: 'pointer', flexShrink: 0 }} />
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{label}</div>
                     <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{sub}</div>
