@@ -42,6 +42,7 @@ export default function PasienCari() {
     const res = await fetch(`/api/jadwal-publik/${d.id}`, {
       cache: 'no-store'
     }).then(r => r.json());
+    console.log('jadwal fetch result:', res);
     setJadwalDokter(res.data || []);
   }
   
@@ -51,7 +52,10 @@ export default function PasienCari() {
     const hariMap = ['Minggu','Senin','Selasa','Rabu',"Kamis","Jum'at",'Sabtu'];
     const [y, m, d] = tgl.split('-').map(Number);
     const hari = hariMap[new Date(y, m - 1, d).getDay()];
+    console.log('hari dipilih:', hari);
+    console.log('jadwalDokter state:', jadwalDokter);
     const jadwalHari = jadwalDokter.find(j => j.hari === hari);
+    console.log('jadwalHari found:', jadwalHari);
     if (!jadwalHari) { setJamOptions([]); return; }
     const mulai = parseInt(jadwalHari.jam_mulai.slice(0,2));
     const selesai = parseInt(jadwalHari.jam_selesai.slice(0,2));
