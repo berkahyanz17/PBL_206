@@ -44,7 +44,7 @@ export default function PasienCari() {
   const filtered = dokters.filter(d => {
     if (filter === 'semua') return true;
     if (filter === 'tersedia') return true;
-    return d.spesialis?.toLowerCase() === filter;
+    return d.spesialis?.toLowerCase() === filter.toLowerCase();
   });
 
   return (
