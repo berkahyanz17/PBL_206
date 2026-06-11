@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '../../components/AdminSidebar';
 import { apiFetch } from '../../utils/api';
@@ -43,7 +43,20 @@ export default function AdminAppointments() {
   }
 
   function logout() { sessionStorage.clear(); navigate('/admin/login'); }
-
+const NOTIF_DATA = [
+  { id: 1, icon: '👥', iconClass: 'blue', title: 'Pasien baru mendaftar', time: '5 menit lalu', unread: true },
+  { id: 2, icon: '📅', iconClass: 'orange', title: 'Appointment masuk', time: '30 menit lalu', unread: true },
+  { id: 3, icon: '💬', iconClass: 'blue', title: 'Pesan dari Dokter', time: 'Kemarin', unread: false },
+];
+const [showNotif, setShowNotif] = useState(false);
+const [notifList, setNotifList] = useState(NOTIF_DATA);
+const notifRef = useRef();
+const unread = notifList.filter(n => n.unread).length;
+useEffect(() => {
+  function handleClick(e) { if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotif(false); }
+  document.addEventListener('mousedown', handleClick);
+  return () => document.removeEventListener('mousedown', handleClick);
+}, []);
   const filtered = appts.filter(a => filter === 'semua' || a.status === filter);
   const statusLabel = { menunggu: 'Menunggu', dikonfirmasi: 'Dikonfirmasi Dokter', selesai: 'Selesai', ditolak: 'Ditolak' };
 
@@ -54,7 +67,28 @@ export default function AdminAppointments() {
         <div className="topbar" style={{ background: 'var(--navy)' }}>
           <h1>Appointments</h1>
           <div className="topbar-right">
-            <button className="btn-notif">🔔</button>
+            <div ref={notifRef} style={{ position: 'relative' }}>
+  <button className="btn-notif" onClick={() => setShowNotif(v => !v)} style={{ position: 'relative' }}>
+    🔔{unread > 0 && <span className="notif-badge">{unread}</span>}
+  </button>
+  {showNotif && (
+    <div className="notif-popup open" style={{ position: 'absolute', top: 48, right: 0, left: 'auto' }}>
+      <div className="notif-popup-header">
+        <span className="notif-popup-title">🔔 Notifikasi</span>
+        <button className="notif-popup-close" onClick={() => setShowNotif(false)}>✕</button>
+      </div>
+      <div className="notif-list">
+        {notifList.map(n => (
+          <div key={n.id} className={`notif-item${n.unread ? ' unread' : ''}`}
+            onClick={() => setNotifList(l => l.map(x => x.id === n.id ? { ...x, unread: false } : x))}>
+            <div className={`notif-icon ${n.iconClass}`}>{n.icon}</div>
+            <div><div className="notif-text">{n.title}</div><div className="notif-time">{n.time}</div></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
+</div>
             <button className="btn-logout" onClick={logout}>🚪 Logout</button>
           </div>
         </div>
