@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DokterSidebar from '../../components/DokterSidebar';
 import { apiFetch } from '../../utils/api';
+import { useNotif, DOKTER_NOTIFS } from '../../components/NotifPopup';
 
 export default function DokterJadwal() {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export default function DokterJadwal() {
   const [diagnosa, setDiagnosa] = useState('');
   const [catatan, setCatatan] = useState('');
   const [resep, setResep] = useState('');
+  const { bellButton, popup } = useNotif('notif-dokter', DOKTER_NOTIFS);
   const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
 
   useEffect(() => { loadAppts(); }, []);
@@ -50,7 +52,7 @@ export default function DokterJadwal() {
         <div className="topbar" style={{ background: 'var(--green)' }}>
           <h1>Jadwal Hari Ini</h1>
           <div className="topbar-right">
-            <button className="btn-notif">🔔</button>
+            { bellButton }
             <button className="btn-logout" onClick={logout}>🚪 Logout</button>
           </div>
         </div>
@@ -113,6 +115,7 @@ export default function DokterJadwal() {
           </div>
         </div>
       )}
+      { popup }
     </div>
   );
 }
