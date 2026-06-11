@@ -48,7 +48,7 @@ export default function PasienCari() {
   function onTanggalChange(tgl) {
     setTanggal(tgl);
     setJam('');
-    const hariMap = ['Minggu','Senin','Selasa','Rabu',"Kamis","Jum'at",'Sabtu'];
+    const hariMap = ['Minggu','Senin','Selasa','Rabu',"Kamis","Jumat",'Sabtu'];
     const [y, m, d] = tgl.split('-').map(Number);
     const hari = hariMap[new Date(y, m - 1, d).getDay()];
     const jadwalHari = jadwalDokter.find(j => j.hari === hari);
