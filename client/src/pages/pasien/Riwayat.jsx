@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import PasienSidebar from '../../components/PasienSidebar';
 import MamoruChat from './Mamoruchat';
 import { apiFetch } from '../../utils/api';
+import { useNotif, PASIEN_NOTIFS } from '../../components/NotifPopup';
 
 export default function PasienRiwayat() {
   const navigate = useNavigate();
   const [riwayat, setRiwayat] = useState([]);
   const [loading, setLoading] = useState(true);
   const user = JSON.parse(sessionStorage.getItem('pasienUser') || '{}');
+  const { bellButton, popup } = useNotif('notif-pasien', PASIEN_NOTIFS, { background: 'rgba(255,255,255,0.4)' });
 
   useEffect(() => {
     async function load() {
@@ -32,7 +34,7 @@ export default function PasienRiwayat() {
         <div className="topbar" style={{ background: 'linear-gradient(90deg,#7dd3fc,#38bdf8)' }}>
           <h1 style={{ color: '#1e3a5f' }}>Riwayat Konsultasi</h1>
           <div className="topbar-right">
-            <button className="btn-notif" style={{ background: 'rgba(255,255,255,0.4)' }}>🔔</button>
+            {bellButton}
             <button className="btn-logout" style={{ background: 'rgba(255,255,255,0.4)', color: '#1e3a5f', borderColor: 'rgba(255,255,255,0.5)' }} onClick={logout}>🚪 Logout</button>
           </div>
         </div>
@@ -65,6 +67,7 @@ export default function PasienRiwayat() {
         </div>
       </div>
       <MamoruChat />
+      {bellButton}
     </div>
   );
 }
