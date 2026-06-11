@@ -44,7 +44,9 @@ export default function PasienRiwayat() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <div>
                   <div style={{ fontSize: 15, fontWeight: 700 }}>{a.dokter_nama}</div>
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>{a.tgl} · {a.spesialis}</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
+                    {new Date(a.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} · {a.spesialis}
+                  </div>
                 </div>
                 <span style={{ background: statusColor[a.status], color: statusText[a.status], padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>{statusLabel[a.status]}</span>
               </div>
@@ -55,7 +57,7 @@ export default function PasienRiwayat() {
               {a.jam && (
                 <div style={{ display: 'flex', gap: 16 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, width: 80, flexShrink: 0 }}>JAM</div>
-                  <div style={{ fontSize: 13 }}>{a.jam}</div>
+                  <div style={{ fontSize: 13 }}>{a.jam?.slice(0, 5)}</div>
                 </div>
               )}
             </div>
