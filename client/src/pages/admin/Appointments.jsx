@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '../../components/AdminSidebar';
 import { apiFetch } from '../../utils/api';
+import { useNotif, ADMIN_NOTIFS } from '../../components/NotifPopup';
 /*
 const initAppts = [
   { id: 1, pasien: 'Andi Yohee', keluhan: 'Sakit kepala, Demam', dokter: 'dr. Dazai Osamu', spesialis: 'Umum', tgl: '24 Mei', jam: '15.00', status: 'menunggu' },
@@ -23,6 +24,7 @@ export default function AdminAppointments() {
     ]);
   const notifRef = useRef();
   const unread = notifList.filter(n => n.unread).length;
+  const { bellButton, popup } = useNotif('notif-admin', ADMIN_NOTIFS);
   useEffect(() => { loadAppts(); }, []);
   useEffect(() => {
   function handleClick(e) { if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotif(false); }
@@ -71,7 +73,7 @@ export default function AdminAppointments() {
   {showNotif && (
     <div className="notif-popup open" style={{ position: 'absolute', top: 48, right: 0, left: 'auto' }}>
       <div className="notif-popup-header">
-        <span className="notif-popup-title">🔔 Notifikasi</span>
+        { bellButton }
         <button className="notif-popup-close" onClick={() => setShowNotif(false)}>✕</button>
       </div>
       <div className="notif-list">
@@ -154,6 +156,7 @@ export default function AdminAppointments() {
           </div>
         </div>
       )}
+      { popup }
     </div>
   );
 }
