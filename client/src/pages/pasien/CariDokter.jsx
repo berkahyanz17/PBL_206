@@ -24,7 +24,7 @@ export default function PasienCari() {
       if (!res?.success) return;
       setDokters(res.data);
       const hariIniIdx = new Date().getDay();
-      const hariMap = ['Minggu','Senin','Selasa','Rabu',"Kamis","Jum'at",'Sabtu'];
+      const hariMap = ['Minggu','Senin','Selasa','Rabu',"Kamis","Jumat",'Sabtu'];
       const hariSaatIni = hariMap[hariIniIdx];
       const map = {};
       for (const d of res.data) {
