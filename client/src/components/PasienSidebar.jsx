@@ -1,12 +1,11 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-
 const navItems = [
   { icon: '🏠', label: 'Home', path: '/pasien/home' },
   { icon: '🔍', label: 'Cari Dokter', path: '/pasien/cari-dokter' },
   { icon: '📅', label: 'Riwayat Konsultasi', path: '/pasien/riwayat' },
   { icon: '👤', label: 'Profil Saya', path: '/pasien/profil' },
+  { icon: '⚙️', label: 'Pengaturan', path: '/pasien/settings' },
 ];
-
 export default function PasienSidebar() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
