@@ -32,15 +32,6 @@ export default function PasienSettings() {
     else alert(res?.message || 'Gagal mengubah password.');
   }
 
-  async function simpanNotif() {
-    const res = await apiFetch('/notif-settings', {
-      method: 'PATCH',
-      body: JSON.stringify({ notif_approve: notif.approveAppt, notif_pengingat: notif.pengingat })
-    });
-    if (res?.success) alert('✅ Pengaturan notifikasi disimpan!');
-    else alert('Gagal menyimpan.');
-  }
-
   function logout() { sessionStorage.clear(); navigate('/pasien/login'); }
 
   return (
@@ -87,9 +78,6 @@ export default function PasienSettings() {
                   </div>
                 </label>
               ))}
-              <button onClick={simpanNotif} style={{ marginTop: 16, padding: '10px 22px', background: '#0d1b4b', color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                💾 Simpan Pengaturan Notifikasi
-              </button>
             </div>
           </div>
         </div>

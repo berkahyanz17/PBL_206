@@ -34,15 +34,6 @@ export default function AdminSettings() {
     else alert(res?.message || 'Gagal mengubah password.');
   }
 
-  async function simpanNotif() {
-    const res = await apiFetch('/notif-settings', {
-      method: 'PATCH',
-      body: JSON.stringify({ telegram_chat_id: telegramId, notif_pasien_baru: notif.pasienBaru, notif_appointment: notif.appointment, notif_chat_dokter: notif.chatDokter })
-    });
-    if (res?.success) alert('✅ Pengaturan notifikasi disimpan!');
-    else alert('Gagal menyimpan.');
-  }
-
   function logout() { sessionStorage.clear(); navigate('/admin/login'); }
 
   return (
