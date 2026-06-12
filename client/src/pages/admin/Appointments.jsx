@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '../../components/AdminSidebar';
 import { apiFetch } from '../../utils/api';
-import { useNotif, ADMIN_NOTIFS } from '../../components/NotifPopup';
+import { useNotif } from '../../components/NotifPopup';
 /*
 const initAppts = [
   { id: 1, pasien: 'Andi Yohee', keluhan: 'Sakit kepala, Demam', dokter: 'dr. Dazai Osamu', spesialis: 'Umum', tgl: '24 Mei', jam: '15.00', status: 'menunggu' },
@@ -24,7 +24,7 @@ export default function AdminAppointments() {
     ]);
   const notifRef = useRef();
   const unread = notifList.filter(n => n.unread).length;
-  const { bellButton, popup } = useNotif('notif-admin', ADMIN_NOTIFS);
+  const { bellButton, popup } = useNotif('notif-admin');
   useEffect(() => { loadAppts(); }, []);
   useEffect(() => {
   function handleClick(e) { if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotif(false); }
