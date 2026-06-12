@@ -1,13 +1,6 @@
 /*M!999999\- enable the sandbox mode */ 
--- MariaDB dump 10.19-11.8.8-MariaDB, for debian-linux-gnu (x86_64)
---
--- Host: localhost    Database: db_praktikum
-
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8mb4 */;
-/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
@@ -18,17 +11,17 @@ CREATE TABLE `admins` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
+  `telegram_chat_id` varchar(100) DEFAULT NULL,
+  `notif_pasien_baru` tinyint(1) DEFAULT 1,
+  `notif_appointment` tinyint(1) DEFAULT 1,
+  `notif_chat_dokter` tinyint(1) DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
-SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `admins` WRITE;
-INSERT INTO `admins` VALUES
-(1,'admin','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa');
+INSERT INTO `admins` VALUES (1,'admin','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa',NULL,1,1,0);
 UNLOCK TABLES;
-COMMIT;
-SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
 
 DROP TABLE IF EXISTS `appointments`;
 CREATE TABLE `appointments` (
@@ -70,20 +63,20 @@ CREATE TABLE `dokters` (
   `harga` int(11) DEFAULT NULL,
   `bio` text DEFAULT NULL,
   `foto` varchar(255) DEFAULT NULL,
+  `telegram_chat_id` varchar(100) DEFAULT NULL,
+  `notif_chat_admin` tinyint(1) DEFAULT 1,
+  `notif_appointment` tinyint(1) DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `no_str` (`no_str`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
-SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `dokters` WRITE;
 INSERT INTO `dokters` VALUES
-(1,'dr. Kuro Tetsuro','kuro@klinik.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','Umum','STR-2025-1111',150000,NULL,NULL),
-(2,'dr. Ichinose Guren','guren@klinik.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','Spesialis Dalam','STR-2025-2222',200000,NULL,NULL),
-(3,'dr. Dazai Osamu','dazai@klinik.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','Anak','STR-2025-3333',100000,NULL,NULL);
+(1,'dr. Kuro Tetsuro','kuro@klinik.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','Umum','STR-2025-1111',150000,NULL,NULL,NULL,1,1),
+(2,'dr. Ichinose Guren','guren@klinik.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','Spesialis Dalam','STR-2025-2222',200000,NULL,NULL,NULL,1,1),
+(3,'dr. Dazai Osamu','dazai@klinik.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','Anak','STR-2025-3333',100000,NULL,NULL,NULL,1,1);
 UNLOCK TABLES;
-COMMIT;
-SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
 
 DROP TABLE IF EXISTS `jadwal_dokter`;
 CREATE TABLE `jadwal_dokter` (
@@ -111,19 +104,18 @@ CREATE TABLE `pasiens` (
   `riwayat_penyakit` text DEFAULT NULL,
   `alergi` text DEFAULT NULL,
   `foto` varchar(255) DEFAULT NULL,
+  `notif_approve` tinyint(1) DEFAULT 1,
+  `notif_pengingat` tinyint(1) DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
-SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 LOCK TABLES `pasiens` WRITE;
 INSERT INTO `pasiens` VALUES
-(1,'Andi Yohee','andi@gmail.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','08111111111',NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-(2,'Budiman','budiman@gmail.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','08222222222',NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-(3,'Megumi Fushiguro','megumi@gmail.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','08333333333',NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+(1,'Andi Yohee','andi@gmail.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','08111111111',NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,1),
+(2,'Budiman','budiman@gmail.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','08222222222',NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,1),
+(3,'Megumi Fushiguro','megumi@gmail.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','08333333333',NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,1);
 UNLOCK TABLES;
-COMMIT;
-SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
 
 DROP TABLE IF EXISTS `password_resets`;
 CREATE TABLE `password_resets` (
@@ -163,10 +155,7 @@ CREATE TABLE `notifications` (
   KEY `idx_role_user` (`role`, `user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
 /*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
