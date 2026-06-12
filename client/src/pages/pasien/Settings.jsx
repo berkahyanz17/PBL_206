@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import PasienSidebar from '../../components/PasienSidebar';
 import MamoruChat from './Mamoruchat';
 import { apiFetch } from '../../utils/api';
-import { useNotif, PASIEN_NOTIFS } from '../../components/NotifPopup';
+import { useNotif } from '../../components/NotifPopup';
 
 export default function PasienSettings() {
   const navigate = useNavigate();
@@ -11,7 +11,7 @@ export default function PasienSettings() {
   const [pwBaru, setPwBaru] = useState('');
   const [pwKonfirm, setPwKonfirm] = useState('');
   const [notif, setNotif] = useState({ approveAppt: true, pengingat: true });
-  const { bellButton, popup } = useNotif('notif-pasien', PASIEN_NOTIFS, { background: 'rgba(255,255,255,0.4)' });
+  const { bellButton, popup } = useNotif('notif-pasien', { background: 'rgba(255,255,255,0.4)' });
 
   async function simpanPassword() {
     if (!pwLama) return alert('Masukkan password lama.');
