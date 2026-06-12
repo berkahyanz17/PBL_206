@@ -73,12 +73,26 @@ export default function DokterSettings() {
             </div>
             <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 24 }}>
               <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', marginBottom: 16 }}>🔔 Notifikasi Telegram</div>
-              <div style={{ marginBottom: 14 }}>
+              <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ flex: 1 }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Telegram Chat ID</label>
-                <input value={telegramId} onChange={e => setTelegramId(e.target.value)} placeholder="Contoh: 123456789"
-                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E5E7EB', borderRadius: 9, fontSize: 14, fontFamily: 'inherit', background: '#F9FAFB', outline: 'none' }} />
-                <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Kirim /start ke bot lalu cek ID kamu di @userinfobot</div>
+                {editTg
+                  ? <input value={telegramId} onChange={e => setTelegramId(e.target.value)} placeholder="Contoh: 123456789"
+                      style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E5E7EB', borderRadius: 9, fontSize: 14, fontFamily: 'inherit', background: '#F9FAFB', outline: 'none' }} />
+                  : <div style={{ fontSize: 14, color: telegramId ? '#111827' : '#9CA3AF', padding: '10px 0' }}>{telegramId || 'Belum diset'}</div>
+                }
               </div>
+              {editTg
+                ? <button onClick={async () => { await apiFetch('/notif-settings', { method: 'PATCH', body: JSON.stringify({ telegram_chat_id: telegramId }) }); setEditTg(false); }}
+                    style={{ padding: '8px 16px', background: 'var(--navy)', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginTop: 20 }}>
+                    Simpan
+                  </button>
+                : <button onClick={() => setEditTg(true)}
+                    style={{ padding: '8px 16px', background: '#F3F4F6', color: '#374151', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginTop: 20 }}>
+                    ✏️ Edit
+                  </button>
+              }
+            </div>
               {[
                 ['chatAdmin', 'Chat Baru dari Admin', 'Notif saat admin mengirim pesan'],
                 ['appointment', 'Appointment Pasien Baru', 'Notif saat ada pasien booking ke kamu'],
