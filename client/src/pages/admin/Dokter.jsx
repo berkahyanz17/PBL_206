@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '../../components/AdminSidebar';
 import { apiFetch } from '../../utils/api';
-import { useNotif, ADMIN_NOTIFS } from '../../components/NotifPopup';
+import { useNotif } from '../../components/NotifPopup';
 
 const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#6366f1', '#14b8a6'];
 
@@ -13,7 +13,7 @@ export default function AdminDokter() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ nama: '', email: '', password: '', spesialis: '', no_str: '', harga: '' });
-  const { bellButton, popup } = useNotif('notif-admin', ADMIN_NOTIFS);
+  const { bellButton, popup } = useNotif('notif-admin');
 
   useEffect(() => { loadDokters(); }, []);
 
