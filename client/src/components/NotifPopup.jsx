@@ -1,13 +1,31 @@
 import { useEffect, useRef, useState } from 'react';
+import { apiFetch } from '../utils/api';
 
-export function useNotif(id, items = [], buttonStyle = {}) {
+export function useNotif(id, buttonStyle = {}) {
+  const [items, setItems] = useState([]);
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const popupRef = useRef(null);
+
+  useEffect(() => {
+    async function fetchNotifs() {
+      const res = await apiFetch('/notifikasi');
+      if (res?.success) {
+        setItems(res.data.map(n => ({
+          icon: n.icon,
+          iconColor: n.icon_color,
+          text: n.text,
+          time: n.time,
+          unread: !n.is_read
+        })));
+      }
+    }
+    fetchNotifs();
+  }, []);
+
   const unreadCount = items.filter(i => i.unread).length;
   const showBadge = unreadCount > 0 && !dismissed;
 
-  // close on outside click
   useEffect(() => {
     function handler(e) {
       if (
@@ -19,9 +37,14 @@ export function useNotif(id, items = [], buttonStyle = {}) {
     return () => document.removeEventListener('mousedown', handler);
   }, [id]);
 
-  function toggle() {
-    setOpen(o => !o);
-    setDismissed(true); // hide badge once opened
+  async function toggle() {
+    const opening = !open;
+    setOpen(opening);
+    if (opening) {
+      setDismissed(true);
+      await apiFetch('/notifikasi/read', { method: 'PATCH' });
+      setItems(prev => prev.map(i => ({ ...i, unread: false })));
+    }
   }
 
   const bellButton = (
@@ -57,23 +80,3 @@ export function useNotif(id, items = [], buttonStyle = {}) {
 
   return { bellButton, popup };
 }
-
-// ─── Per-role static notification data (frontend only, matches HTML reference) ─
-
-export const ADMIN_NOTIFS = [
-  { icon: '👤', iconColor: 'orange', text: 'Pasien baru mendaftar: Rina Kartika',              time: '2 menit lalu',  unread: true },
-  { icon: '📅', iconColor: 'blue',   text: 'Booking baru masuk dari Budiman ke dr. Kuro',      time: '15 menit lalu', unread: true },
-  { icon: '👤', iconColor: 'green',  text: 'Pasien baru mendaftar: Teguh Prasetyo',             time: '1 jam lalu',    unread: true },
-  { icon: '📅', iconColor: 'blue',   text: 'Booking baru masuk dari Megumi ke dr. Ichinose',   time: '3 jam lalu',    unread: false },
-];
-
-export const DOKTER_NOTIFS = [
-  { icon: '💬', iconColor: 'blue',  text: 'Admin: "Mohon konfirmasi jadwal besok"',            time: '10 menit lalu', unread: true },
-  { icon: '📅', iconColor: 'green', text: 'Pasien baru booking: Budiman · 25 Mei 09:00',       time: '1 jam lalu',    unread: true },
-  { icon: '📅', iconColor: 'green', text: 'Pasien baru booking: Wulan · 24 Mei 10:00',         time: '3 jam lalu',    unread: false },
-];
-
-export const PASIEN_NOTIFS = [
-  { icon: '✅', iconColor: 'green', text: 'Dr. Sarah Melati menyetujui appointment kamu · 22 Mei 10:00', time: '30 menit lalu', unread: true },
-  { icon: '📅', iconColor: 'blue',  text: 'Pengingat: Jadwal konsultasi besok 09:00 WIB',               time: 'Kemarin',       unread: false },
-];
