@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PasienSidebar from '../../components/PasienSidebar';
 import MamoruChat from './Mamoruchat';
@@ -13,18 +13,34 @@ export default function PasienSettings() {
   const [notif, setNotif] = useState({ approveAppt: true, pengingat: true });
   const { bellButton, popup } = useNotif('notif-pasien', { background: 'rgba(255,255,255,0.4)' });
 
+  useEffect(() => {
+    async function load() {
+      const res = await apiFetch('/notif-settings');
+      if (res?.success) {
+        setNotif({ approveAppt: !!res.data.notif_approve, pengingat: !!res.data.notif_pengingat });
+      }
+    }
+    load();
+  }, []);
+
   async function simpanPassword() {
     if (!pwLama) return alert('Masukkan password lama.');
     if (pwBaru.length < 8) return alert('Password baru minimal 8 karakter.');
     if (pwBaru !== pwKonfirm) return alert('Konfirmasi password tidak cocok.');
-    const res = await apiFetch('/pasien/password', {
-      method: 'PATCH',
-      body: JSON.stringify({ pwLama, pwBaru })
-    });
+    const res = await apiFetch('/pasien/password', { method: 'PATCH', body: JSON.stringify({ pwLama, pwBaru }) });
     if (res?.success) { alert('✅ Password berhasil diubah!'); setPwLama(''); setPwBaru(''); setPwKonfirm(''); }
     else alert(res?.message || 'Gagal mengubah password.');
   }
-  
+
+  async function simpanNotif() {
+    const res = await apiFetch('/notif-settings', {
+      method: 'PATCH',
+      body: JSON.stringify({ notif_approve: notif.approveAppt, notif_pengingat: notif.pengingat })
+    });
+    if (res?.success) alert('✅ Pengaturan notifikasi disimpan!');
+    else alert('Gagal menyimpan.');
+  }
+
   function logout() { sessionStorage.clear(); navigate('/pasien/login'); }
 
   return (
@@ -56,10 +72,11 @@ export default function PasienSettings() {
               </button>
             </div>
             <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 24 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', marginBottom: 16 }}>🔔 Notifikasi Telegram</div>
+              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', marginBottom: 16 }}>📧 Notifikasi Email</div>
+              <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 12 }}>Notifikasi dikirim ke email yang terdaftar di akun kamu.</div>
               {[
-                ['approveAppt', 'Appointment Disetujui Dokter', 'Notif saat dokter approve booking kamu'],
-                ['pengingat', 'Pengingat Jadwal', 'Notif H-1 sebelum jadwal konsultasi'],
+                ['approveAppt', 'Appointment Disetujui/Ditolak Dokter', 'Email saat dokter approve atau tolak booking kamu'],
+                ['pengingat', 'Pengingat Jadwal', 'Email H-1 sebelum jadwal konsultasi'],
               ].map(([key, label, sub]) => (
                 <label key={key} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 0', borderBottom: '1px solid #F9FAFB', cursor: 'pointer' }}>
                   <input type="checkbox" checked={notif[key]} onChange={e => setNotif(p => ({ ...p, [key]: e.target.checked }))}
@@ -70,6 +87,9 @@ export default function PasienSettings() {
                   </div>
                 </label>
               ))}
+              <button onClick={simpanNotif} style={{ marginTop: 16, padding: '10px 22px', background: '#0d1b4b', color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                💾 Simpan Pengaturan Notifikasi
+              </button>
             </div>
           </div>
         </div>
