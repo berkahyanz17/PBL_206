@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '../../components/AdminSidebar';
 import { apiFetch } from '../../utils/api';
-import { useNotif, ADMIN_NOTIFS } from '../../components/NotifPopup';
+import { useNotif } from '../../components/NotifPopup';
 
 export default function AdminSettings() {
   const navigate = useNavigate();
@@ -10,7 +10,7 @@ export default function AdminSettings() {
   const [pwBaru, setPwBaru] = useState('');
   const [pwKonfirm, setPwKonfirm] = useState('');
   const [notif, setNotif] = useState({ pasienBaru: true, appointment: true, chatDokter: false });
-  const { bellButton, popup } = useNotif('notif-admin', ADMIN_NOTIFS);
+  const { bellButton, popup } = useNotif('notif-admin');
 
   async function simpanPassword() {
     if (!pwLama) return alert('Masukkan password lama.');
