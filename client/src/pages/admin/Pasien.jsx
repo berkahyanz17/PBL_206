@@ -28,7 +28,23 @@ export default function AdminPasien() {
 
   function logout() { sessionStorage.clear(); navigate('/admin/login'); }
 
-  const filtered = pasiens.filter(p => p.nama.toLowerCase().includes(search.toLowerCase()));
+ const filtered = pasiens.filter(p => p.nama.toLowerCase().includes(search.toLowerCase()));
+
+  function maskNIK(nik) {
+    if (!nik || nik === '-') return '-';
+    const s = nik.toString();
+    return s.slice(0, 4) + ' **** **** ' + s.slice(-4);
+  }
+  function maskHP(hp) {
+    if (!hp || hp === '-') return '-';
+    const s = hp.toString();
+    return s.slice(0, 4) + ' **** ' + s.slice(-4);
+  }
+  function maskEmail(email) {
+    if (!email || email === '-') return '-';
+    const [user, domain] = email.split('@');
+    return user.slice(0, 2) + '*****@' + domain;
+  }
 
   return (
     <div className="dashboard-layout">
@@ -58,10 +74,9 @@ export default function AdminPasien() {
                     {filtered.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Tidak ada data.</td></tr>}
                     {filtered.map(p => (
                       <tr key={p.id}>
-                        <td style={{ fontWeight: 600 }}>{p.nama}</td>
-                        <td style={{ color: 'var(--text-muted)' }}>{p.nik || '-'}</td>
-                        <td>{p.no_hp || '-'}</td>
-                        <td>{p.email}</td>
+                       <td style={{ color: 'var(--text-muted)' }}>{maskNIK(p.nik)}</td>
+                        <td>{maskHP(p.no_hp)}</td>
+                        <td>{maskEmail(p.email)}</td>
                         <td><button className="btn-del" onClick={() => hapus(p.id, p.nama)}>🗑️</button></td>
                       </tr>
                     ))}
