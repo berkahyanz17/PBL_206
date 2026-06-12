@@ -13,6 +13,7 @@ export default function AdminDokter() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ nama: '', email: '', password: '', spesialis: '', no_str: '', harga: '' });
+  const [showPw, setShowPw] = useState(false);
   const { bellButton, popup } = useNotif('notif-admin');
 
   useEffect(() => { loadDokters(); }, []);
@@ -96,12 +97,32 @@ export default function AdminDokter() {
               <h3 style={{ fontSize: 18, fontWeight: 800 }}>Tambah Dokter</h3>
               <button onClick={() => setShowModal(false)} style={{ background: '#F3F4F6', border: 'none', width: 34, height: 34, borderRadius: '50%', fontSize: 18, cursor: 'pointer' }}>✕</button>
             </div>
-            {[['nama','Nama Lengkap','text'],['email','Email','email'],['password','Password','password'],['spesialis','Spesialisasi','text'],['no_str','No. STR','text'],['harga','Harga Konsultasi','number']].map(([key, label, type]) => (
-              <div className="form-group" key={key}>
-                <label>{label}</label>
+           {[['nama','Nama Lengkap','text'],['email','Email','email'],['password','Password','password'],['spesialis','Spesialisasi','text'],['no_str','No. STR','text'],['harga','Harga Konsultasi','number']].map(([key, label, type]) => (
+            <div className="form-group" key={key}>
+              <label>{label}</label>
+              {key === 'password' ? (
+                <div style={{ position: 'relative' }}>
+                  <input type={showPw ? 'text' : 'password'} placeholder={label} value={form[key]} onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))} style={{ paddingRight: 44 }} />
+                  <button type="button" onClick={() => setShowPw(!showPw)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }}>
+                    {showPw ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              ) : (
                 <input type={type} placeholder={label} value={form[key]} onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))} />
-              </div>
-            ))}
+              )}
+            </div>
+          ))}
             <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
               <button onClick={() => setShowModal(false)} className="btn-batal" style={{ flex: 1 }}>Batal</button>
               <button onClick={tambah} style={{ flex: 1, padding: 12, background: 'var(--navy)', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Simpan</button>
