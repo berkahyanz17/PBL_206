@@ -37,7 +37,9 @@ export default function DokterRiwayat() {
       <div className="main-content">
         <div className="topbar" style={{ background: 'var(--green)' }}>
           <h1>Riwayat Konsultasi</h1>
-          {bellButton}<button className="btn-logout" onClick={logout}>🚪 Logout</button>
+          <div className="topbar-right">
+            {bellButton}<button className="btn-logout" onClick={logout}>🚪 Logout</button>
+          </div>
         </div>
         <div className="content-area">
           <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 18 }}>
