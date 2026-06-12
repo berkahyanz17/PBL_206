@@ -44,7 +44,7 @@ export default function DokterChat() {
       <div className="main-content">
         <div className="topbar" style={{ background: 'var(--green)' }}>
           <h1>Chat Admin</h1>
-          {bellButton}<button className="btn-logout" onClick={logout}>🚪 Logout</button></div>
+          {bellButton}<button className="btn-logout" onClick={logout}>🚪 Logout</button>
         </div>
         <div className="content-area">
           <div style={{ background: 'white', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
