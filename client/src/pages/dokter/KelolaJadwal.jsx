@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DokterSidebar from '../../components/DokterSidebar';
 import { apiFetch } from '../../utils/api';
-import { useNotif, DOKTER_NOTIFS } from '../../components/NotifPopup';
+import { useNotif } from '../../components/NotifPopup';
 
 const hariList = ['Senin','Selasa','Rabu','Kamis',"Jumat",'Sabtu','Minggu'];
 
@@ -10,7 +10,7 @@ export default function DokterKelola() {
   const navigate = useNavigate();
   const [jadwal, setJadwal] = useState(hariList.map(h => ({ hari: h, aktif: false, mulai: '08:00', selesai: '16:00', id: null })));
   const [saving, setSaving] = useState(false);
-  const { bellButton, popup } = useNotif('notif-dokter', DOKTER_NOTIFS);
+  const { bellButton, popup } = useNotif('notif-dokter');
   const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
 
   useEffect(() => {
