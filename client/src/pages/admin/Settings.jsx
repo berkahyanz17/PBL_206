@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '../../components/AdminSidebar';
 import { apiFetch } from '../../utils/api';
@@ -9,19 +9,37 @@ export default function AdminSettings() {
   const [pwLama, setPwLama] = useState('');
   const [pwBaru, setPwBaru] = useState('');
   const [pwKonfirm, setPwKonfirm] = useState('');
+  const [telegramId, setTelegramId] = useState('');
   const [notif, setNotif] = useState({ pasienBaru: true, appointment: true, chatDokter: false });
   const { bellButton, popup } = useNotif('notif-admin');
+
+  useEffect(() => {
+    async function load() {
+      const res = await apiFetch('/notif-settings');
+      if (res?.success) {
+        setTelegramId(res.data.telegram_chat_id || '');
+        setNotif({ pasienBaru: !!res.data.notif_pasien_baru, appointment: !!res.data.notif_appointment, chatDokter: !!res.data.notif_chat_dokter });
+      }
+    }
+    load();
+  }, []);
 
   async function simpanPassword() {
     if (!pwLama) return alert('Masukkan password lama.');
     if (pwBaru.length < 8) return alert('Password baru minimal 8 karakter.');
     if (pwBaru !== pwKonfirm) return alert('Konfirmasi password tidak cocok.');
-    const res = await apiFetch('/admin/password', {
-      method: 'PATCH',
-      body: JSON.stringify({ pwLama, pwBaru })
-    });
+    const res = await apiFetch('/admin/password', { method: 'PATCH', body: JSON.stringify({ pwLama, pwBaru }) });
     if (res?.success) { alert('✅ Password berhasil diubah!'); setPwLama(''); setPwBaru(''); setPwKonfirm(''); }
     else alert(res?.message || 'Gagal mengubah password.');
+  }
+
+  async function simpanNotif() {
+    const res = await apiFetch('/notif-settings', {
+      method: 'PATCH',
+      body: JSON.stringify({ telegram_chat_id: telegramId, notif_pasien_baru: notif.pasienBaru, notif_appointment: notif.appointment, notif_chat_dokter: notif.chatDokter })
+    });
+    if (res?.success) alert('✅ Pengaturan notifikasi disimpan!');
+    else alert('Gagal menyimpan.');
   }
 
   function logout() { sessionStorage.clear(); navigate('/admin/login'); }
@@ -55,6 +73,12 @@ export default function AdminSettings() {
             </div>
             <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 24 }}>
               <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', marginBottom: 16 }}>🔔 Notifikasi Telegram</div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Telegram Chat ID</label>
+                <input value={telegramId} onChange={e => setTelegramId(e.target.value)} placeholder="Contoh: 123456789"
+                  style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E5E7EB', borderRadius: 9, fontSize: 14, fontFamily: 'inherit', background: '#F9FAFB', outline: 'none' }} />
+                <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Kirim /start ke bot lalu cek ID kamu di @userinfobot</div>
+              </div>
               {[
                 ['pasienBaru', 'Ada Pasien Baru Mendaftar', 'Notif saat ada pasien baru registrasi ke sistem'],
                 ['appointment', 'Appointment Masuk', 'Notif saat pasien membuat booking baru'],
@@ -69,6 +93,9 @@ export default function AdminSettings() {
                   </div>
                 </label>
               ))}
+              <button onClick={simpanNotif} style={{ marginTop: 16, padding: '10px 22px', background: 'var(--navy)', color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                💾 Simpan Pengaturan Notifikasi
+              </button>
             </div>
           </div>
         </div>
