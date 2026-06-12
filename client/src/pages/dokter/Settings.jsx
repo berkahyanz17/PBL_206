@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DokterSidebar from '../../components/DokterSidebar';
 import { apiFetch } from '../../utils/api';
-import { useNotif, DOKTER_NOTIFS } from '../../components/NotifPopup';
+import { useNotif } from '../../components/NotifPopup';
 
 export default function DokterSettings() {
   const navigate = useNavigate();
   const [pwLama, setPwLama] = useState('');
   const [pwBaru, setPwBaru] = useState('');
   const [pwKonfirm, setPwKonfirm] = useState('');
-  const { bellButton, popup } = useNotif('notif-dokter', DOKTER_NOTIFS);
+  const { bellButton, popup } = useNotif('notif-dokter');
   const [notif, setNotif] = useState({ chatAdmin: true, appointment: true });
 
   async function simpanPassword() {
