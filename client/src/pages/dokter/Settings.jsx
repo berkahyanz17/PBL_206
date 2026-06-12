@@ -34,15 +34,6 @@ export default function DokterSettings() {
     else alert(res?.message || 'Gagal mengubah password.');
   }
 
-  async function simpanNotif() {
-    const res = await apiFetch('/notif-settings', {
-      method: 'PATCH',
-      body: JSON.stringify({ telegram_chat_id: telegramId, notif_chat_admin: notif.chatAdmin, notif_appointment: notif.appointment })
-    });
-    if (res?.success) alert('✅ Pengaturan notifikasi disimpan!');
-    else alert('Gagal menyimpan.');
-  }
-
   function logout() { sessionStorage.clear(); navigate('/dokter/login'); }
 
   return (
@@ -74,26 +65,27 @@ export default function DokterSettings() {
             </div>
             <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 24 }}>
               <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', marginBottom: 16 }}>🔔 Notifikasi Telegram</div>
-              <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Telegram Chat ID</label>
+              <div style={{ marginBottom: 14, display: 'flex', alignItems: 'flex-end', gap: 10 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Telegram Chat ID</label>
+                  {editTg
+                    ? <input value={telegramId} onChange={e => setTelegramId(e.target.value)} placeholder="Contoh: 123456789"
+                        style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E5E7EB', borderRadius: 9, fontSize: 14, fontFamily: 'inherit', background: '#F9FAFB', outline: 'none' }} />
+                    : <div style={{ fontSize: 14, color: telegramId ? '#111827' : '#9CA3AF', padding: '10px 0' }}>{telegramId || 'Belum diset'}</div>
+                  }
+                  <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Kirim /start ke bot lalu cek ID kamu di @userinfobot</div>
+                </div>
                 {editTg
-                  ? <input value={telegramId} onChange={e => setTelegramId(e.target.value)} placeholder="Contoh: 123456789"
-                      style={{ width: '100%', padding: '10px 14px', border: '1.5px solid #E5E7EB', borderRadius: 9, fontSize: 14, fontFamily: 'inherit', background: '#F9FAFB', outline: 'none' }} />
-                  : <div style={{ fontSize: 14, color: telegramId ? '#111827' : '#9CA3AF', padding: '10px 0' }}>{telegramId || 'Belum diset'}</div>
+                  ? <button onClick={async () => { await apiFetch('/notif-settings', { method: 'PATCH', body: JSON.stringify({ telegram_chat_id: telegramId }) }); setEditTg(false); }}
+                      style={{ padding: '8px 16px', background: 'var(--green)', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 20 }}>
+                      Simpan
+                    </button>
+                  : <button onClick={() => setEditTg(true)}
+                      style={{ padding: '8px 16px', background: '#F3F4F6', color: '#374151', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 20 }}>
+                      ✏️ Edit
+                    </button>
                 }
               </div>
-              {editTg
-                ? <button onClick={async () => { await apiFetch('/notif-settings', { method: 'PATCH', body: JSON.stringify({ telegram_chat_id: telegramId }) }); setEditTg(false); }}
-                    style={{ padding: '8px 16px', background: 'var(--navy)', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginTop: 20 }}>
-                    Simpan
-                  </button>
-                : <button onClick={() => setEditTg(true)}
-                    style={{ padding: '8px 16px', background: '#F3F4F6', color: '#374151', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginTop: 20 }}>
-                    ✏️ Edit
-                  </button>
-              }
-            </div>
               {[
                 ['chatAdmin', 'Chat Baru dari Admin', 'Notif saat admin mengirim pesan'],
                 ['appointment', 'Appointment Pasien Baru', 'Notif saat ada pasien booking ke kamu'],
@@ -107,9 +99,6 @@ export default function DokterSettings() {
                   </div>
                 </label>
               ))}
-              <button onClick={simpanNotif} style={{ marginTop: 16, padding: '10px 22px', background: 'var(--green)', color: 'white', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                💾 Simpan Pengaturan Notifikasi
-              </button>
             </div>
           </div>
         </div>
