@@ -113,6 +113,33 @@ async function createNotif(role, user_id, icon, icon_color, text) {
       'INSERT INTO notifications (role, user_id, icon, icon_color, text, time) VALUES (?, ?, ?, ?, ?, ?)',
       [role, user_id, icon, icon_color, text, time]
     );
+
+// ─── Telegram helper ──────────────────────────────────────────────────────────
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+
+async function sendTelegram(chatId, text) {
+  if (!TELEGRAM_BOT_TOKEN || !chatId) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' })
+    });
+  } catch (err) {
+    console.error('[Telegram] Failed:', err.message);
+  }
+}
+
+// ─── Email helper ─────────────────────────────────────────────────────────────
+async function sendEmail(to, subject, html) {
+  if (!to) return;
+  try {
+    await transporter.sendMail({ from: 'onboarding@resend.dev', to, subject, html });
+  } catch (err) {
+    console.error('[Email] Failed:', err.message);
+  }
+}
+
   } catch (err) {
     console.error('[Notif] Failed to create notification:', err.message);
   }
@@ -179,9 +206,12 @@ app.post('/api/pasien/daftar', async (req, res) => {
     const hashed = await bcrypt.hash(password, SALT_ROUNDS);
     await db.query('INSERT INTO pasiens (nama, email, no_hp, password) VALUES (?, ?, ?, ?)', [nama, email, no_hp, hashed]);
     // Notify all admins
-    const [admins] = await db.query('SELECT id FROM admins');
+    const [admins] = await db.query('SELECT id, telegram_chat_id, notif_pasien_baru FROM admins');
     for (const a of admins) {
       await createNotif('admin', a.id, '👤', 'orange', `Pasien baru mendaftar: ${nama}`);
+      if (a.notif_pasien_baru && a.telegram_chat_id) {
+        await sendTelegram(a.telegram_chat_id, `👤 *Pasien Baru Mendaftar*\nNama: *${nama}*\nEmail: ${email}`);
+      }
     }
     res.json({ success: true, message: 'Pendaftaran berhasil. Silakan login.' });
   } catch (err) {
@@ -356,11 +386,18 @@ app.post('/api/appointments', verifyToken, async (req, res) => {
     const [dokterRow] = await db.query('SELECT nama FROM dokters WHERE id = ?', [dokter_id]);
     const pnama = pasienRow[0]?.nama || 'Pasien';
     const dnama = dokterRow[0]?.nama || 'Dokter';
-    const [admins] = await db.query('SELECT id FROM admins');
+    const [admins] = await db.query('SELECT id, telegram_chat_id, notif_appointment FROM admins');
     for (const a of admins) {
       await createNotif('admin', a.id, '📅', 'blue', `Booking baru dari ${pnama} ke ${dnama}`);
+      if (a.notif_appointment && a.telegram_chat_id) {
+        await sendTelegram(a.telegram_chat_id, `📅 *Booking Baru*\nPasien: *${pnama}*\nDokter: ${dnama}\nTgl: ${tgl} · ${jam?.slice(0,5)}`);
+      }
     }
     await createNotif('dokter', dokter_id, '📅', 'green', `Pasien baru booking: ${pnama} · ${tgl} ${jam?.slice(0,5)}`);
+    const [dokterNotif] = await db.query('SELECT telegram_chat_id, notif_appointment FROM dokters WHERE id = ?', [dokter_id]);
+    if (dokterNotif[0]?.notif_appointment && dokterNotif[0]?.telegram_chat_id) {
+      await sendTelegram(dokterNotif[0].telegram_chat_id, `📅 *Booking Baru*\nPasien: *${pnama}*\nTgl: ${tgl} · ${jam?.slice(0,5)}\nKeluhan: ${keluhan}`);
+    }
 
     res.json({ success: true, message: 'Appointment berhasil dibuat.' });
   } catch (err) {
@@ -383,10 +420,19 @@ app.patch('/api/appointments/:id/status', verifyToken, async (req, res) => {
       );
       if (rows.length > 0) {
         const { pasien_id, tgl, jam, dnama } = rows[0];
+        const [pasienRow] = await db.query('SELECT email, nama, notif_approve FROM pasiens WHERE id = ?', [pasien_id]);
         if (status === 'dikonfirmasi') {
           await createNotif('pasien', pasien_id, '✅', 'green', `${dnama} menyetujui appointment kamu · ${tgl} ${jam?.slice(0,5)}`);
+          if (pasienRow[0]?.notif_approve && pasienRow[0]?.email) {
+            await sendEmail(pasienRow[0].email, '✅ Appointment Dikonfirmasi — HealthSync',
+              `<p>Halo <b>${pasienRow[0].nama}</b>,</p><p>Appointment kamu dengan <b>${dnama}</b> pada <b>${tgl} · ${jam?.slice(0,5)}</b> telah dikonfirmasi.</p>`);
+          }
         } else {
           await createNotif('pasien', pasien_id, '❌', 'orange', `${dnama} menolak appointment kamu · ${tgl}`);
+          if (pasienRow[0]?.notif_approve && pasienRow[0]?.email) {
+            await sendEmail(pasienRow[0].email, '❌ Appointment Ditolak — HealthSync',
+              `<p>Halo <b>${pasienRow[0].nama}</b>,</p><p>Mohon maaf, appointment kamu dengan <b>${dnama}</b> pada <b>${tgl}</b> ditolak. Silakan booking ulang.</p>`);
+          }
         }
       }
     }
@@ -600,12 +646,19 @@ app.post('/api/chat', verifyToken, async (req, res) => {
     // Notify recipient
     if (sender_role === 'dokter' && receiver_role === 'admin') {
       const [dok] = await db.query('SELECT nama FROM dokters WHERE id = ?', [sender_id]);
-      const [admins] = await db.query('SELECT id FROM admins');
+      const [admins] = await db.query('SELECT id, telegram_chat_id, notif_chat_dokter FROM admins');
       for (const a of admins) {
         await createNotif('admin', a.id, '💬', 'blue', `Pesan baru dari ${dok[0]?.nama || 'Dokter'}`);
+        if (a.notif_chat_dokter && a.telegram_chat_id) {
+          await sendTelegram(a.telegram_chat_id, `💬 *Pesan dari ${dok[0]?.nama || 'Dokter'}*\n${pesan}`);
+        }
       }
     } else if (sender_role === 'admin' && receiver_role === 'dokter') {
       await createNotif('dokter', receiver_id, '💬', 'blue', 'Admin mengirim pesan baru');
+      const [dokNotif] = await db.query('SELECT telegram_chat_id, notif_chat_admin FROM dokters WHERE id = ?', [receiver_id]);
+      if (dokNotif[0]?.notif_chat_admin && dokNotif[0]?.telegram_chat_id) {
+        await sendTelegram(dokNotif[0].telegram_chat_id, `💬 *Pesan dari Admin*\n${pesan}`);
+      }
     }
     res.json({ success: true, message: 'Pesan terkirim.' });
   } catch (err) {
@@ -681,12 +734,50 @@ app.patch('/api/notifikasi/read', verifyToken, async (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════════════════════
+// NOTIF SETTINGS
+// ════════════════════════════════════════════════════════════════════════════
+
+app.get('/api/notif-settings', verifyToken, async (req, res) => {
+  try {
+    const { role, id } = req.user;
+    let rows;
+    if (role === 'admin') {
+      [rows] = await db.query('SELECT telegram_chat_id, notif_pasien_baru, notif_appointment, notif_chat_dokter FROM admins WHERE id = ?', [id]);
+    } else if (role === 'dokter') {
+      [rows] = await db.query('SELECT telegram_chat_id, notif_chat_admin, notif_appointment FROM dokters WHERE id = ?', [id]);
+    } else {
+      [rows] = await db.query('SELECT notif_approve, notif_pengingat FROM pasiens WHERE id = ?', [id]);
+    }
+    res.json({ success: true, data: rows[0] });
+  } catch (err) { res.status(500).json({ success: false }); }
+});
+
+app.patch('/api/notif-settings', verifyToken, async (req, res) => {
+  try {
+    const { role, id } = req.user;
+    if (role === 'admin') {
+      const { telegram_chat_id, notif_pasien_baru, notif_appointment, notif_chat_dokter } = req.body;
+      await db.query('UPDATE admins SET telegram_chat_id=?, notif_pasien_baru=?, notif_appointment=?, notif_chat_dokter=? WHERE id=?',
+        [telegram_chat_id, notif_pasien_baru ? 1 : 0, notif_appointment ? 1 : 0, notif_chat_dokter ? 1 : 0, id]);
+    } else if (role === 'dokter') {
+      const { telegram_chat_id, notif_chat_admin, notif_appointment } = req.body;
+      await db.query('UPDATE dokters SET telegram_chat_id=?, notif_chat_admin=?, notif_appointment=? WHERE id=?',
+        [telegram_chat_id, notif_chat_admin ? 1 : 0, notif_appointment ? 1 : 0, id]);
+    } else {
+      const { notif_approve, notif_pengingat } = req.body;
+      await db.query('UPDATE pasiens SET notif_approve=?, notif_pengingat=? WHERE id=?',
+        [notif_approve ? 1 : 0, notif_pengingat ? 1 : 0, id]);
+    }
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ success: false }); }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
 // MAMORU — AI Chatbot (Gemini Flash + Telegram Notification)
 // ════════════════════════════════════════════════════════════════════════════
 
 const GEMINI_API_KEY   = process.env.GEMINI_API_KEY;
-const TELEGRAM_TOKEN   = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID; // used by Mamoru only
 const GEMINI_MODELS = [
   'gemini-2.5-flash',
   'gemini-2.5-flash-lite',
@@ -729,7 +820,7 @@ async function callGemini(contents, systemInstruction) {
 }
 
 async function notifyTelegram(pasienNama, pesan) {
-  if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
     console.log('[Mamoru] ⚠️  Telegram env not set, skipping notification.');
     return;
   }
@@ -739,7 +830,7 @@ async function notifyTelegram(pasienNama, pesan) {
     `💬 Pesan: ${pesan}\n` +
     `🕐 ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}`;
   try {
-    const tgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+    const tgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text, parse_mode: 'Markdown' })
