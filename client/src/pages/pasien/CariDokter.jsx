@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import PasienSidebar from '../../components/PasienSidebar';
 import MamoruChat from './Mamoruchat';
 import { apiFetch } from '../../utils/api';
-import { useNotif, PASIEN_NOTIFS } from '../../components/NotifPopup';
+import { useNotif } from '../../components/NotifPopup';
 
 export default function PasienCari() {
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ export default function PasienCari() {
   const [jadwalDokter, setJadwalDokter] = useState([]);
   const [jamOptions, setJamOptions] = useState([]);
   const [tersediaMap, setTersediaMap] = useState({});
-  const { bellButton, popup } = useNotif('notif-admin', PASIEN_NOTIFS, { background: 'rgba(255,255,255,0.4)' });
+  const { bellButton, popup } = useNotif('notif-admin', { background: 'rgba(255,255,255,0.4)' });
   const user = JSON.parse(sessionStorage.getItem('pasienUser') || '{}');
 
   useEffect(() => {
