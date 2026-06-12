@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '../../components/AdminSidebar';
 import { apiFetch } from '../../utils/api';
-import { useNotif, ADMIN_NOTIFS } from '../../components/NotifPopup';
+import { useNotif } from '../../components/NotifPopup';
 
 export default function AdminPasien() {
   const navigate = useNavigate();
   const [pasiens, setPasiens] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
-  const { bellButton, popup } = useNotif('notif-admin', ADMIN_NOTIFS);
+  const { bellButton, popup } = useNotif('notif-admin');
 
   useEffect(() => { loadPasiens(); }, []);
 
