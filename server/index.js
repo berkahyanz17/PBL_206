@@ -95,14 +95,27 @@ async function verifyCaptcha(token) {
   return data.success;
 }
 
-// ─── Rate limiter middleware ─────────────────────────────────────────────
+// ─── Rate limiter middleware ──────────────────────────────────────────────────
 async function rateLimiter(req, res, next) {
   const ip = req.headers['x-real-ip'] || req.ip;
   const key = `rl:${ip}:${req.path}`;
   const count = await redis.incr(key);
-  if (count === 1) await redis.expire(key, 60); // window 60s
+  if (count === 1) await redis.expire(key, 60);
   if (count > 10) return res.status(429).json({ success: false, message: 'Terlalu banyak percobaan. Coba lagi nanti.' });
   next();
+}
+
+// ─── Notification helper ──────────────────────────────────────────────────────
+async function createNotif(role, user_id, icon, icon_color, text) {
+  try {
+    const time = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' });
+    await db.query(
+      'INSERT INTO notifications (role, user_id, icon, icon_color, text, time) VALUES (?, ?, ?, ?, ?, ?)',
+      [role, user_id, icon, icon_color, text, time]
+    );
+  } catch (err) {
+    console.error('[Notif] Failed to create notification:', err.message);
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -113,15 +126,10 @@ async function rateLimiter(req, res, next) {
 app.post('/api/admin/login', rateLimiter, async (req, res) => {
   try {
     const { username, password, captchaToken } = req.body;
-    //const valid = await verifyCaptcha(captchaToken);
-    //if (!valid) return res.status(400).json({ success: false, message: 'CAPTCHA tidak valid.' });
-
     const [rows] = await db.query('SELECT * FROM admins WHERE username = ?', [username]);
     if (rows.length === 0) return res.status(401).json({ success: false, message: 'Username atau password salah.' });
-
     const match = await bcrypt.compare(password, rows[0].password);
     if (!match) return res.status(401).json({ success: false, message: 'Username atau password salah.' });
-
     const token = jwt.sign({ id: rows[0].id, role: 'admin', username }, JWT_SECRET, { expiresIn: '8h' });
     res.json({ success: true, token, user: { id: rows[0].id, username } });
   } catch (err) {
@@ -134,15 +142,10 @@ app.post('/api/admin/login', rateLimiter, async (req, res) => {
 app.post('/api/dokter/login', rateLimiter, async (req, res) => {
   try {
     const { email, password, captchaToken } = req.body;
-    //const valid = await verifyCaptcha(captchaToken);
-    //if (!valid) return res.status(400).json({ success: false, message: 'CAPTCHA tidak valid.' });
-
     const [rows] = await db.query('SELECT * FROM dokters WHERE email = ? OR no_str = ?', [email, email]);
     if (rows.length === 0) return res.status(401).json({ success: false, message: 'Email/STR atau password salah.' });
-
     const match = await bcrypt.compare(password, rows[0].password);
     if (!match) return res.status(401).json({ success: false, message: 'Email/STR atau password salah.' });
-
     const token = jwt.sign({ id: rows[0].id, role: 'dokter', nama: rows[0].nama }, JWT_SECRET, { expiresIn: '8h' });
     res.json({ success: true, token, user: { id: rows[0].id, nama: rows[0].nama, spesialis: rows[0].spesialis } });
   } catch (err) {
@@ -155,15 +158,10 @@ app.post('/api/dokter/login', rateLimiter, async (req, res) => {
 app.post('/api/pasien/login', rateLimiter, async (req, res) => {
   try {
     const { email, password, captchaToken } = req.body;
-    //const valid = await verifyCaptcha(captchaToken);
-    //if (!valid) return res.status(400).json({ success: false, message: 'CAPTCHA tidak valid.' });
-
     const [rows] = await db.query('SELECT * FROM pasiens WHERE email = ? OR no_hp = ?', [email, email]);
     if (rows.length === 0) return res.status(401).json({ success: false, message: 'Email/HP atau password salah.' });
-
     const match = await bcrypt.compare(password, rows[0].password);
     if (!match) return res.status(401).json({ success: false, message: 'Email/HP atau password salah.' });
-
     const token = jwt.sign({ id: rows[0].id, role: 'pasien', nama: rows[0].nama }, JWT_SECRET, { expiresIn: '8h' });
     res.json({ success: true, token, user: { id: rows[0].id, nama: rows[0].nama } });
   } catch (err) {
@@ -176,12 +174,15 @@ app.post('/api/pasien/login', rateLimiter, async (req, res) => {
 app.post('/api/pasien/daftar', async (req, res) => {
   try {
     const { nama, email, no_hp, password } = req.body;
-
     const [exist] = await db.query('SELECT id FROM pasiens WHERE email = ?', [email]);
     if (exist.length > 0) return res.status(400).json({ success: false, message: 'Email sudah terdaftar.' });
-
     const hashed = await bcrypt.hash(password, SALT_ROUNDS);
     await db.query('INSERT INTO pasiens (nama, email, no_hp, password) VALUES (?, ?, ?, ?)', [nama, email, no_hp, hashed]);
+    // Notify all admins
+    const [admins] = await db.query('SELECT id FROM admins');
+    for (const a of admins) {
+      await createNotif('admin', a.id, '👤', 'orange', `Pasien baru mendaftar: ${nama}`);
+    }
     res.json({ success: true, message: 'Pendaftaran berhasil. Silakan login.' });
   } catch (err) {
     console.error(err);
@@ -193,17 +194,14 @@ app.post('/api/pasien/daftar', async (req, res) => {
 app.post('/api/forgot-password', async (req, res) => {
   try {
     const { email, captchaToken } = req.body;
-    
     const [dokter] = await db.query('SELECT email FROM dokters WHERE email = ?', [email]);
     const [pasien] = await db.query('SELECT email FROM pasiens WHERE email = ?', [email]);
     if (dokter.length === 0 && pasien.length === 0) {
       return res.json({ success: true, message: 'Jika email terdaftar, link reset telah dikirim.' });
     }
-
     const token = crypto.randomBytes(32).toString('hex');
     const expires = new Date(Date.now() + 3600000);
     await db.query('INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)', [email, token, expires]);
-
     const resetLink = `https://192.168.56.105/pasien/reset-password?token=${token}`;
     await transporter.sendMail({
       from: 'onboarding@resend.dev',
@@ -211,7 +209,6 @@ app.post('/api/forgot-password', async (req, res) => {
       subject: 'Reset Password - HealthSync Clinic',
       html: `<p>Klik link berikut untuk reset password (berlaku 1 jam):</p><a href="${resetLink}">${resetLink}</a>`
     });
-
     res.json({ success: true, message: 'Link reset telah dikirim ke email kamu.' });
   } catch (err) {
     console.error(err);
@@ -228,14 +225,11 @@ app.post('/api/reset-password', async (req, res) => {
       [token]
     );
     if (rows.length === 0) return res.status(400).json({ success: false, message: 'Token tidak valid atau sudah expired.' });
-
     const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS);
     const email = rows[0].email;
-
     await db.query('UPDATE dokters SET password = ? WHERE email = ?', [hashed, email]);
     await db.query('UPDATE pasiens SET password = ? WHERE email = ?', [hashed, email]);
     await db.query('UPDATE password_resets SET used = 1 WHERE token = ?', [token]);
-
     res.json({ success: true, message: 'Password berhasil direset.' });
   } catch (err) {
     console.error(err);
@@ -249,7 +243,6 @@ app.post('/api/reset-password', async (req, res) => {
 
 app.get('/api/dokter', verifyToken, async (req, res) => {
   try {
-    const cached = await redis.get('cache:dokter');
     const [rows] = await db.query('SELECT id, nama, email, spesialis, no_str, harga, foto FROM dokters');
     await redis.setex('cache:dokter', 300, JSON.stringify({ success: true, data: rows }));
     res.json({ success: true, data: rows });
@@ -328,7 +321,6 @@ app.post('/api/appointments', verifyToken, async (req, res) => {
     const { dokter_id, keluhan, tgl, jam } = req.body;
     const pasien_id = req.user.id;
 
-    // Cek hari sesuai jadwal dokter
     const hariMap = ['Minggu','Senin','Selasa','Rabu',"Kamis","Jum'at",'Sabtu'];
     const hariTgl = hariMap[new Date(tgl).getDay()];
     const [jadwal] = await db.query(
@@ -339,7 +331,6 @@ app.post('/api/appointments', verifyToken, async (req, res) => {
       return res.status(400).json({ success: false, message: `Dokter tidak praktik pada hari ${hariTgl}.` });
     }
 
-    // Cek jam dalam range
     const jamBook = jam.slice(0,5);
     const mulai = jadwal[0].jam_mulai.slice(0,5);
     const selesai = jadwal[0].jam_selesai.slice(0,5);
@@ -347,7 +338,6 @@ app.post('/api/appointments', verifyToken, async (req, res) => {
       return res.status(400).json({ success: false, message: `Jam praktik dokter ${mulai}–${selesai}.` });
     }
 
-    // Cek slot collision
     const [exist] = await db.query(
       'SELECT id FROM appointments WHERE dokter_id = ? AND tgl = ? AND jam = ? AND status != "ditolak"',
       [dokter_id, tgl, jam]
@@ -355,11 +345,23 @@ app.post('/api/appointments', verifyToken, async (req, res) => {
     if (exist.length > 0) {
       return res.status(400).json({ success: false, message: 'Jam tersebut sudah dibooking pasien lain.' });
     }
-    
-    await db.query(
+
+    const [result] = await db.query(
       'INSERT INTO appointments (pasien_id, dokter_id, keluhan, tgl, jam) VALUES (?, ?, ?, ?, ?)',
       [pasien_id, dokter_id, keluhan, tgl, jam]
     );
+
+    // Notify admin and dokter
+    const [pasienRow] = await db.query('SELECT nama FROM pasiens WHERE id = ?', [pasien_id]);
+    const [dokterRow] = await db.query('SELECT nama FROM dokters WHERE id = ?', [dokter_id]);
+    const pnama = pasienRow[0]?.nama || 'Pasien';
+    const dnama = dokterRow[0]?.nama || 'Dokter';
+    const [admins] = await db.query('SELECT id FROM admins');
+    for (const a of admins) {
+      await createNotif('admin', a.id, '📅', 'blue', `Booking baru dari ${pnama} ke ${dnama}`);
+    }
+    await createNotif('dokter', dokter_id, '📅', 'green', `Pasien baru booking: ${pnama} · ${tgl} ${jam?.slice(0,5)}`);
+
     res.json({ success: true, message: 'Appointment berhasil dibuat.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -370,6 +372,25 @@ app.patch('/api/appointments/:id/status', verifyToken, async (req, res) => {
   try {
     const { status } = req.body;
     await db.query('UPDATE appointments SET status = ? WHERE id = ?', [status, req.params.id]);
+
+    // Notify pasien on dikonfirmasi or ditolak
+    if (status === 'dikonfirmasi' || status === 'ditolak') {
+      const [rows] = await db.query(
+        `SELECT a.pasien_id, a.tgl, a.jam, d.nama as dnama
+         FROM appointments a JOIN dokters d ON d.id = a.dokter_id
+         WHERE a.id = ?`,
+        [req.params.id]
+      );
+      if (rows.length > 0) {
+        const { pasien_id, tgl, jam, dnama } = rows[0];
+        if (status === 'dikonfirmasi') {
+          await createNotif('pasien', pasien_id, '✅', 'green', `${dnama} menyetujui appointment kamu · ${tgl} ${jam?.slice(0,5)}`);
+        } else {
+          await createNotif('pasien', pasien_id, '❌', 'orange', `${dnama} menolak appointment kamu · ${tgl}`);
+        }
+      }
+    }
+
     res.json({ success: true, message: 'Status berhasil diupdate.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -550,7 +571,7 @@ app.put('/api/pasien/:id/profil', verifyToken, upload.single('foto'), async (req
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-// CHAT (pasien ↔ dokter)
+// CHAT (admin ↔ dokter)
 // ════════════════════════════════════════════════════════════════════════════
 
 app.get('/api/chat/:sender_role/:sender_id/:receiver_role/:receiver_id', verifyToken, async (req, res) => {
@@ -576,6 +597,16 @@ app.post('/api/chat', verifyToken, async (req, res) => {
       'INSERT INTO chats (sender_role, sender_id, receiver_role, receiver_id, pesan) VALUES (?, ?, ?, ?, ?)',
       [sender_role, sender_id, receiver_role, receiver_id, pesan]
     );
+    // Notify recipient
+    if (sender_role === 'dokter' && receiver_role === 'admin') {
+      const [dok] = await db.query('SELECT nama FROM dokters WHERE id = ?', [sender_id]);
+      const [admins] = await db.query('SELECT id FROM admins');
+      for (const a of admins) {
+        await createNotif('admin', a.id, '💬', 'blue', `Pesan baru dari ${dok[0]?.nama || 'Dokter'}`);
+      }
+    } else if (sender_role === 'admin' && receiver_role === 'dokter') {
+      await createNotif('dokter', receiver_id, '💬', 'blue', 'Admin mengirim pesan baru');
+    }
     res.json({ success: true, message: 'Pesan terkirim.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -583,10 +614,9 @@ app.post('/api/chat', verifyToken, async (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-// SETTINGS
+// SETTINGS — PASSWORD
 // ════════════════════════════════════════════════════════════════════════════
 
-// PATCH /api/admin/password
 app.patch('/api/admin/password', verifyToken, async (req, res) => {
   try {
     const { pwLama, pwBaru } = req.body;
@@ -600,7 +630,6 @@ app.patch('/api/admin/password', verifyToken, async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, message: 'Server error.' }); }
 });
 
-// PATCH /api/dokter/password
 app.patch('/api/dokter/password', verifyToken, async (req, res) => {
   try {
     const { pwLama, pwBaru } = req.body;
@@ -614,7 +643,6 @@ app.patch('/api/dokter/password', verifyToken, async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, message: 'Server error.' }); }
 });
 
-// PATCH /api/pasien/password
 app.patch('/api/pasien/password', verifyToken, async (req, res) => {
   try {
     const { pwLama, pwBaru } = req.body;
@@ -625,6 +653,30 @@ app.patch('/api/pasien/password', verifyToken, async (req, res) => {
     const hashed = await bcrypt.hash(pwBaru, SALT_ROUNDS);
     await db.query('UPDATE pasiens SET password = ? WHERE id = ?', [hashed, req.user.id]);
     res.json({ success: true, message: 'Password berhasil diubah.' });
+  } catch (err) { res.status(500).json({ success: false, message: 'Server error.' }); }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ════════════════════════════════════════════════════════════════════════════
+
+app.get('/api/notifikasi', verifyToken, async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      'SELECT * FROM notifications WHERE role = ? AND user_id = ? ORDER BY created_at DESC LIMIT 20',
+      [req.user.role, req.user.id]
+    );
+    res.json({ success: true, data: rows });
+  } catch (err) { res.status(500).json({ success: false, message: 'Server error.' }); }
+});
+
+app.patch('/api/notifikasi/read', verifyToken, async (req, res) => {
+  try {
+    await db.query(
+      'UPDATE notifications SET is_read = 1 WHERE role = ? AND user_id = ?',
+      [req.user.role, req.user.id]
+    );
+    res.json({ success: true });
   } catch (err) { res.status(500).json({ success: false, message: 'Server error.' }); }
 });
 
@@ -712,46 +764,32 @@ function isAdminNotifyNeeded(pesan) {
   return keywords.some(k => pesan.toLowerCase().includes(k));
 }
 
-// POST /api/mamoru  — no auth required (public chatbot)
+// POST /api/mamoru
 app.post('/api/mamoru', async (req, res) => {
   console.log('[Mamoru] 📨 Request received:', JSON.stringify(req.body).slice(0, 200));
   try {
     const { pesan, history = [], pasienNama = 'Pasien' } = req.body;
-
     if (!pesan || !pesan.trim()) {
-      console.log('[Mamoru] ⚠️  Empty message received.');
       return res.status(400).json({ success: false, message: 'Pesan tidak boleh kosong.' });
     }
-
     if (!GEMINI_API_KEY) {
-      console.error('[Mamoru] ❌ GEMINI_API_KEY is not set!');
       return res.status(500).json({ success: false, message: 'Gemini API key belum dikonfigurasi.' });
     }
-
-    console.log('[Mamoru] 🔑 Gemini key found:', GEMINI_API_KEY.slice(0, 8) + '...');
-    console.log('[Mamoru] 💬 Sending to Gemini:', pesan);
-
     const recentHistory = history.slice(-10).map(m => ({
       role: m.type === 'user' ? 'user' : 'model',
       parts: [{ text: m.text }]
     }));
-
     const systemInstruction = `Kamu adalah Mamoru, asisten kesehatan virtual dari HealthSync Clinic.
 Tugasmu membantu pasien dengan informasi seputar layanan klinik: booking dokter, jadwal, riwayat konsultasi, profil, dan pertanyaan umum kesehatan.
 Jawab dalam Bahasa Indonesia, ramah, singkat, dan profesional.
 Jangan pernah memberikan diagnosis medis. Jika darurat, selalu arahkan ke tenaga medis.
 Nama pasien yang sedang chat: ${pasienNama}.`;
-
     const reply = await callGemini(
       [...recentHistory, { role: 'user', parts: [{ text: pesan }] }],
       systemInstruction
     ) || 'Maaf, saya tidak bisa menjawab saat ini. Silakan coba lagi.';
-    console.log('[Mamoru] ✅ Reply:', reply.slice(0, 100));
-
     const needsNotif = isAdminNotifyNeeded(pesan);
-    console.log('[Mamoru] 📣 Needs Telegram notif?', needsNotif);
     if (needsNotif) await notifyTelegram(pasienNama, pesan);
-
     res.json({ success: true, reply });
   } catch (err) {
     console.error('[Mamoru] 💥 Unexpected error:', err);
