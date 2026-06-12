@@ -52,7 +52,7 @@ export default function DokterKelola() {
       <div className="main-content">
         <div className="topbar" style={{ background: 'var(--green)' }}>
           <h1>Kelola Jadwal</h1>
-          {bellButton}<button className="btn-logout" onClick={logout}>🚪 Logout</button></div>
+          {bellButton}<button className="btn-logout" onClick={logout}>🚪 Logout</button>
         </div>
         <div className="content-area">
           <div className="card">
