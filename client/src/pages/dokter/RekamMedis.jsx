@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DokterSidebar from '../../components/DokterSidebar';
 import { apiFetch } from '../../utils/api';
-import { useNotif, DOKTER_NOTIFS } from '../../components/NotifPopup';
+import { useNotif } from '../../components/NotifPopup';
 
 export default function DokterRekam() {
   const navigate = useNavigate();
   const [riwayat, setRiwayat] = useState([]);
   const [search, setSearch] = useState('');
   const [detail, setDetail] = useState(null);
-  const { bellButton, popup } = useNotif('notif-dokter', DOKTER_NOTIFS);
+  const { bellButton, popup } = useNotif('notif-dokter');
   const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
 
   useEffect(() => {
