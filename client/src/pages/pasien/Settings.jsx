@@ -32,6 +32,15 @@ export default function PasienSettings() {
     else alert(res?.message || 'Gagal mengubah password.');
   }
 
+  async function toggleNotif(key, val) {
+    const updated = { ...notif, [key]: val };
+    setNotif(updated);
+    await apiFetch('/notif-settings', {
+      method: 'PATCH',
+      body: JSON.stringify({ notif_approve: updated.approveAppt, notif_pengingat: updated.pengingat })
+    });
+  }
+
   function logout() { sessionStorage.clear(); navigate('/pasien/login'); }
 
   return (
@@ -63,14 +72,14 @@ export default function PasienSettings() {
               </button>
             </div>
             <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 24 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', marginBottom: 16 }}>📧 Notifikasi Email</div>
+              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', marginBottom: 4 }}>📧 Notifikasi Email</div>
               <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 12 }}>Notifikasi dikirim ke email yang terdaftar di akun kamu.</div>
               {[
                 ['approveAppt', 'Appointment Disetujui/Ditolak Dokter', 'Email saat dokter approve atau tolak booking kamu'],
                 ['pengingat', 'Pengingat Jadwal', 'Email H-1 sebelum jadwal konsultasi'],
               ].map(([key, label, sub]) => (
                 <label key={key} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 0', borderBottom: '1px solid #F9FAFB', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={notif[key]} onChange={e => setNotif(p => ({ ...p, [key]: e.target.checked }))}
+                  <input type="checkbox" checked={notif[key]} onChange={e => toggleNotif(key, e.target.checked)}
                     style={{ width: 16, height: 16, marginTop: 2, accentColor: 'var(--sky)', cursor: 'pointer', flexShrink: 0 }} />
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{label}</div>
