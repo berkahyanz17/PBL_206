@@ -54,7 +54,9 @@ export default function DokterProfil() {
       <div className="main-content">
         <div className="topbar" style={{ background: 'var(--green)' }}>
           <h1>Profil Dokter</h1>
-          {bellButton}<button className="btn-logout" onClick={logout}>🚪 Logout</button>
+          <div className="topbar-right">
+            {bellButton}<button className="btn-logout" onClick={logout}>🚪 Logout</button>
+          </div>
         </div>
         <div className="content-area">
           <div style={{ background: 'white', borderRadius: 14, padding: 28, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
