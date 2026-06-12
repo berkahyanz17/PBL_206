@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PasienSidebar from '../../components/PasienSidebar';
-import { useNotif, PASIEN_NOTIFS } from '../../components/NotifPopup';
+import { useNotif } from '../../components/NotifPopup';
 import { apiFetch } from '../../utils/api';
 import MamoruChat from './Mamoruchat';
 
@@ -10,7 +10,7 @@ export default function PasienHome() {
   const nama = sessionStorage.getItem('pasienNama') || 'Pasien';
   const token = sessionStorage.getItem('token') || '';
   const user = JSON.parse(sessionStorage.getItem('pasienUser') || '{}');
-  const { bellButton, popup } = useNotif('notif-pasien', PASIEN_NOTIFS, { background: 'rgba(255,255,255,0.4)' });
+  const { bellButton, popup } = useNotif('notif-pasien', { background: 'rgba(255,255,255,0.4)' });
   const [appointments, setAppointments] = useState([]);
 
   useEffect(() => {
