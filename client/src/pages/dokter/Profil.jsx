@@ -2,14 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DokterSidebar from '../../components/DokterSidebar';
 import { apiFetch } from '../../utils/api';
-import { useNotif, DOKTER_NOTIFS } from '../../components/NotifPopup';
+import { useNotif } from '../../components/NotifPopup';
 
 export default function DokterProfil() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ nama: '', spesialis: '', no_str: '', email: '', harga: '', bio: '' });
   const [foto, setFoto] = useState(null);
   const [saving, setSaving] = useState(false);
-  const { bellButton, popup } = useNotif('notif-dokter', DOKTER_NOTIFS);
+  const { bellButton, popup } = useNotif('notif-dokter');
   const fileRef = useRef();
   const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
 
