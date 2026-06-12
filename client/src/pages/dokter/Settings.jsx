@@ -10,6 +10,7 @@ export default function DokterSettings() {
   const [pwBaru, setPwBaru] = useState('');
   const [pwKonfirm, setPwKonfirm] = useState('');
   const [telegramId, setTelegramId] = useState('');
+  const [editTg, setEditTg] = useState(false);
   const [notif, setNotif] = useState({ chatAdmin: true, appointment: true });
   const { bellButton, popup } = useNotif('notif-dokter');
 
