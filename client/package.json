@@ -10,7 +10,7 @@
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-router-dom": "^6.0.0",
-    "jwt-decode": "^4.0.0"
+    "jwt-decode": "^4.0.0",
     "@hcaptcha/react-hcaptcha": "^1.1.4"
   },
   "devDependencies": {
