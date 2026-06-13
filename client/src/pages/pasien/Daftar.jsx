@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function PasienDaftar() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ nama: '', email: '', hp: '', pass: '', konfirm: '' });
+  const [form, setForm] = useState({ nama: '', email: '', hp: '', nik: '', pass: '', konfirm: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -13,13 +13,14 @@ export default function PasienDaftar() {
     if (!form.nama || !form.email || !form.hp || !form.pass || !form.konfirm) { setError('Semua kolom harus diisi.'); return; }
     if (form.pass.length < 8) { setError('Password minimal 8 karakter.'); return; }
     if (form.pass !== form.konfirm) { setError('Konfirmasi password tidak cocok.'); return; }
+    if (form.nik && form.nik.length !== 16) { setError('NIK harus 16 digit.'); return; }
     setError('');
     setLoading(true);
     try {
       const res = await fetch('/api/pasien/daftar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nama: form.nama, email: form.email, no_hp: form.hp, password: form.pass })
+        body: JSON.stringify({ nama: form.nama, email: form.email, no_hp: form.hp, nik: form.nik, password: form.pass })
       });
       const data = await res.json();
       if (data.success) {
@@ -46,6 +47,7 @@ export default function PasienDaftar() {
         <div className="form-group"><label>Nama Lengkap</label><input type="text" placeholder="Masukkan Nama Lengkap" value={form.nama} onChange={e => set('nama', e.target.value)} /></div>
         <div className="form-group"><label>Email</label><input type="email" placeholder="Masukkan Email" value={form.email} onChange={e => set('email', e.target.value)} /></div>
         <div className="form-group"><label>No.Hp</label><input type="tel" placeholder="08XXXXXXXXXX" value={form.hp} onChange={e => set('hp', e.target.value)} /></div>
+        <div className="form-group"><label>NIK <span style={{color:'#9CA3AF', fontWeight:400}}>(opsional)</span></label><input type="text" placeholder="16 digit NIK" maxLength={16} value={form.nik} onChange={e => set('nik', e.target.value)} /></div>
         <div className="form-group"><label>Password</label><input type="password" placeholder="Min 8 karakter" value={form.pass} onChange={e => set('pass', e.target.value)} /></div>
         <div className="form-group"><label>Konfirmasi Password</label><input type="password" placeholder="Ulangi password" value={form.konfirm} onChange={e => set('konfirm', e.target.value)} /></div>
         <button onClick={daftar} disabled={loading} style={{ width: '100%', padding: 14, background: loading ? '#6B7280' : '#4B8A8C', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'inherit', cursor: loading ? 'not-allowed' : 'pointer', marginTop: 8 }}>
