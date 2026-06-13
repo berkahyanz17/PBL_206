@@ -101,6 +101,18 @@ export default function AdminSettings() {
                 </label>
               ))}
             </div>
+            <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 24, marginTop: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', marginBottom: 12 }}>⚙️ Pengaturan Klinik & Mamoru</div>
+              <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 12 }}>
+                Atur informasi klinik, kontak, dan konteks yang dibaca Mamoru saat menjawab pasien.
+              </p>
+              <button
+                onClick={() => navigate('/admin/klinik-settings')}
+                style={{ padding: '10px 22px', background: '#eff6ff', color: '#1d4ed8', border: '1.5px solid #bfdbfe', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                ⚙️ Buka Pengaturan Klinik →
+              </button>
+            </div>
           </div>
         </div>
       </div>
