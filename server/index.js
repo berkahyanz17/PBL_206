@@ -776,112 +776,276 @@ app.patch('/api/notif-settings', verifyToken, async (req, res) => {
 // MAMORU — AI Chatbot (Gemini Flash + Telegram Notification)
 // ════════════════════════════════════════════════════════════════════════════
 
+// ════════════════════════════════════════════════════════════════════════════
+// PATCH — Ganti seluruh section Mamoru di index.js dengan kode ini.
+// Section yang diganti: mulai dari baris "const GEMINI_API_KEY" sampai
+// akhir endpoint POST /api/mamoru (termasuk notifyTelegram & isAdminNotifyNeeded)
+//
+// TAMBAHKAN JUGA dua endpoint baru di bawah section NOTIF SETTINGS:
+//   GET  /api/klinik-settings        (public, untuk Mamoru load context)
+//   GET  /api/klinik-settings/admin  (private, untuk halaman admin)
+//   PATCH /api/klinik-settings       (private, admin update)
+// ════════════════════════════════════════════════════════════════════════════
+
+
+// ─── Klinik Settings endpoints ───────────────────────────────────────────────
+// Taruh di bawah section NOTIF SETTINGS, sebelum section MAMORU
+
+// GET /api/klinik-settings  — public, dipakai Mamoru untuk load context
+app.get('/api/klinik-settings', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT `key`, `value`, `label`, `kategori` FROM klinik_settings ORDER BY id');
+    // Ubah ke object { key: value } agar mudah dikonsumsi
+    const data = {};
+    rows.forEach(r => { data[r.key] = r.value; });
+    res.json({ success: true, data, rows });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
+});
+
+// PATCH /api/klinik-settings  — admin only
+app.patch('/api/klinik-settings', verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') return res.status(403).json({ success: false, message: 'Forbidden.' });
+    const updates = req.body; // { key: value, key2: value2, ... }
+    for (const [key, value] of Object.entries(updates)) {
+      await db.query(
+        'INSERT INTO klinik_settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?',
+        [key, value, value]
+      );
+    }
+    res.json({ success: true, message: 'Pengaturan klinik berhasil disimpan.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// MAMORU — AI Chatbot (Gemini Flash + Smart Telegram Notification)
+// ════════════════════════════════════════════════════════════════════════════
+
 const GEMINI_API_KEY   = process.env.GEMINI_API_KEY;
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID; // used by Mamoru only
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID; // fallback group chat
+
+// Urutan model: coba satu per satu kalau rate limit
 const GEMINI_MODELS = [
   'gemini-2.5-flash',
   'gemini-2.5-flash-lite',
-  'gemini-3-flash',
-  'gemini-3.1-flash-lite',
-  'gemini-3.5-flash'
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
 ];
 
+// ─── Helper: panggil Gemini dengan fallback model ─────────────────────────
 async function callGemini(contents, systemInstruction) {
   for (const model of GEMINI_MODELS) {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemInstruction }] },
-          contents,
-          generationConfig: { maxOutputTokens: 512, temperature: 0.7 }
-        })
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemInstruction }] },
+            contents,
+            generationConfig: { maxOutputTokens: 512, temperature: 0.7 }
+          })
+        }
+      );
+      if (res.status === 429) {
+        console.log(`[Mamoru] ⚠️ ${model} rate limited, trying next...`);
+        continue;
       }
-    );
-    if (res.status === 429) {
-      console.log(`[Mamoru] ⚠️ ${model} rate limited, trying next...`);
-      continue;
-    }
-    if (!res.ok) {
-      const err = await res.text();
-      console.error(`[Mamoru] ❌ ${model} error:`, err);
-      continue;
-    }
-    const data = await res.json();
-    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (reply) {
-      console.log(`[Mamoru] ✅ Answered by ${model}`);
-      return reply;
+      if (!res.ok) {
+        const err = await res.text();
+        console.error(`[Mamoru] ❌ ${model} error:`, err);
+        continue;
+      }
+      const data = await res.json();
+      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (reply) {
+        console.log(`[Mamoru] ✅ Answered by ${model}`);
+        return reply;
+      }
+    } catch (err) {
+      console.error(`[Mamoru] ❌ ${model} fetch error:`, err.message);
     }
   }
   return null;
 }
 
-async function notifyTelegram(pasienNama, pesan) {
-  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-    console.log('[Mamoru] ⚠️  Telegram env not set, skipping notification.');
+// ─── Helper: load konteks klinik dari DB ─────────────────────────────────
+async function loadKlinikContext() {
+  try {
+    const [rows] = await db.query('SELECT `key`, `value` FROM klinik_settings');
+    const s = {};
+    rows.forEach(r => { s[r.key] = r.value || ''; });
+    return s;
+  } catch {
+    return {};
+  }
+}
+
+// ─── Helper: build system prompt dinamis ─────────────────────────────────
+function buildSystemPrompt(s, pasienNama, dokterList) {
+  const dokterInfo = dokterList.length > 0
+    ? dokterList.map(d => `  • ${d.nama} (${d.spesialis}) — Rp${Number(d.harga).toLocaleString('id-ID')}`).join('\n')
+    : '  (Data dokter tidak tersedia)';
+
+  return `Kamu adalah Mamoru, asisten kesehatan virtual dari ${s.klinik_nama || 'HealthSync Clinic'}.
+Tugasmu membantu pasien dengan informasi seputar layanan klinik.
+
+=== DATA KLINIK ===
+Nama    : ${s.klinik_nama || 'HealthSync Clinic'}
+Alamat  : ${s.klinik_alamat || '-'}
+Jam Buka: ${s.klinik_jam_buka || '-'}
+Telepon : ${s.klinik_telepon || '-'}
+Email   : ${s.klinik_email || '-'}
+WhatsApp: ${s.klinik_whatsapp || '-'}
+
+=== DAFTAR DOKTER AKTIF ===
+${dokterInfo}
+
+=== CARA BOOKING ===
+1. Login ke portal pasien
+2. Buka menu "Cari Dokter"
+3. Pilih dokter dan jadwal yang tersedia
+4. Isi keluhan dan konfirmasi booking
+5. Tunggu konfirmasi dari klinik via notifikasi
+
+=== CARA LIHAT RIWAYAT ===
+Buka menu "Riwayat" di sidebar portal pasien.
+
+=== CARA UBAH PROFIL ===
+Buka menu "Settings" → tab Profil.
+
+${s.mamoru_context_extra ? `=== INFO TAMBAHAN ===\n${s.mamoru_context_extra}\n` : ''}
+=== ATURAN MAMORU ===
+- Jawab dalam Bahasa Indonesia, ramah, singkat, dan profesional.
+- JANGAN pernah memberikan diagnosis medis.
+- Untuk kondisi darurat: ${s.mamoru_darurat_msg || 'segera ke IGD atau hubungi klinik.'}
+- Jika pasien marah atau komplain, minta maaf dan arahkan ke admin/telepon klinik.
+- Jika ditanya di luar topik klinik, jawab singkat bahwa kamu hanya menangani urusan klinik.
+- Nama pasien yang sedang chat: ${pasienNama}.`;
+}
+
+// ─── Logika kapan notif ke Telegram ──────────────────────────────────────
+//
+// LEVEL 1 — DARURAT: langsung notif, prioritas tinggi
+const KEYWORDS_DARURAT = [
+  'darurat', 'emergency', 'gawat', 'pingsan', 'sesak nafas', 'sesak napas',
+  'tidak sadarkan', 'tidak sadar', 'pendarahan', 'kejang', 'stroke', 'serangan jantung',
+  'kecelakaan', 'overdosis', 'bunuh diri', 'mau mati'
+];
+
+// LEVEL 2 — PERLU BANTUAN ADMIN: notif kalau bot tidak bisa bantu
+const KEYWORDS_PERLU_ADMIN = [
+  'komplain', 'keluhan', 'tidak puas', 'kecewa', 'mengadu', 'lapor',
+  'tidak bisa booking', 'gagal booking', 'error', 'bug', 'tidak muncul',
+  'refund', 'cancel', 'batal', 'uang kembali',
+  'hubungi', 'telepon klinik', 'nomor klinik', 'minta tolong admin',
+  'bicara dengan manusia', 'bicara dengan orang', 'cs', 'customer service'
+];
+
+// LEVEL 3 — INFO SAJA: TIDAK perlu notif (bot bisa handle sendiri)
+// booking, jadwal, riwayat, profil, info dokter, info klinik, dll.
+
+function classifyPesan(pesan) {
+  const p = pesan.toLowerCase();
+  if (KEYWORDS_DARURAT.some(k => p.includes(k)))      return 'darurat';
+  if (KEYWORDS_PERLU_ADMIN.some(k => p.includes(k)))  return 'perlu_admin';
+  return 'normal'; // bot handle sendiri, tidak perlu notif
+}
+
+// ─── Kirim notif Telegram ke admin (dengan level) ─────────────────────────
+async function notifyAdminTelegram(pasienNama, pesan, level) {
+  // Ambil chat_id dari DB (semua admin yang punya telegram_chat_id)
+  // + fallback ke env TELEGRAM_CHAT_ID
+  const chatIds = new Set();
+  try {
+    const [admins] = await db.query('SELECT telegram_chat_id FROM admins WHERE telegram_chat_id IS NOT NULL');
+    admins.forEach(a => { if (a.telegram_chat_id) chatIds.add(a.telegram_chat_id); });
+  } catch { /* skip */ }
+  if (TELEGRAM_CHAT_ID) chatIds.add(TELEGRAM_CHAT_ID);
+
+  if (chatIds.size === 0) {
+    console.log('[Mamoru] ⚠️ Tidak ada chat_id admin, skip notif Telegram.');
     return;
   }
+
+  const isDarurat = level === 'darurat';
+  const emoji     = isDarurat ? '🚨' : '⚠️';
+  const judul     = isDarurat ? 'DARURAT — Butuh Penanganan Segera!' : 'Pasien Butuh Bantuan Admin';
   const text =
-    `🔔 *Pesan Masuk — Mamoru Chatbot*\n` +
+    `${emoji} *${judul}*\n` +
     `👤 Pasien: *${pasienNama}*\n` +
     `💬 Pesan: ${pesan}\n` +
     `🕐 ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}`;
-  try {
-    const tgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text, parse_mode: 'Markdown' })
-    });
-    const tgData = await tgRes.json();
-    if (tgData.ok) {
-      console.log('[Mamoru] ✅ Telegram notification sent.');
-    } else {
-      console.error('[Mamoru] ❌ Telegram error:', JSON.stringify(tgData));
+
+  for (const chatId of chatIds) {
+    try {
+      const tgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' })
+      });
+      const tgData = await tgRes.json();
+      if (tgData.ok) {
+        console.log(`[Mamoru] ✅ Telegram notif [${level}] sent to ${chatId}`);
+      } else {
+        console.error(`[Mamoru] ❌ Telegram error for ${chatId}:`, JSON.stringify(tgData));
+      }
+    } catch (err) {
+      console.error(`[Mamoru] ❌ Telegram fetch failed for ${chatId}:`, err.message);
     }
-  } catch (err) {
-    console.error('[Mamoru] ❌ Telegram fetch failed:', err.message);
   }
 }
 
-function isAdminNotifyNeeded(pesan) {
-  const keywords = [
-    'booking', 'darurat', 'urgent', 'gawat', 'emergency',
-    'tidak bisa', 'gagal', 'error', 'komplain', 'keluhan',
-    'hubungi', 'telepon', 'bantuan', 'help'
-  ];
-  return keywords.some(k => pesan.toLowerCase().includes(k));
-}
-
-// POST /api/mamoru
+// ─── POST /api/mamoru ─────────────────────────────────────────────────────
 app.post('/api/mamoru', async (req, res) => {
   console.log('[Mamoru] 📨 Request received:', JSON.stringify(req.body).slice(0, 200));
   try {
     const { pesan, history = [], pasienNama = 'Pasien' } = req.body;
+
     if (!pesan || !pesan.trim()) {
       return res.status(400).json({ success: false, message: 'Pesan tidak boleh kosong.' });
     }
     if (!GEMINI_API_KEY) {
       return res.status(500).json({ success: false, message: 'Gemini API key belum dikonfigurasi.' });
     }
+
+    // Load konteks klinik + daftar dokter secara paralel
+    const [klinik, [dokterList]] = await Promise.all([
+      loadKlinikContext(),
+      db.query('SELECT nama, spesialis, harga FROM dokters ORDER BY nama')
+        .catch(() => [[]])
+    ]);
+
+    const systemInstruction = buildSystemPrompt(klinik, pasienNama, dokterList);
+
     const recentHistory = history.slice(-10).map(m => ({
       role: m.type === 'user' ? 'user' : 'model',
       parts: [{ text: m.text }]
     }));
-    const systemInstruction = `Kamu adalah Mamoru, asisten kesehatan virtual dari HealthSync Clinic.
-Tugasmu membantu pasien dengan informasi seputar layanan klinik: booking dokter, jadwal, riwayat konsultasi, profil, dan pertanyaan umum kesehatan.
-Jawab dalam Bahasa Indonesia, ramah, singkat, dan profesional.
-Jangan pernah memberikan diagnosis medis. Jika darurat, selalu arahkan ke tenaga medis.
-Nama pasien yang sedang chat: ${pasienNama}.`;
+
+    // Klasifikasi pesan SEBELUM panggil Gemini (supaya bisa inject warning di reply jika darurat)
+    const level = classifyPesan(pesan);
+
     const reply = await callGemini(
       [...recentHistory, { role: 'user', parts: [{ text: pesan }] }],
       systemInstruction
-    ) || 'Maaf, saya tidak bisa menjawab saat ini. Silakan coba lagi.';
-    const needsNotif = isAdminNotifyNeeded(pesan);
-    if (needsNotif) await notifyTelegram(pasienNama, pesan);
-    res.json({ success: true, reply });
+    ) || 'Maaf, saya tidak bisa menjawab saat ini. Silakan coba lagi atau hubungi klinik langsung.';
+
+    // Notif Telegram hanya untuk level darurat / perlu_admin
+    if (level === 'darurat' || level === 'perlu_admin') {
+      // Fire-and-forget, tidak blocking response ke user
+      notifyAdminTelegram(pasienNama, pesan, level).catch(err =>
+        console.error('[Mamoru] notifyAdminTelegram error:', err.message)
+      );
+    }
+
+    res.json({ success: true, reply, notifLevel: level }); // notifLevel opsional, untuk debug di frontend
   } catch (err) {
     console.error('[Mamoru] 💥 Unexpected error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
