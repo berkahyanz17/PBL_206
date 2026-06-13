@@ -74,11 +74,12 @@ export default function AdminPasien() {
                     {filtered.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Tidak ada data.</td></tr>}
                     {filtered.map(p => (
                       <tr key={p.id}>
-                       <td style={{ color: 'var(--text-muted)' }}>{maskNIK(p.nik)}</td>
-                        <td>{maskHP(p.no_hp)}</td>
-                        <td>{maskEmail(p.email)}</td>
-                        <td><button className="btn-del" onClick={() => hapus(p.id, p.nama)}>🗑️</button></td>
-                      </tr>
+                      <td style={{ fontWeight: 600 }}>{p.nama || '-'}</td>
+                      <td style={{ color: 'var(--text-muted)' }}>{maskNIK(p.nik)}</td>
+                      <td>{maskHP(p.no_hp)}</td>
+                      <td>{maskEmail(p.email)}</td>
+                      <td><button className="btn-del" onClick={() => hapus(p.id, p.nama)}>🗑️</button></td>
+                    </tr>
                     ))}
                   </tbody>
                 </table>
