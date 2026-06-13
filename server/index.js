@@ -239,11 +239,45 @@ app.post('/api/admin/login', rateLimiter, async (req, res) => {
 // POST /api/dokter/login
 app.post('/api/dokter/login', rateLimiter, async (req, res) => {
   try {
-    const { email, password, captchaToken } = req.body;
+    const { email, password, twofa } = req.body;
     const [rows] = await db.query('SELECT * FROM dokters WHERE email = ? OR no_str = ?', [email, email]);
     if (rows.length === 0) return res.status(401).json({ success: false, message: 'Email/STR atau password salah.' });
     const match = await bcrypt.compare(password, rows[0].password);
     if (!match) return res.status(401).json({ success: false, message: 'Email/STR atau password salah.' });
+
+    if (twofa) {
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const tempToken = crypto.randomBytes(32).toString('hex');
+      await redis.setex(`2fa:dokter:${tempToken}`, 300, JSON.stringify({ otp, dokterId: rows[0].id }));
+      await transporter.sendMail({
+        from: '"HealthSync" <no-reply@healthsync.id>',
+        to: rows[0].email,
+        subject: 'Kode OTP Login Dokter',
+        html: `<p>Kode OTP kamu: <strong style="font-size:24px">${otp}</strong></p><p>Berlaku 5 menit.</p>`
+      });
+      return res.json({ success: true, require2FA: true, tempToken });
+    }
+
+    const token = jwt.sign({ id: rows[0].id, role: 'dokter', nama: rows[0].nama }, JWT_SECRET, { expiresIn: '8h' });
+    res.json({ success: true, token, user: { id: rows[0].id, nama: rows[0].nama, spesialis: rows[0].spesialis } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+app.post('/api/dokter/verify-2fa', async (req, res) => {
+  try {
+    const { tempToken, otp } = req.body;
+    const raw = await redis.get(`2fa:dokter:${tempToken}`);
+    if (!raw) return res.status(400).json({ success: false, message: 'OTP expired atau tidak valid.' });
+
+    const { otp: storedOtp, dokterId } = JSON.parse(raw);
+    if (otp !== storedOtp) return res.status(400).json({ success: false, message: 'OTP salah.' });
+
+    await redis.del(`2fa:dokter:${tempToken}`);
+
+    const [rows] = await db.query('SELECT * FROM dokters WHERE id = ?', [dokterId]);
     const token = jwt.sign({ id: rows[0].id, role: 'dokter', nama: rows[0].nama }, JWT_SECRET, { expiresIn: '8h' });
     res.json({ success: true, token, user: { id: rows[0].id, nama: rows[0].nama, spesialis: rows[0].spesialis } });
   } catch (err) {
