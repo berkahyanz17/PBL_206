@@ -1,25 +1,27 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
+import { useRef } from 'react';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
+  const captchaRef = useRef(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [robot, setRobot] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
   const [error, setError] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
     if (!username || !password) { setError('Username dan password harus diisi.'); return; }
-    if (!robot) { setError("⚠️ Harap centang \"I'm not a robot\" terlebih dahulu."); return; }
-    setError('');
-    setLoading(true);
+    if (!captchaToken) { setError('⚠️ Harap selesaikan captcha terlebih dahulu.'); return; }
+    setError(''); setLoading(true);
     try {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password, captchaToken })
       });
       const data = await res.json();
       if (data.success) {
@@ -28,6 +30,8 @@ export default function AdminLogin() {
         navigate('/admin/dashboard');
       } else {
         setError(data.message || 'Login gagal.');
+        captchaRef.current?.resetCaptcha();
+        setCaptchaToken('');
       }
     } catch {
       setError('Tidak dapat terhubung ke server.');
@@ -69,9 +73,14 @@ export default function AdminLogin() {
             </button>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22 }}>
-          <input type="checkbox" id="robot" checked={robot} onChange={e => setRobot(e.target.checked)} style={{ width: 18, height: 18, accentColor: 'var(--navy)', cursor: 'pointer' }} />
-          <label htmlFor="robot" style={{ fontSize: 14, color: 'var(--text-muted)', cursor: 'pointer' }}>I'm not a robot</label>
+        {/* hCaptcha */}
+        <div style={{ marginBottom: 22, display: 'flex', justifyContent: 'center' }}>
+          <HCaptcha
+            sitekey={import.meta.env.VITE_HCAPTCHA_SITEKEY}
+            onVerify={token => setCaptchaToken(token)}
+            onExpire={() => setCaptchaToken('')}
+            ref={captchaRef}
+          />
         </div>
         {error && <div style={{ background: '#FEE2E2', color: '#991B1B', borderRadius: 8, padding: '10px 14px', fontSize: 13, fontWeight: 600, marginBottom: 14, textAlign: 'center' }}>{error}</div>}
         <button onClick={handleLogin} disabled={loading} style={{ width: '100%', padding: 14, background: loading ? '#6B7280' : 'var(--navy)', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'inherit', cursor: loading ? 'not-allowed' : 'pointer' }}>
