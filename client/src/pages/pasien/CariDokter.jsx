@@ -139,7 +139,10 @@ export default function PasienCari() {
           <div className="modal-box" onClick={e => e.stopPropagation()}>
             <div className="modal-title">Booking - {booking.nama}</div>
             <div className="form-group"><label>Tanggal</label>
-              <input type="date" value={tanggal} onChange={e => onTanggalChange(e.target.value)} /></div>
+              <input type="date" value={tanggal} onChange={e => onTanggalChange(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+              max={new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]}
+            /></div>
             <div className="form-group"><label>Jam</label>
               <select value={jam} onChange={e => setJam(e.target.value)} disabled={!tanggal}>
                 <option value="">-- Pilih jam --</option>
