@@ -44,7 +44,7 @@ services:
     build:
       context: ./client
       args:
-        - VITE_HCAPTCHA_SITEKEY: 97304a14-ac8e-473a-b1b2-f6aa751631f2
+        VITE_HCAPTCHA_SITEKEY: 97304a14-ac8e-473a-b1b2-f6aa751631f2
     restart: always
     networks:
       - app_network
