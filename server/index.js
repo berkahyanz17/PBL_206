@@ -105,28 +105,84 @@ async function rateLimiter(req, res, next) {
   next();
 }
 
-// ─── Notification helper ──────────────────────────────────────────────────────
-async function createNotif(role, user_id, icon, icon_color, text) {
-  try {
-    const time = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' });
-    await db.query(
-      'INSERT INTO notifications (role, user_id, icon, icon_color, text, time) VALUES (?, ?, ?, ?, ?, ?)',
-      [role, user_id, icon, icon_color, text, time]
-    );
+// ════════════════════════════════════════════════════════════════════════════
+// PATCH — Ganti 3 helper function di index.js (baris 108–146)
+// Ganti dari:
+//   "// ─── Notification helper" (baris 108)
+// Sampai:
+//   "  } catch (err) {"  +  "    console.error('[Notif]..." + "  }" + "}" (baris 143–146)
+//
+// Dengan kode di bawah ini.
+// ════════════════════════════════════════════════════════════════════════════
 
 // ─── Telegram helper ──────────────────────────────────────────────────────────
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
+/**
+ * Kirim pesan Telegram ke satu chatId.
+ * Return: { ok: true } kalau berhasil, { ok: false, reason, code } kalau gagal.
+ * TIDAK pernah throw — aman dipanggil fire-and-forget maupun di-await.
+ */
 async function sendTelegram(chatId, text) {
-  if (!TELEGRAM_BOT_TOKEN || !chatId) return;
+  if (!TELEGRAM_BOT_TOKEN) {
+    console.warn('[Telegram] ⚠️  TELEGRAM_BOT_TOKEN tidak diset, skip.');
+    return { ok: false, reason: 'no_token' };
+  }
+  if (!chatId) {
+    console.warn('[Telegram] ⚠️  chatId kosong, skip.');
+    return { ok: false, reason: 'no_chat_id' };
+  }
+
   try {
-    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' })
-    });
+    const tgRes = await fetch(
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' })
+      }
+    );
+
+    const tgData = await tgRes.json();
+
+    if (tgData.ok) {
+      console.log(`[Telegram] ✅ Sent to ${chatId}`);
+      return { ok: true };
+    }
+
+    // Telegram API returned ok: false — log detail errornya
+    const errCode    = tgData.error_code;
+    const errDesc    = tgData.description || 'Unknown error';
+    let reason       = 'api_error';
+    let hint         = '';
+
+    if (errCode === 400 && errDesc.includes('chat not found')) {
+      reason = 'chat_not_found';
+      hint   = `Chat ID "${chatId}" tidak ditemukan. Pastikan user sudah /start ke bot terlebih dahulu.`;
+    } else if (errCode === 400 && errDesc.includes('PEER_ID_INVALID')) {
+      reason = 'invalid_chat_id';
+      hint   = `Chat ID "${chatId}" tidak valid. Cek kembali format Chat ID di settings.`;
+    } else if (errCode === 403 && errDesc.includes('bot was blocked')) {
+      reason = 'bot_blocked';
+      hint   = `User memblokir bot. Minta user untuk unblock atau /start ulang.`;
+    } else if (errCode === 403 && errDesc.includes('user is deactivated')) {
+      reason = 'user_deactivated';
+      hint   = `Akun Telegram untuk chat ID "${chatId}" telah dideaktivasi.`;
+    } else if (errCode === 429) {
+      reason = 'rate_limited';
+      hint   = `Bot Telegram terkena rate limit. Coba lagi beberapa detik kemudian.`;
+    } else if (errCode === 401) {
+      reason = 'invalid_token';
+      hint   = `TELEGRAM_BOT_TOKEN tidak valid. Cek kembali token di environment variables.`;
+    }
+
+    console.error(`[Telegram] ❌ Error ${errCode} → ${errDesc}${hint ? ' | ' + hint : ''}`);
+    return { ok: false, reason, code: errCode, description: errDesc, hint };
+
   } catch (err) {
-    console.error('[Telegram] Failed:', err.message);
+    // Network error (DNS gagal, timeout, dsb)
+    console.error('[Telegram] ❌ Network error:', err.message);
+    return { ok: false, reason: 'network_error', message: err.message };
   }
 }
 
@@ -140,6 +196,18 @@ async function sendEmail(to, subject, html) {
   }
 }
 
+// ─── Notification helper ──────────────────────────────────────────────────────
+async function createNotif(role, user_id, icon, icon_color, text) {
+  try {
+    const time = new Date().toLocaleString('id-ID', {
+      timeZone: 'Asia/Jakarta',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    await db.query(
+      'INSERT INTO notifications (role, user_id, icon, icon_color, text, time) VALUES (?, ?, ?, ?, ?, ?)',
+      [role, user_id, icon, icon_color, text, time]
+    );
   } catch (err) {
     console.error('[Notif] Failed to create notification:', err.message);
   }
