@@ -222,6 +222,8 @@ async function createNotif(role, user_id, icon, icon_color, text) {
 app.post('/api/admin/login', rateLimiter, async (req, res) => {
   try {
     const { username, password, captchaToken } = req.body;
+    const captchaOk = await verifyCaptcha(captchaToken);
+    if (!captchaOk) return res.json({ success: false, message: 'Captcha tidak valid.' });
     const [rows] = await db.query('SELECT * FROM admins WHERE username = ?', [username]);
     if (rows.length === 0) return res.status(401).json({ success: false, message: 'Username atau password salah.' });
     const match = await bcrypt.compare(password, rows[0].password);
