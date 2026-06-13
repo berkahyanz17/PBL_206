@@ -155,6 +155,35 @@ CREATE TABLE `notifications` (
   KEY `idx_role_user` (`role`, `user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
+-- ════════════════════════════════════════════════════════════════════════════
+-- MIGRATION: Tambah tabel klinik_settings untuk Mamoru context
+-- Jalankan sekali di DB yang sudah ada, ATAU tambahkan ke db_praktikum.sql
+-- sebelum 'docker compose down -v && up --build'
+-- ════════════════════════════════════════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS `klinik_settings` (
+  `id`            int(11) NOT NULL AUTO_INCREMENT,
+  `key`           varchar(100) NOT NULL,
+  `value`         text DEFAULT NULL,
+  `label`         varchar(150) DEFAULT NULL,   -- label tampilan di admin
+  `kategori`      varchar(50) DEFAULT 'umum',  -- umum | kontak | mamoru
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `key` (`key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- Seed data default — admin bisa edit via halaman Settings
+INSERT INTO `klinik_settings` (`key`, `value`, `label`, `kategori`) VALUES
+  ('klinik_nama',       'HealthSync Clinic',                          'Nama Klinik',            'umum'),
+  ('klinik_alamat',     'Jl. Sehat No. 1, Kota Sehat',               'Alamat',                 'umum'),
+  ('klinik_jam_buka',   'Senin–Jumat 08.00–17.00, Sabtu 08.00–13.00','Jam Operasional',        'umum'),
+  ('klinik_telepon',    '(021) 1234-5678',                            'Nomor Telepon',          'kontak'),
+  ('klinik_email',      'info@healthsync.id',                         'Email Klinik',           'kontak'),
+  ('klinik_whatsapp',   '08xx-xxxx-xxxx',                             'WhatsApp',               'kontak'),
+  ('mamoru_greeting',   'Halo! Saya Mamoru, asisten virtual HealthSync Clinic. Ada yang bisa saya bantu?', 'Sapaan Mamoru', 'mamoru'),
+  ('mamoru_darurat_msg','Untuk kondisi darurat, segera hubungi IGD terdekat atau hubungi klinik kami.', 'Pesan Darurat Mamoru', 'mamoru'),
+  ('mamoru_context_extra', '', 'Konteks Tambahan untuk Mamoru (opsional)', 'mamoru')
+ON DUPLICATE KEY UPDATE `key` = `key`; -- idempotent, aman dijalankan ulang
+
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
 /*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
