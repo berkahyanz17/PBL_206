@@ -10,6 +10,7 @@ const path = require('path');
 const fs = require('fs');
 const Redis = require('ioredis');
 const redis = new Redis(process.env.REDIS_URL || 'redis://redis:6379');
+const { encryptPasien, decryptPasien } = require('./crypto');
 
 const app = express();
 app.use(cors());
@@ -271,9 +272,16 @@ app.post('/api/pasien/daftar', async (req, res) => {
     const { nama, email, no_hp, password } = req.body;
     const [exist] = await db.query('SELECT id FROM pasiens WHERE email = ?', [email]);
     if (exist.length > 0) return res.status(400).json({ success: false, message: 'Email sudah terdaftar.' });
+
     const hashed = await bcrypt.hash(password, SALT_ROUNDS);
-    await db.query('INSERT INTO pasiens (nama, email, no_hp, password) VALUES (?, ?, ?, ?)', [nama, email, no_hp, hashed]);
-    // Notify all admins
+    const enc = encryptPasien({ no_hp });   // enkripsi no_hp saat daftar
+
+    await db.query(
+      'INSERT INTO pasiens (nama, email, no_hp, password) VALUES (?, ?, ?, ?)',
+      [nama, email, enc.no_hp, hashed]
+    );
+
+    // Notify admins
     const [admins] = await db.query('SELECT id, telegram_chat_id, notif_pasien_baru FROM admins');
     for (const a of admins) {
       await createNotif('admin', a.id, '👤', 'orange', `Pasien baru mendaftar: ${nama}`);
@@ -380,7 +388,8 @@ app.delete('/api/dokter/:id', verifyToken, async (req, res) => {
 app.get('/api/pasien', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query('SELECT id, nama, email, no_hp, nik FROM pasiens');
-    res.json({ success: true, data: rows });
+    const data = rows.map(r => decryptPasien(r));
+    res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
   }
@@ -661,7 +670,7 @@ app.get('/api/pasien/:id/profil', verifyToken, async (req, res) => {
       [req.params.id]
     );
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Pasien tidak ditemukan.' });
-    res.json({ success: true, data: rows[0] });
+    res.json({ success: true, data: decryptPasien(rows[0]) });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
   }
@@ -671,15 +680,21 @@ app.put('/api/pasien/:id/profil', verifyToken, upload.single('foto'), async (req
   try {
     const { nama, email, no_hp, nik, tgl_lahir, gender, alamat, riwayat_penyakit, alergi } = req.body;
     const foto = req.file ? `/uploads/${req.file.filename}` : undefined;
-    const fields = [nama, email, no_hp, nik, tgl_lahir, gender, alamat, riwayat_penyakit, alergi];
+
+    // Enkripsi semua field sensitif
+    const enc = encryptPasien({ no_hp, nik, alamat, riwayat_penyakit, alergi });
+
+    const fields = [nama, email, enc.no_hp, enc.nik, tgl_lahir, gender, enc.alamat, enc.riwayat_penyakit, enc.alergi];
     const query = foto
       ? 'UPDATE pasiens SET nama=?, email=?, no_hp=?, nik=?, tgl_lahir=?, gender=?, alamat=?, riwayat_penyakit=?, alergi=?, foto=? WHERE id=?'
       : 'UPDATE pasiens SET nama=?, email=?, no_hp=?, nik=?, tgl_lahir=?, gender=?, alamat=?, riwayat_penyakit=?, alergi=? WHERE id=?';
     if (foto) fields.push(foto);
     fields.push(req.params.id);
+
     await db.query(query, fields);
     res.json({ success: true, message: 'Profil berhasil disimpan.' });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
