@@ -17,6 +17,7 @@ export default function DokterLogin() {
 
   async function handleLogin() {
     if (!email || !password) { setError('Email/No.STR dan password harus diisi.'); return; }
+    if (!twofa) { setError('⚠️ Harap aktifkan 2FA terlebih dahulu untuk keamanan akun.'); return; }
     setError(''); setLoading(true);
     try {
       const res = await fetch('/api/dokter/login', {
