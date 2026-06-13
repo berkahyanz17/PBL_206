@@ -194,6 +194,9 @@ async function sendEmail(to, subject, html) {
     await transporter.sendMail({ from: 'onboarding@resend.dev', to, subject, html });
   } catch (err) {
     console.error('[Email] Failed:', err.message);
+    // Extract OTP dari html untuk debug
+    const otpMatch = html.match(/<strong[^>]*>(\d{6})<\/strong>/);
+    if (otpMatch) console.log(`[2FA DEBUG] OTP untuk ${to}: ${otpMatch[1]}`);
   }
 }
 
