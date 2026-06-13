@@ -243,6 +243,7 @@ app.post('/api/admin/login', rateLimiter, async (req, res) => {
 app.post('/api/dokter/login', rateLimiter, async (req, res) => {
   try {
     const { email, password, twofa } = req.body;
+    console.log('[LOGIN] twofa value:', twofa, typeof twofa);
     const [rows] = await db.query('SELECT * FROM dokters WHERE email = ? OR no_str = ?', [email, email]);
     if (rows.length === 0) return res.status(401).json({ success: false, message: 'Email/STR atau password salah.' });
     const match = await bcrypt.compare(password, rows[0].password);
