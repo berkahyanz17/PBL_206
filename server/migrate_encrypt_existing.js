@@ -10,8 +10,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 'use strict';
-require('dotenv').config(); // opsional, kalau pakai .env lokal
-
+// require('dotenv').config(); // opsional, kalau pakai .env lokal
+// untuk saat ini .env masih di docker-compose.yml
 const mysql  = require('mysql2/promise');
 const { encrypt, ENCRYPTED_FIELDS } = require('./crypto');
 
