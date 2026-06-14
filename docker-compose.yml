@@ -28,6 +28,7 @@ services:
       MAIL_PASS: REDACTED
       HCAPTCHA_SECRET: REDACTED
       REDIS_URL: redis://redis:6379
+      ENCRYPTION_KEY: REDACTEDc
       # ── Mamoru Chatbot ──────────────────────────────
       GEMINI_API_KEY: REDACTED
       TELEGRAM_BOT_TOKEN: REDACTED
