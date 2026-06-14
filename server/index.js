@@ -690,7 +690,7 @@ app.put('/api/pasien/:id/profil', verifyToken, upload.single('foto'), async (req
 
     // Enkripsi semua field sensitif
     // const enc = encryptPasien({ no_hp, nik, alamat, riwayat_penyakit, alergi });
-    const fields = [nama, email, no_hp, nik, tgl_lahir || null, gender, alamat, riwayat_penyakit, alergi];
+    const fields = [nama, email, no_hp, nik, tgl_lahir || null, gender || null, alamat, riwayat_penyakit, alergi];
     // const fields = [nama, email, enc.no_hp, enc.nik, tgl_lahir, gender, enc.alamat, enc.riwayat_penyakit, enc.alergi];
     const query = foto
       ? 'UPDATE pasiens SET nama=?, email=?, no_hp=?, nik=?, tgl_lahir=?, gender=?, alamat=?, riwayat_penyakit=?, alergi=?, foto=? WHERE id=?'
