@@ -10,7 +10,7 @@ const path = require('path');
 const fs = require('fs');
 const Redis = require('ioredis');
 const redis = new Redis(process.env.REDIS_URL || 'redis://redis:6379');
-// const { encryptPasien, decryptPasien } = require('./crypto');
+const { encryptPasien, decryptPasien } = require('./crypto');
 
 const app = express();
 app.use(cors());
@@ -279,11 +279,11 @@ app.post('/api/pasien/daftar', async (req, res) => {
     if (exist.length > 0) return res.status(400).json({ success: false, message: 'Email sudah terdaftar.' });
 
     const hashed = await bcrypt.hash(password, SALT_ROUNDS);
-    // const enc = encryptPasien({ no_hp });   // enkripsi no_hp saat daftar
+    const enc = encryptPasien({ no_hp });   // enkripsi no_hp saat daftar
 
     await db.query(
       'INSERT INTO pasiens (nama, email, no_hp, password) VALUES (?, ?, ?, ?)',
-      [nama, email, no_hp, hashed]
+      [nama, email, enc.no_hp, hashed]
     );
 
     // Notify admins
@@ -393,8 +393,7 @@ app.delete('/api/dokter/:id', verifyToken, async (req, res) => {
 app.get('/api/pasien', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query('SELECT id, nama, email, no_hp, nik FROM pasiens');
-    // const data = rows.map(r => decryptPasien(r));
-    res.json({ success: true, data: rows });
+    const data = rows.map(r => decryptPasien(r));
     res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -676,8 +675,7 @@ app.get('/api/pasien/:id/profil', verifyToken, async (req, res) => {
       [req.params.id]
     );
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Pasien tidak ditemukan.' });
-    // res.json({ success: true, data: decryptPasien(rows[0]) });
-    res.json({ success: true, data: rows[0] });
+    res.json({ success: true, data: decryptPasien(rows[0]) });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
   }
@@ -689,9 +687,8 @@ app.put('/api/pasien/:id/profil', verifyToken, upload.single('foto'), async (req
     const foto = req.file ? `/uploads/${req.file.filename}` : undefined;
 
     // Enkripsi semua field sensitif
-    // const enc = encryptPasien({ no_hp, nik, alamat, riwayat_penyakit, alergi });
-    const fields = [nama, email, no_hp, nik, tgl_lahir || null, gender || null, alamat, riwayat_penyakit, alergi];
-    // const fields = [nama, email, enc.no_hp, enc.nik, tgl_lahir, gender, enc.alamat, enc.riwayat_penyakit, enc.alergi];
+    const enc = encryptPasien({ no_hp, nik, alamat, riwayat_penyakit, alergi });
+    const fields = [nama, email, enc.no_hp, enc.nik, tgl_lahir || null, gender || null, enc.alamat, enc.riwayat_penyakit, enc.alergi];
     const query = foto
       ? 'UPDATE pasiens SET nama=?, email=?, no_hp=?, nik=?, tgl_lahir=?, gender=?, alamat=?, riwayat_penyakit=?, alergi=?, foto=? WHERE id=?'
       : 'UPDATE pasiens SET nama=?, email=?, no_hp=?, nik=?, tgl_lahir=?, gender=?, alamat=?, riwayat_penyakit=?, alergi=? WHERE id=?';
