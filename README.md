@@ -3,7 +3,7 @@ Secure Mini Enterprise Infrastructure Deployment
 
 fitur cepat update dari github + jalanin server
 ```
-git pull --rebase && docker compose down && docker compose up --build -d
+git pull --rebase && docker compose down && docker compose up --build -d && docker exec -it pbl_206-server-1 node migrate_encrypt_existing.js
 ```
 akses ke browser
 ```
@@ -35,6 +35,10 @@ docker compose down
 matiin server + reset database
 ```
 docker compose down -v
+```
+migrasi data lama ke data terenkripsi
+```
+docker exec -it pbl_206-server-1 node migrate_encrypt_existing.js
 ```
 # HealthSync Clinic
 
