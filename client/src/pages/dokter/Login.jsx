@@ -5,14 +5,12 @@ export default function DokterLogin() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [twofa, setTwofa] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
 
   async function handleLogin() {
     if (!email || !password) { setError('Email/No.STR dan password harus diisi.'); return; }
-    if (!twofa) { setError('⚠️ Harap aktifkan 2FA terlebih dahulu untuk keamanan akun.'); return; }
     setError('');
     setLoading(true);
     try {
@@ -67,13 +65,9 @@ export default function DokterLogin() {
             </button>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input type="checkbox" id="twofa" checked={twofa} onChange={e => setTwofa(e.target.checked)} style={{ width: 16, height: 16, accentColor: 'var(--green)' }} />
-            <label htmlFor="twofa" style={{ fontSize: 13, color: 'var(--text-muted)' }}>Enable 2FA</label>
-          </div>
-          <span style={{ fontSize: 13, color: 'var(--green)', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/dokter/lupa-password')}>Lupa password?</span>
-        </div>
+         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 22 }}>
+        <span style={{ fontSize: 13, color: 'var(--green)', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/dokter/lupa-password')}>Lupa password?</span>
+      </div>
         {error && <div style={{ background: '#FEE2E2', color: '#991B1B', borderRadius: 8, padding: '10px 14px', fontSize: 13, fontWeight: 600, marginBottom: 14, textAlign: 'center' }}>{error}</div>}
         <button onClick={handleLogin} disabled={loading} style={{ width: '100%', padding: 14, background: loading ? '#6B7280' : 'var(--green-dark)', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'inherit', cursor: loading ? 'not-allowed' : 'pointer' }}>
           {loading ? 'Memproses...' : 'Login'}
