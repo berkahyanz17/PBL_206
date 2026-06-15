@@ -40,6 +40,18 @@ migrasi data lama ke data terenkripsi
 ```
 docker exec -it pbl_206-server-1 node migrate_encrypt_existing.js
 ```
+Trivy scan latest cve vulnerability
+```
+# Check images name
+docker images
+
+# Install trivy if not already
+sudo curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
+
+# Scan
+trivy image pbl_206-server:latest
+trivy image pbl_206-client:latest
+```
 # HealthSync Clinic
 
 Frontend-only React app served by Nginx via Docker.
