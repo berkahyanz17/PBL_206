@@ -36,7 +36,7 @@ export default function DokterProfil() {
     Object.entries(form).forEach(([k, v]) => formData.append(k, v));
     if (fileRef.current?.files[0]) formData.append('foto', fileRef.current.files[0]);
 
-    const res = await fetch(`/api/dokter/${user.id}/profil`, {
+    const res = await apiFetch(`/api/dokter/${user.id}/profil`, {
       method: 'PUT',
       headers: { 'Authorization': `Bearer ${sessionStorage.getItem('token')}` },
       body: formData
