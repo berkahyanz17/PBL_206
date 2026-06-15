@@ -16,6 +16,141 @@ const { encryptPasien, decryptPasien } = require('./crypto');
 
 const logger = pino({ level: process.env.NODE_ENV === 'production' ? 'info' : 'debug' });
 
+// ─── Zod Schemas ─────────────────────────────────────────────────────────────
+const { z } = require('zod');
+
+const zAdminLogin = z.object({
+  username: z.string().min(1).max(50),
+  password: z.string().min(6).max(100),
+  captchaToken: z.string().min(1),
+});
+
+const zDokterLogin = z.object({
+  email: z.string().min(1).max(100),   // bisa email atau no_str
+  password: z.string().min(6).max(100),
+});
+
+const zPasienLogin = z.object({
+  email: z.string().min(1).max(100),
+  password: z.string().min(6).max(100),
+  captchaToken: z.string().min(1),
+});
+
+const zDaftar = z.object({
+  nama: z.string().min(1).max(100),
+  email: z.string().email().max(100),
+  no_hp: z.string().min(8).max(20),
+  password: z.string().min(8).max(100),
+});
+
+const zForgotPassword = z.object({
+  email: z.string().email().max(100),
+  captchaToken: z.string().optional(),
+});
+
+const zResetPassword = z.object({
+  token: z.string().min(1),
+  newPassword: z.string().min(8).max(100),
+});
+
+const zAddDokter = z.object({
+  nama: z.string().min(1).max(100),
+  email: z.string().email().max(100),
+  password: z.string().min(8).max(100),
+  spesialis: z.string().min(1).max(100),
+  no_str: z.string().min(1).max(50),
+  harga: z.number().int().positive(),
+});
+
+const zAppointment = z.object({
+  dokter_id: z.number().int().positive(),
+  keluhan: z.string().min(1).max(500),
+  tgl: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  jam: z.string().regex(/^\d{2}:\d{2}/),
+});
+
+const zAppointmentStatus = z.object({
+  status: z.enum(['menunggu', 'dikonfirmasi', 'selesai', 'ditolak']),
+});
+
+const zRekamMedis = z.object({
+  appointment_id: z.number().int().positive(),
+  diagnosa: z.string().min(1).max(1000),
+  resep: z.string().max(1000).optional(),
+  catatan: z.string().max(1000).optional(),
+});
+
+const zJadwal = z.object({
+  dokter_id: z.number().int().positive(),
+  hari: z.enum(['Senin','Selasa','Rabu','Kamis',"Jum'at",'Sabtu','Minggu']),
+  jam_mulai: z.string().regex(/^\d{2}:\d{2}/),
+  jam_selesai: z.string().regex(/^\d{2}:\d{2}/),
+});
+
+const zDokterProfil = z.object({
+  nama: z.string().min(1).max(100),
+  spesialis: z.string().min(1).max(100),
+  no_str: z.string().min(1).max(50),
+  harga: z.union([z.string(), z.number()]),
+  bio: z.string().max(500).optional(),
+  email: z.string().email().max(100),
+});
+
+const zPasienProfil = z.object({
+  nama: z.string().min(1).max(100),
+  email: z.string().email().max(100),
+  no_hp: z.string().min(8).max(20).optional(),
+  nik: z.string().max(20).optional(),
+  tgl_lahir: z.string().optional(),
+  gender: z.enum(['L','P']).optional(),
+  alamat: z.string().max(300).optional(),
+  riwayat_penyakit: z.string().max(500).optional(),
+  alergi: z.string().max(300).optional(),
+});
+
+const zChat = z.object({
+  sender_role: z.enum(['admin','dokter','pasien']),
+  sender_id: z.number().int().positive(),
+  receiver_role: z.enum(['admin','dokter','pasien']),
+  receiver_id: z.number().int().positive(),
+  pesan: z.string().min(1).max(2000),
+});
+
+const zPassword = z.object({
+  pwLama: z.string().min(1).max(100),
+  pwBaru: z.string().min(8).max(100),
+});
+
+const zNotifSettings = z.object({
+  telegram_chat_id: z.string().max(50).optional().nullable(),
+  notif_pasien_baru: z.boolean().optional(),
+  notif_appointment: z.boolean().optional(),
+  notif_chat_dokter: z.boolean().optional(),
+  notif_chat_admin: z.boolean().optional(),
+  notif_approve: z.boolean().optional(),
+  notif_pengingat: z.boolean().optional(),
+});
+
+const zMamoru = z.object({
+  pesan: z.string().min(1).max(1000),
+  history: z.array(z.any()).optional(),
+  pasienNama: z.string().max(100).optional(),
+});
+
+const zRefreshToken = z.object({
+  refreshToken: z.string().min(1),
+});
+
+// Helper — parse or return 400
+function validate(schema, body, res) {
+  const result = schema.safeParse(body);
+  if (!result.success) {
+    res.status(400).json({ success: false, message: 'Input tidak valid.', errors: result.error.issues });
+    return null;
+  }
+  return result.data;
+}
+
 const app = express();
 app.use(cors());
 app.use(helmet());
