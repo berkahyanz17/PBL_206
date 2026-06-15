@@ -25,7 +25,14 @@ app.use('/uploads', express.static('/app/uploads'));
 // ─── Healthcheck ────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.sendStatus(200));
 
-const JWT_SECRET = process.env.JWT_SECRET || 'healthsync_secret_key';
+const JWT_SECRET         = process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+if (!JWT_SECRET || !JWT_REFRESH_SECRET) {
+  logger.error('JWT_SECRET atau JWT_REFRESH_SECRET belum diset!');
+  process.exit(1);
+}
+const ACCESS_TOKEN_TTL  = 15 * 60;        // 15 menit (detik)
+const REFRESH_TOKEN_TTL = 7 * 24 * 3600;  // 7 hari (detik)
 const SALT_ROUNDS = 10;
 
 // ─── Multer (foto profil) ────────────────────────────────────────────────────
@@ -103,6 +110,24 @@ function verifyToken(req, res, next) {
     res.status(401).json({ success: false, message: 'Token tidak valid.' });
   }
 }
+
+// ─── Token helpers ────────────────────────────────────────────────────────────
+function signAccessToken(payload) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_TTL });
+}
+
+async function signRefreshToken(payload) {
+  const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: REFRESH_TOKEN_TTL });
+  // Simpan di Redis: key = refresh:<token>, value = user id
+  await redis.setex(`refresh:${refreshToken}`, REFRESH_TOKEN_TTL, String(payload.id));
+  return refreshToken;
+}
+
+async function revokeRefreshToken(token) {
+  await redis.del(`refresh:${token}`);
+}
+
+// verifyToken sudah ada di atas — tidak perlu diubah, tetap pakai JWT_SECRET
 
 // ─── hCaptcha ────────────────────────────────────────────────────────────────
 async function verifyCaptcha(token) {
@@ -252,8 +277,10 @@ app.post('/api/admin/login', rateLimiter, async (req, res) => {
     if (rows.length === 0) return res.status(401).json({ success: false, message: 'Username atau password salah.' });
     const match = await bcrypt.compare(password, rows[0].password);
     if (!match) return res.status(401).json({ success: false, message: 'Username atau password salah.' });
-    const token = jwt.sign({ id: rows[0].id, role: 'admin', username }, JWT_SECRET, { expiresIn: '8h' });
-    res.json({ success: true, token, user: { id: rows[0].id, username } });
+    const payload      = { id: rows[0].id, role: 'admin', username };
+    const accessToken  = signAccessToken(payload);
+    const refreshToken = await signRefreshToken(payload);
+    res.json({ success: true, accessToken, refreshToken, user: { id: rows[0].id, username } });
   } catch (err) {
     logger.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -268,8 +295,10 @@ app.post('/api/dokter/login', rateLimiter, async (req, res) => {
     if (rows.length === 0) return res.status(401).json({ success: false, message: 'Email/STR atau password salah.' });
     const match = await bcrypt.compare(password, rows[0].password);
     if (!match) return res.status(401).json({ success: false, message: 'Email/STR atau password salah.' });
-    const token = jwt.sign({ id: rows[0].id, role: 'dokter', nama: rows[0].nama }, JWT_SECRET, { expiresIn: '8h' });
-    res.json({ success: true, token, user: { id: rows[0].id, nama: rows[0].nama, spesialis: rows[0].spesialis } });
+    const payload      = { id: rows[0].id, role: 'dokter', nama: rows[0].nama };
+    const accessToken  = signAccessToken(payload);
+    const refreshToken = await signRefreshToken(payload);
+    res.json({ success: true, accessToken, refreshToken, user: { id: rows[0].id, nama: rows[0].nama, spesialis: rows[0].spesialis } });
   } catch (err) {
     logger.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -284,8 +313,10 @@ app.post('/api/pasien/login', rateLimiter, async (req, res) => {
     if (rows.length === 0) return res.status(401).json({ success: false, message: 'Email/HP atau password salah.' });
     const match = await bcrypt.compare(password, rows[0].password);
     if (!match) return res.status(401).json({ success: false, message: 'Email/HP atau password salah.' });
-    const token = jwt.sign({ id: rows[0].id, role: 'pasien', nama: rows[0].nama }, JWT_SECRET, { expiresIn: '8h' });
-    res.json({ success: true, token, user: { id: rows[0].id, nama: rows[0].nama } });
+    const payload      = { id: rows[0].id, role: 'pasien', nama: rows[0].nama };
+    const accessToken  = signAccessToken(payload);
+    const refreshToken = await signRefreshToken(payload);
+    res.json({ success: true, accessToken, refreshToken, user: { id: rows[0].id, nama: rows[0].nama } });
   } catch (err) {
     logger.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -1129,7 +1160,7 @@ app.post('/api/mamoru', async (req, res) => {
       db.query('SELECT nama, spesialis, harga FROM dokters ORDER BY nama')
         .catch(() => [[]])
     ]);
-
+    
     const systemInstruction = buildSystemPrompt(klinik, pasienNama, dokterList);
 
     const recentHistory = history.slice(-10).map(m => ({
@@ -1158,6 +1189,48 @@ app.post('/api/mamoru', async (req, res) => {
     logger.error('[Mamoru] 💥 Unexpected error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
+});
+
+// ─── POST /api/refresh ────────────────────────────────────────────────────────
+// Tukar refresh token lama → access token baru + refresh token baru (rotation)
+app.post('/api/refresh', async (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) return res.status(401).json({ success: false, message: 'Refresh token tidak ada.' });
+
+  try {
+    // 1. Verifikasi signature
+    const payload = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+
+    // 2. Cek apakah token masih ada di Redis (belum di-revoke)
+    const stored = await redis.get(`refresh:${refreshToken}`);
+    if (!stored) return res.status(401).json({ success: false, message: 'Refresh token tidak valid atau sudah expired.' });
+
+    // 3. Revoke token lama (rotation — satu token hanya bisa dipakai sekali)
+    await revokeRefreshToken(refreshToken);
+
+    // 4. Issue token baru
+    const newPayload      = { id: payload.id, role: payload.role, ...(payload.username && { username: payload.username }), ...(payload.nama && { nama: payload.nama }) };
+    const newAccessToken  = signAccessToken(newPayload);
+    const newRefreshToken = await signRefreshToken(newPayload);
+
+    res.json({ success: true, accessToken: newAccessToken, refreshToken: newRefreshToken });
+  } catch (err) {
+    logger.warn('[Refresh] Token error:', err.message);
+    res.status(401).json({ success: false, message: 'Refresh token tidak valid.' });
+  }
+});
+
+// ─── POST /api/logout ─────────────────────────────────────────────────────────
+app.post('/api/logout', async (req, res) => {
+  const { refreshToken } = req.body;
+  if (refreshToken) {
+    try {
+      await revokeRefreshToken(refreshToken);
+    } catch (err) {
+      logger.warn('[Logout] Redis error:', err.message);
+    }
+  }
+  res.json({ success: true, message: 'Logout berhasil.' });
 });
 
 // ─── Centralized error handler ──────────────────────────────────────────────
