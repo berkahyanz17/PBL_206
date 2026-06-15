@@ -25,6 +25,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'healthsync_secret_key';
 const SALT_ROUNDS = 10;
 
 // ─── Multer (foto profil) ────────────────────────────────────────────────────
+const upload = multer({ storage });
+const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp'];
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const dir = '/app/uploads';
@@ -32,11 +35,22 @@ const storage = multer.diskStorage({
     cb(null, dir);
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, crypto.randomUUID() + ext);  // random name, no original filename
   }
 });
-const upload = multer({ storage });
 
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  fileFilter: (req, file, cb) => {
+    if (ALLOWED_MIME.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type'), false);
+    }
+  }
+});
 // ─── Nodemailer ──────────────────────────────────────────────────────────────
 const transporter = nodemailer.createTransport({
   host: 'smtp.resend.com',
@@ -1141,6 +1155,16 @@ app.post('/api/mamoru', async (req, res) => {
     console.error('[Mamoru] 💥 Unexpected error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
+});
+
+// ─── Centralized error handler ──────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({ 
+    error: process.env.NODE_ENV === 'production' 
+      ? 'Internal server error' 
+      : err.message 
+  });
 });
 
 // ════════════════════════════════════════════════════════════════════════════
