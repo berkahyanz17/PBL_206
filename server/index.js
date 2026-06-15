@@ -17,6 +17,9 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static('/app/uploads'));
 
+// ─── Healthcheck ────────────────────────────────────────────────────
+app.get('/health', (req, res) => res.sendStatus(200));
+
 const JWT_SECRET = process.env.JWT_SECRET || 'healthsync_secret_key';
 const SALT_ROUNDS = 10;
 
@@ -1138,11 +1141,6 @@ app.post('/api/mamoru', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
-
-// ════════════════════════════════════════════════════════════════════════════
-// HEALTHCHECK
-// ════════════════════════════════════════════════════════════════════════════
-app.get('/health', (req, res) => res.sendStatus(200));
 
 // ════════════════════════════════════════════════════════════════════════════
 // START
