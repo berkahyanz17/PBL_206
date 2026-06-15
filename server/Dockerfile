@@ -10,5 +10,4 @@ COPY . .
 RUN mkdir -p /app/uploads && chown -R node:node /app
 USER node
 EXPOSE 3001
-RUN apk upgrade --no-cache
 CMD ["node", "index.js"]
