@@ -8,9 +8,13 @@ const crypto = require('crypto');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const helmet = require('helmet');
+const pino = require('pino');
 const Redis = require('ioredis');
 const redis = new Redis(process.env.REDIS_URL || 'redis://redis:6379');
 const { encryptPasien, decryptPasien } = require('./crypto');
+
+const logger = pino({ level: process.env.NODE_ENV === 'production' ? 'info' : 'debug' });
 
 const app = express();
 app.use(cors());
@@ -25,7 +29,6 @@ const JWT_SECRET = process.env.JWT_SECRET || 'healthsync_secret_key';
 const SALT_ROUNDS = 10;
 
 // ─── Multer (foto profil) ────────────────────────────────────────────────────
-const upload = multer({ storage });
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp'];
 
 const storage = multer.diskStorage({
@@ -78,10 +81,10 @@ async function connectDB() {
         enableKeepAlive: true,
         keepAliveInitialDelay: 0
       });
-      console.log('DB connected');
+      logger.info('DB connected');
       break;
     } catch (err) {
-      console.log('DB not ready, retrying in 3s...');
+      logger.info('DB not ready, retrying in 3s...');
       await new Promise(r => setTimeout(r, 3000));
     }
   }
@@ -96,7 +99,7 @@ function verifyToken(req, res, next) {
     req.user = jwt.verify(token, JWT_SECRET);
     next();
   } catch (err) {
-    console.log('Verify error:', err.message);
+    logger.info('Verify error:', err.message);
     res.status(401).json({ success: false, message: 'Token tidak valid.' });
   }
 }
@@ -110,7 +113,7 @@ async function verifyCaptcha(token) {
     body: `response=${token}&secret=${process.env.HCAPTCHA_SECRET}`
   });
   const data = await res.json();
-  console.log('hCaptcha response:', JSON.stringify(data));
+  logger.info('hCaptcha response:', JSON.stringify(data));
   return data.success;
 }
 
@@ -129,7 +132,7 @@ async function rateLimiter(req, res, next) {
 // Ganti dari:
 //   "// ─── Notification helper" (baris 108)
 // Sampai:
-//   "  } catch (err) {"  +  "    console.error('[Notif]..." + "  }" + "}" (baris 143–146)
+//   "  } catch (err) {"  +  "    logger.error('[Notif]..." + "  }" + "}" (baris 143–146)
 //
 // Dengan kode di bawah ini.
 // ════════════════════════════════════════════════════════════════════════════
@@ -144,11 +147,11 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
  */
 async function sendTelegram(chatId, text) {
   if (!TELEGRAM_BOT_TOKEN) {
-    console.warn('[Telegram] ⚠️  TELEGRAM_BOT_TOKEN tidak diset, skip.');
+    logger.warn('[Telegram] ⚠️  TELEGRAM_BOT_TOKEN tidak diset, skip.');
     return { ok: false, reason: 'no_token' };
   }
   if (!chatId) {
-    console.warn('[Telegram] ⚠️  chatId kosong, skip.');
+    logger.warn('[Telegram] ⚠️  chatId kosong, skip.');
     return { ok: false, reason: 'no_chat_id' };
   }
 
@@ -165,7 +168,7 @@ async function sendTelegram(chatId, text) {
     const tgData = await tgRes.json();
 
     if (tgData.ok) {
-      console.log(`[Telegram] ✅ Sent to ${chatId}`);
+      logger.info(`[Telegram] ✅ Sent to ${chatId}`);
       return { ok: true };
     }
 
@@ -195,12 +198,12 @@ async function sendTelegram(chatId, text) {
       hint   = `TELEGRAM_BOT_TOKEN tidak valid. Cek kembali token di environment variables.`;
     }
 
-    console.error(`[Telegram] ❌ Error ${errCode} → ${errDesc}${hint ? ' | ' + hint : ''}`);
+    logger.error(`[Telegram] ❌ Error ${errCode} → ${errDesc}${hint ? ' | ' + hint : ''}`);
     return { ok: false, reason, code: errCode, description: errDesc, hint };
 
   } catch (err) {
     // Network error (DNS gagal, timeout, dsb)
-    console.error('[Telegram] ❌ Network error:', err.message);
+    logger.error('[Telegram] ❌ Network error:', err.message);
     return { ok: false, reason: 'network_error', message: err.message };
   }
 }
@@ -211,10 +214,10 @@ async function sendEmail(to, subject, html) {
   try {
     await transporter.sendMail({ from: 'onboarding@resend.dev', to, subject, html });
   } catch (err) {
-    console.error('[Email] Failed:', err.message);
+    logger.error('[Email] Failed:', err.message);
     // Extract OTP dari html untuk debug
     const otpMatch = html.match(/<strong[^>]*>(\d{6})<\/strong>/);
-    if (otpMatch) console.log(`[2FA DEBUG] OTP untuk ${to}: ${otpMatch[1]}`);
+    if (otpMatch) logger.info(`[2FA DEBUG] OTP untuk ${to}: ${otpMatch[1]}`);
   }
 }
 
@@ -231,7 +234,7 @@ async function createNotif(role, user_id, icon, icon_color, text) {
       [role, user_id, icon, icon_color, text, time]
     );
   } catch (err) {
-    console.error('[Notif] Failed to create notification:', err.message);
+    logger.error('[Notif] Failed to create notification:', err.message);
   }
 }
 
@@ -252,7 +255,7 @@ app.post('/api/admin/login', rateLimiter, async (req, res) => {
     const token = jwt.sign({ id: rows[0].id, role: 'admin', username }, JWT_SECRET, { expiresIn: '8h' });
     res.json({ success: true, token, user: { id: rows[0].id, username } });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
@@ -268,7 +271,7 @@ app.post('/api/dokter/login', rateLimiter, async (req, res) => {
     const token = jwt.sign({ id: rows[0].id, role: 'dokter', nama: rows[0].nama }, JWT_SECRET, { expiresIn: '8h' });
     res.json({ success: true, token, user: { id: rows[0].id, nama: rows[0].nama, spesialis: rows[0].spesialis } });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
@@ -284,7 +287,7 @@ app.post('/api/pasien/login', rateLimiter, async (req, res) => {
     const token = jwt.sign({ id: rows[0].id, role: 'pasien', nama: rows[0].nama }, JWT_SECRET, { expiresIn: '8h' });
     res.json({ success: true, token, user: { id: rows[0].id, nama: rows[0].nama } });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
@@ -314,7 +317,7 @@ app.post('/api/pasien/daftar', async (req, res) => {
     }
     res.json({ success: true, message: 'Pendaftaran berhasil. Silakan login.' });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
@@ -340,7 +343,7 @@ app.post('/api/forgot-password', async (req, res) => {
     });
     res.json({ success: true, message: 'Link reset telah dikirim ke email kamu.' });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
@@ -361,7 +364,7 @@ app.post('/api/reset-password', async (req, res) => {
     await db.query('UPDATE password_resets SET used = 1 WHERE token = ?', [token]);
     res.json({ success: true, message: 'Password berhasil direset.' });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
@@ -390,7 +393,7 @@ app.post('/api/dokter', verifyToken, async (req, res) => {
     );
     res.json({ success: true, message: 'Dokter berhasil ditambahkan.' });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
@@ -716,7 +719,7 @@ app.put('/api/pasien/:id/profil', verifyToken, upload.single('foto'), async (req
     await db.query(query, fields);
     res.json({ success: true, message: 'Profil berhasil disimpan.' });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
@@ -959,22 +962,22 @@ async function callGemini(contents, systemInstruction) {
         }
       );
       if (res.status === 429) {
-        console.log(`[Mamoru] ⚠️ ${model} rate limited, trying next...`);
+        logger.info(`[Mamoru] ⚠️ ${model} rate limited, trying next...`);
         continue;
       }
       if (!res.ok) {
         const err = await res.text();
-        console.error(`[Mamoru] ❌ ${model} error:`, err);
+        logger.error(`[Mamoru] ❌ ${model} error:`, err);
         continue;
       }
       const data = await res.json();
       const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (reply) {
-        console.log(`[Mamoru] ✅ Answered by ${model}`);
+        logger.info(`[Mamoru] ✅ Answered by ${model}`);
         return reply;
       }
     } catch (err) {
-      console.error(`[Mamoru] ❌ ${model} fetch error:`, err.message);
+      logger.error(`[Mamoru] ❌ ${model} fetch error:`, err.message);
     }
   }
   return null;
@@ -1075,7 +1078,7 @@ async function notifyAdminTelegram(pasienNama, pesan, level) {
   if (TELEGRAM_CHAT_ID) chatIds.add(TELEGRAM_CHAT_ID);
 
   if (chatIds.size === 0) {
-    console.log('[Mamoru] ⚠️ Tidak ada chat_id admin, skip notif Telegram.');
+    logger.info('[Mamoru] ⚠️ Tidak ada chat_id admin, skip notif Telegram.');
     return;
   }
 
@@ -1097,19 +1100,19 @@ async function notifyAdminTelegram(pasienNama, pesan, level) {
       });
       const tgData = await tgRes.json();
       if (tgData.ok) {
-        console.log(`[Mamoru] ✅ Telegram notif [${level}] sent to ${chatId}`);
+        logger.info(`[Mamoru] ✅ Telegram notif [${level}] sent to ${chatId}`);
       } else {
-        console.error(`[Mamoru] ❌ Telegram error for ${chatId}:`, JSON.stringify(tgData));
+        logger.error(`[Mamoru] ❌ Telegram error for ${chatId}:`, JSON.stringify(tgData));
       }
     } catch (err) {
-      console.error(`[Mamoru] ❌ Telegram fetch failed for ${chatId}:`, err.message);
+      logger.error(`[Mamoru] ❌ Telegram fetch failed for ${chatId}:`, err.message);
     }
   }
 }
 
 // ─── POST /api/mamoru ─────────────────────────────────────────────────────
 app.post('/api/mamoru', async (req, res) => {
-  console.log('[Mamoru] 📨 Request received:', JSON.stringify(req.body).slice(0, 200));
+  logger.info('[Mamoru] 📨 Request received:', JSON.stringify(req.body).slice(0, 200));
   try {
     const { pesan, history = [], pasienNama = 'Pasien' } = req.body;
 
@@ -1146,20 +1149,20 @@ app.post('/api/mamoru', async (req, res) => {
     if (level === 'darurat' || level === 'perlu_admin') {
       // Fire-and-forget, tidak blocking response ke user
       notifyAdminTelegram(pasienNama, pesan, level).catch(err =>
-        console.error('[Mamoru] notifyAdminTelegram error:', err.message)
+        logger.error('[Mamoru] notifyAdminTelegram error:', err.message)
       );
     }
 
     res.json({ success: true, reply, notifLevel: level }); // notifLevel opsional, untuk debug di frontend
   } catch (err) {
-    console.error('[Mamoru] 💥 Unexpected error:', err);
+    logger.error('[Mamoru] 💥 Unexpected error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
 
 // ─── Centralized error handler ──────────────────────────────────────────────
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error(err.stack);
   res.status(err.status || 500).json({ 
     error: process.env.NODE_ENV === 'production' 
       ? 'Internal server error' 
@@ -1171,5 +1174,5 @@ app.use((err, req, res, next) => {
 // START
 // ════════════════════════════════════════════════════════════════════════════
 connectDB().then(() => {
-  app.listen(3001, () => console.log('Server jalan di port 3001'));
+  app.listen(3001, () => logger.info('Server jalan di port 3001'));
 });
