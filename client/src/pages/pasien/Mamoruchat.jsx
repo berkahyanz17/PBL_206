@@ -91,7 +91,7 @@ export default function MamoruChat() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/mamoru', {
+      const res = await apiFetch('/api/mamoru', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
