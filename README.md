@@ -1,9 +1,9 @@
 # PBL_206
 Secure Mini Enterprise Infrastructure Deployment
 
-fitur cepat update dari github + jalanin server + migrasi ke data terenkripsi
+fitur cepat update dari github + jalanin server
 ```
-git pull --rebase && docker compose down && docker compose up --build -d && docker exec -it pbl_206-server-1 node migrate_encrypt_existing.js
+git pull --rebase && docker compose down && docker compose up --build -d
 ```
 akses ke browser
 ```
