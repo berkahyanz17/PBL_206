@@ -41,7 +41,7 @@ export default function PasienSettings() {
     });
   }
 
-  function logout() { sessionStorage.clear(); navigate('/pasien/login'); }
+  async function logout() { const rt = localStorage.getItem('refreshToken'); if (rt) { await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); } sessionStorage.clear(); localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); navigate('/pasien/login'); }
 
   return (
     <div className="dashboard-layout">

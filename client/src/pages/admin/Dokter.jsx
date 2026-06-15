@@ -39,7 +39,7 @@ export default function AdminDokter() {
     loadDokters();
   }
 
-  function logout() { sessionStorage.clear(); navigate('/admin/login'); }
+  async function logout() { const rt = localStorage.getItem('refreshToken'); if (rt) { await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); } sessionStorage.clear(); localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); navigate('/admin/login'); }
 
   const spesialisList = ['semua', ...new Set(dokters.map(d => d.spesialis).filter(Boolean))];
   const filtered = dokters.filter(d => filter === 'semua' || d.spesialis === filter);

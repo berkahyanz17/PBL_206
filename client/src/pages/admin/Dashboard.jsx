@@ -33,10 +33,7 @@ export default function AdminDashboard() {
     load();
   }, []);
 
-  function logout() {
-    sessionStorage.clear();
-    navigate('/admin/login');
-  }
+  async function logout() { const rt = localStorage.getItem('refreshToken'); if (rt) { await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); } sessionStorage.clear(); localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); navigate('/admin/login'); }
 
   const statusBadge = { menunggu: 'menunggu', dikonfirmasi: 'dikonfirmasi', selesai: 'selesai', ditolak: 'tolak' };
   const statusLabel = { menunggu: 'Menunggu', dikonfirmasi: 'Dikonfirmasi', selesai: 'Selesai', ditolak: 'Ditolak' };

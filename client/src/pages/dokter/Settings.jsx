@@ -47,7 +47,7 @@ export default function DokterSettings() {
     });
   }
 
-  function logout() { sessionStorage.clear(); navigate('/dokter/login'); }
+  async function logout() { const rt = localStorage.getItem('refreshToken'); if (rt) { await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); } sessionStorage.clear(); localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); navigate('/dokter/login'); }
 
   return (
     <div className="dashboard-layout">

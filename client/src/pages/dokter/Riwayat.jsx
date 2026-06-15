@@ -26,7 +26,7 @@ export default function DokterRiwayat() {
     load();
   }, []);
 
-  function logout() { sessionStorage.clear(); navigate('/dokter/login'); }
+  async function logout() { const rt = localStorage.getItem('refreshToken'); if (rt) { await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); } sessionStorage.clear(); localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); navigate('/dokter/login'); }
 
   const activeRekam = rekamList.filter(r => r.pasien_nama === active);
   const colors = ['#a855f7', '#3b82f6', '#22c55e', '#f59e0b', '#ec4899'];
