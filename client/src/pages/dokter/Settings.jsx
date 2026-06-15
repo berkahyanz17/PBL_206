@@ -34,6 +34,19 @@ export default function DokterSettings() {
     else alert(res?.message || 'Gagal mengubah password.');
   }
 
+  async function simpanNotif(overrideTg, overrideNotif) {
+    const tg = overrideTg !== undefined ? overrideTg : telegramId;
+    const n  = overrideNotif !== undefined ? overrideNotif : notif;
+    await apiFetch('/notif-settings', {
+      method: 'PATCH',
+      body: JSON.stringify({
+        telegram_chat_id: tg,
+        notif_chat_admin: n.chatAdmin   ? 1 : 0,
+        notif_appointment: n.appointment ? 1 : 0,
+      }),
+    });
+  }
+
   function logout() { sessionStorage.clear(); navigate('/dokter/login'); }
 
   return (
@@ -76,7 +89,7 @@ export default function DokterSettings() {
                   <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Kirim /start ke bot lalu cek ID kamu di @userinfobot</div>
                 </div>
                 {editTg
-                  ? <button onClick={async () => { await apiFetch('/notif-settings', { method: 'PATCH', body: JSON.stringify({ telegram_chat_id: telegramId }) }); setEditTg(false); }}
+                  ? <button onClick={async () => { await simpanNotif(telegramId, notif); setEditTg(false); alert('✅ Telegram ID tersimpan!'); }}
                       style={{ padding: '8px 16px', background: 'var(--green)', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 20 }}>
                       Simpan
                     </button>
@@ -91,7 +104,7 @@ export default function DokterSettings() {
                 ['appointment', 'Appointment Pasien Baru', 'Notif saat ada pasien booking ke kamu'],
               ].map(([key, label, sub]) => (
                 <label key={key} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 0', borderBottom: '1px solid #F9FAFB', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={notif[key]} onChange={e => setNotif(p => ({ ...p, [key]: e.target.checked }))}
+                  <input type="checkbox" checked={notif[key]} onChange={e => { const updated = { ...notif, [key]: e.target.checked }; setNotif(updated); simpanNotif(telegramId, updated); }}
                     style={{ width: 16, height: 16, marginTop: 2, accentColor: 'var(--green)', cursor: 'pointer', flexShrink: 0 }} />
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{label}</div>
