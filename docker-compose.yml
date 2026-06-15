@@ -98,7 +98,7 @@ services:
       server:
         condition: service_healthy
       client:
-        condition: service_healthy
+        condition: service_started
     networks:
       - frontend
       - backend
