@@ -65,7 +65,9 @@ export default function DokterLogin() {
             </button>
           </div>
         </div>
-        <span style={{ fontSize: 13, color: 'var(--green)', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/dokter/lupa-password')}>Lupa password?</span>
+        <div style={{ display: 'flex', marginBottom: 22 }}>
+          <span style={{ fontSize: 13, color: 'var(--green)', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/dokter/lupa-password')}>Lupa password?</span>
+        </div>
         {error && <div style={{ background: '#FEE2E2', color: '#991B1B', borderRadius: 8, padding: '10px 14px', fontSize: 13, fontWeight: 600, marginBottom: 14, textAlign: 'center' }}>{error}</div>}
         <button onClick={handleLogin} disabled={loading} style={{ width: '100%', padding: 14, background: loading ? '#6B7280' : 'var(--green-dark)', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'inherit', cursor: loading ? 'not-allowed' : 'pointer' }}>
           {loading ? 'Memproses...' : 'Login'}
