@@ -1,75 +1,104 @@
 services:
   db:
     image: mariadb:11
-    restart: always
+    restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: secret
-      MYSQL_DATABASE: db_praktikum
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
     volumes:
       - db_data:/var/lib/mysql
       - ./db_praktikum.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - app_network
+      - backend
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+      
   redis:
     image: redis:7-alpine
-    restart: always
+    restart: unless-stopped
     networks:
-      - app_network
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   server:
     build: ./server
-    restart: always
+    restart: unless-stopped
     environment:
       DB_HOST: db
-      DB_USER: root
-      DB_PASSWORD: secret
-      DB_NAME: db_praktikum
-      JWT_SECRET: REDACTED
-      MAIL_PASS: REDACTED
-      HCAPTCHA_SECRET: REDACTED
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      MAIL_PASS: ${MAIL_PASS}
+      HCAPTCHA_SECRET: ${HCAPTCHA_SECRET}
       REDIS_URL: redis://redis:6379
-      ENCRYPTION_KEY: REDACTEDc
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       # ── Mamoru Chatbot ──────────────────────────────
-      GEMINI_API_KEY: REDACTED
-      TELEGRAM_BOT_TOKEN: REDACTED
-      TELEGRAM_CHAT_ID: -5022288086
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
-      - app_network
+      - backend
     volumes:
       - uploads_data:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   client:
     build:
       context: ./client
       args:
-        VITE_HCAPTCHA_SITEKEY: 97304a14-ac8e-473a-b1b2-f6aa751631f2
-    restart: always
+        VITE_HCAPTCHA_SITEKEY: ${VITE_HCAPTCHA_SITEKEY}
+    restart: unless-stopped
     networks:
-      - app_network
+      - frontend
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   nginx:
     image: nginx:alpine
-    restart: always
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-      - /etc/ssl/certs/server.crt:/etc/ssl/certs/server.crt
-      - /etc/ssl/private/server.key:/etc/ssl/private/server.key
-      - /etc/ssl/certs/ca-chain.crt:/etc/ssl/certs/ca-chain.crt
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/ssl/certs/server.crt:/etc/ssl/certs/server.crt:ro
+      - /etc/ssl/private/server.key:/etc/ssl/private/server.key:ro
+      - /etc/ssl/certs/ca-chain.crt:/etc/ssl/certs/ca-chain.crt:ro
     depends_on:
-      - server
-      - client
+      server:
+        condition: service_healthy
+      client:
+        condition: service_healthy
     networks:
-      - app_network
+      - frontend
+      - backend
 
 volumes:
   db_data:
   uploads_data:
 
 networks:
-  app_network:
+  frontend:   # nginx <-> client
+  backend:    # nginx <-> server <-> db <-> redis
