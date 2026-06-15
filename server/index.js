@@ -14,6 +14,7 @@ const { encryptPasien, decryptPasien } = require('./crypto');
 
 const app = express();
 app.use(cors());
+app.use(helmet());
 app.use(express.json());
 app.use('/uploads', express.static('/app/uploads'));
 
