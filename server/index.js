@@ -16,6 +16,16 @@ const { encryptPasien, decryptPasien } = require('./crypto');
 
 const logger = pino({ level: process.env.NODE_ENV === 'production' ? 'info' : 'debug' });
 
+// Helper — parse or return 400
+function validate(schema, body, res) {
+  const result = schema.safeParse(body);
+  if (!result.success) {
+    res.status(400).json({ success: false, message: 'Input tidak valid.', errors: result.error.issues });
+    return null;
+  }
+  return result.data;
+}
+
 const app = express();
 app.use(cors());
 app.use(helmet());
