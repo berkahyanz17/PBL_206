@@ -1,5 +1,6 @@
 FROM node:20-alpine
 WORKDIR /app
+RUN apk upgrade --no-cache
 # Install dependencies as root, then drop privileges
 COPY package*.json ./
 # -- RUN npm ci --omit=dev && \
