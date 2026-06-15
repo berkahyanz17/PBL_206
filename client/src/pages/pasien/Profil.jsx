@@ -42,7 +42,7 @@ export default function PasienProfil() {
     Object.entries(form).forEach(([k, v]) => formData.append(k, v));
     if (fileRef.current?.files[0]) formData.append('foto', fileRef.current.files[0]);
 
-    const res = await fetch(`/api/pasien/${user.id}/profil`, {
+    const res = await apiFetch(`/api/pasien/${user.id}/profil`, {
       method: 'PUT',
       headers: { 'Authorization': `Bearer ${sessionStorage.getItem('token')}` },
       body: formData
