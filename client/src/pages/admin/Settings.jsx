@@ -73,6 +73,20 @@ export default function AdminSettings() {
     else alert(res?.message || 'Gagal menyimpan pengaturan klinik.');
   }
 
+  async function simpanNotif(overrideTg, overrideNotif) {
+    const tg = overrideTg !== undefined ? overrideTg : telegramId;
+    const n  = overrideNotif !== undefined ? overrideNotif : notif;
+    await apiFetch('/notif-settings', {
+      method: 'PATCH',
+      body: JSON.stringify({
+        telegram_chat_id:  tg,
+        notif_pasien_baru: n.pasienBaru  ? 1 : 0,
+        notif_appointment: n.appointment ? 1 : 0,
+        notif_chat_dokter: n.chatDokter  ? 1 : 0,
+      }),
+    });
+  }
+
   function logout() { sessionStorage.clear(); navigate('/admin/login'); }
 
   const inputStyle = {
@@ -147,8 +161,9 @@ export default function AdminSettings() {
                 </div>
                 {editTg
                   ? <button onClick={async () => {
-                      await apiFetch('/notif-settings', { method: 'PATCH', body: JSON.stringify({ telegram_chat_id: telegramId }) });
+                      await simpanNotif(telegramId, notif);
                       setEditTg(false);
+                      alert('✅ Telegram ID tersimpan!');
                     }}
                       style={{ padding: '8px 16px', background: 'var(--navy)', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 20 }}>
                       Simpan
@@ -169,11 +184,7 @@ export default function AdminSettings() {
                     onChange={e => {
                       const updated = { ...notif, [key]: e.target.checked };
                       setNotif(updated);
-                      apiFetch('/notif-settings', { method: 'PATCH', body: JSON.stringify({
-                        notif_pasien_baru: updated.pasienBaru ? 1 : 0,
-                        notif_appointment: updated.appointment ? 1 : 0,
-                        notif_chat_dokter: updated.chatDokter ? 1 : 0,
-                      }) });
+                      simpanNotif(telegramId, updated);
                     }}
                     style={{ width: 16, height: 16, marginTop: 2, accentColor: 'var(--navy)', cursor: 'pointer', flexShrink: 0 }} />
                   <div>
