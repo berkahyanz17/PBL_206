@@ -25,7 +25,7 @@ export default function PasienRiwayat() {
   const statusText = { selesai: '#065F46', dikonfirmasi: '#1E40AF', menunggu: '#92400E', ditolak: '#991B1B' };
   const statusLabel = { selesai: 'Selesai', dikonfirmasi: 'Dikonfirmasi', menunggu: 'Menunggu', ditolak: 'Ditolak' };
 
-  function logout() { sessionStorage.clear(); navigate('/pasien/login'); }
+  async function logout() { const rt = localStorage.getItem('refreshToken'); if (rt) { await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); } sessionStorage.clear(); localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); navigate('/pasien/login'); }
 
   return (
     <div className="dashboard-layout">
