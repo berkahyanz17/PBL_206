@@ -49,8 +49,8 @@ function TypingDots() {
 }
 
 export default function MamoruChat() {
-  const nama  = sessionStorage.getItem('pasienNama') || 'Pasien';
-  const token = sessionStorage.getItem('token') || '';
+  const nama  = localStorage.getItem('pasienNama') || 'Pasien';
+  const token = localStorage.getItem('accessToken') || '';
 
   const [chatOpen,  setChatOpen]  = useState(false);
   const [messages,  setMessages]  = useState([INITIAL_MSG(nama)]);

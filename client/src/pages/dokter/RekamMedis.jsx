@@ -10,7 +10,7 @@ export default function DokterRekam() {
   const [search, setSearch] = useState('');
   const [detail, setDetail] = useState(null);
   const { bellButton, popup } = useNotif('notif-dokter');
-  const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
+  const user = JSON.parse(localStorage.getItem('dokterUser') || '{}');
 
   useEffect(() => {
     async function load() {

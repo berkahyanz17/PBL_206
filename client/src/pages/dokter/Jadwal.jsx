@@ -12,7 +12,7 @@ export default function DokterJadwal() {
   const [catatan, setCatatan] = useState('');
   const [resep, setResep] = useState('');
   const { bellButton, popup } = useNotif('notif-dokter');
-  const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
+  const user = JSON.parse(localStorage.getItem('dokterUser') || '{}');
 
   useEffect(() => { loadAppts(); }, []);
 

@@ -11,7 +11,7 @@ export default function DokterKelola() {
   const [jadwal, setJadwal] = useState(hariList.map(h => ({ hari: h, aktif: false, mulai: '08:00', selesai: '16:00', id: null })));
   const [saving, setSaving] = useState(false);
   const { bellButton, popup } = useNotif('notif-dokter');
-  const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
+  const user = JSON.parse(localStorage.getItem('dokterUser') || '{}');
 
   useEffect(() => {
     async function load() {

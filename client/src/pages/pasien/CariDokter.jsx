@@ -18,7 +18,7 @@ export default function PasienCari() {
   const [jamOptions, setJamOptions] = useState([]);
   const [tersediaMap, setTersediaMap] = useState({});
   const { bellButton, popup } = useNotif('notif-admin', { background: 'rgba(255,255,255,0.4)' });
-  const user = JSON.parse(sessionStorage.getItem('pasienUser') || '{}');
+  const user = JSON.parse(localStorage.getItem('pasienUser') || '{}');
 
   useEffect(() => {
     async function load() {
@@ -94,7 +94,7 @@ export default function PasienCari() {
           <h1 style={{ color: '#1e3a5f' }}>Cari Dokter</h1>
           <div className="topbar-right">
             {bellButton}
-            <button className="btn-logout" style={{ background: 'rgba(255,255,255,0.4)', color: '#1e3a5f', borderColor: 'rgba(255,255,255,0.5)' }} onClick={() => { sessionStorage.clear(); navigate('/pasien/login'); }}>🚪 Logout</button>
+            <button className="btn-logout" style={{ background: 'rgba(255,255,255,0.4)', color: '#1e3a5f', borderColor: 'rgba(255,255,255,0.5)' }} onClick={async () => { const rt = localStorage.getItem('refreshToken'); if (rt) { await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); } localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); localStorage.removeItem('pasienUser'); navigate('/pasien/login'); }}>🚪 Logout</button>
           </div>
         </div>
         <div className="content-area">
