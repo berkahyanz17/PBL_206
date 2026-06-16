@@ -23,7 +23,7 @@ export default function DokterLogin() {
       if (data.success) {
         localStorage.setItem('accessToken', data.accessToken);
         localStorage.setItem('refreshToken', data.refreshToken);
-        sessionStorage.setItem('dokterUser', JSON.stringify(data.user));
+        localStorage.setItem('dokterUser', JSON.stringify(data.user));
         navigate('/dokter/jadwal');
       } else {
         setError(data.message || 'Login gagal.');
