@@ -28,7 +28,7 @@ export default function DokterLogin() {
       } else {
         setError(data.message || 'Login gagal.');
       }
-    } catch {
+    } catch (err) {
       setError('Tidak dapat terhubung ke server.');
     } finally {
       setLoading(false);
