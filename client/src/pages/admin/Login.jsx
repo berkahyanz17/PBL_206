@@ -25,6 +25,9 @@ export default function AdminLogin() {
       });
       const data = await res.json();
       if (data.success) {
+        if (data.success) {
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
         sessionStorage.setItem('token', data.token);
         sessionStorage.setItem('adminUser', JSON.stringify(data.user));
         navigate('/admin/dashboard');
