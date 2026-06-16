@@ -11,7 +11,7 @@ const navItems = [
 export default function DokterSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
+  const user = JSON.parse(localStorage.getItem('dokterUser') || '{}');
   return (
     <div className="sidebar" style={{ background: 'var(--green)' }}>
       <div className="sidebar-brand">

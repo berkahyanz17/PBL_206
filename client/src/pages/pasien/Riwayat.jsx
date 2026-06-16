@@ -9,7 +9,7 @@ export default function PasienRiwayat() {
   const navigate = useNavigate();
   const [riwayat, setRiwayat] = useState([]);
   const [loading, setLoading] = useState(true);
-  const user = JSON.parse(sessionStorage.getItem('pasienUser') || '{}');
+  const user = JSON.parse(localStorage.getItem('pasienUser') || '{}');
   const { bellButton, popup } = useNotif('notif-pasien', { background: 'rgba(255,255,255,0.4)' });
 
   useEffect(() => {

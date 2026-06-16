@@ -7,9 +7,9 @@ import MamoruChat from './Mamoruchat';
 
 export default function PasienHome() {
   const navigate = useNavigate();
-  const nama = sessionStorage.getItem('pasienNama') || 'Pasien';
-  const token = sessionStorage.getItem('token') || '';
-  const user = JSON.parse(sessionStorage.getItem('pasienUser') || '{}');
+  const nama = localStorage.getItem('pasienNama') || 'Pasien';
+  const token = localStorage.getItem('accessToken') || '';
+  const user = JSON.parse(localStorage.getItem('pasienUser') || '{}');
   const { bellButton, popup } = useNotif('notif-pasien', { background: 'rgba(255,255,255,0.4)' });
   const [appointments, setAppointments] = useState([]);
 

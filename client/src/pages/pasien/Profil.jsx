@@ -11,7 +11,7 @@ export default function PasienProfil() {
   const [foto, setFoto] = useState(null);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef();
-  const user = JSON.parse(sessionStorage.getItem('pasienUser') || '{}');
+  const user = JSON.parse(localStorage.getItem('pasienUser') || '{}');
   const { bellButton, popup } = useNotif('notif-pasien', { background: 'rgba(255,255,255,0.4)' });
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export default function PasienProfil() {
 
     const res = await apiFetch(`/api/pasien/${user.id}/profil`, {
       method: 'PUT',
-      headers: { 'Authorization': `Bearer ${sessionStorage.getItem('token')}` },
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` },
       body: formData
     });
     const data = await res.json();

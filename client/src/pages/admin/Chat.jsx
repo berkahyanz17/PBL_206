@@ -12,7 +12,7 @@ export default function AdminChat() {
   const [active, setActive] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const adminUser = JSON.parse(sessionStorage.getItem('adminUser') || '{}');
+  const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
   const bottomRef = useRef();
   const { bellButton, popup } = useNotif('notif-admin');
 

@@ -11,7 +11,7 @@ export default function DokterRiwayat() {
   const [active, setActive] = useState(null);
   const [tab, setTab] = useState('riwayat');
   const { bellButton, popup } = useNotif('notif-dokter');
-  const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
+  const user = JSON.parse(localStorage.getItem('dokterUser') || '{}');
 
   useEffect(() => {
     async function load() {

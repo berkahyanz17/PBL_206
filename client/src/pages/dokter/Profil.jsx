@@ -11,7 +11,7 @@ export default function DokterProfil() {
   const [saving, setSaving] = useState(false);
   const { bellButton, popup } = useNotif('notif-dokter');
   const fileRef = useRef();
-  const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
+  const user = JSON.parse(localStorage.getItem('dokterUser') || '{}');
 
   useEffect(() => {
     async function load() {
@@ -38,7 +38,7 @@ export default function DokterProfil() {
 
     const res = await apiFetch(`/api/dokter/${user.id}/profil`, {
       method: 'PUT',
-      headers: { 'Authorization': `Bearer ${sessionStorage.getItem('token')}` },
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` },
       body: formData
     });
     const data = await res.json();

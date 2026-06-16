@@ -10,7 +10,7 @@ export default function DokterChat() {
   const [input, setInput] = useState('');
   const [adminId, setAdminId] = useState(1);
   const { bellButton, popup } = useNotif('notif-dokter');
-  const user = JSON.parse(sessionStorage.getItem('dokterUser') || '{}');
+  const user = JSON.parse(localStorage.getItem('dokterUser') || '{}');
   const bottomRef = useRef();
 
   useEffect(() => {
