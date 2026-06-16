@@ -35,7 +35,7 @@ export default function AdminLogin() {
         captchaRef.current?.resetCaptcha();
         setCaptchaToken('');
       }
-    } catch {
+    } catch (err) {
       setError('Tidak dapat terhubung ke server.');
     } finally {
       setLoading(false);
