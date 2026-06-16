@@ -21,7 +21,8 @@ export default function DokterLogin() {
       });
       const data = await res.json();
       if (data.success) {
-        sessionStorage.setItem('token', data.token);
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
         sessionStorage.setItem('dokterUser', JSON.stringify(data.user));
         navigate('/dokter/jadwal');
       } else {
