@@ -21,7 +21,8 @@ export default function PasienLogin() {
       });
       const data = await res.json();
       if (data.success) {
-        sessionStorage.setItem('token', data.token);
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
         sessionStorage.setItem('pasienUser', JSON.stringify(data.user));
         sessionStorage.setItem('pasienNama', data.user.nama);
         navigate('/pasien/home');
