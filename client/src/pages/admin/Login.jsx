@@ -25,7 +25,6 @@ export default function AdminLogin() {
       });
       const data = await res.json();
       if (data.success) {
-        if (data.success) {
         localStorage.setItem('accessToken', data.accessToken);
         localStorage.setItem('refreshToken', data.refreshToken);
         localStorage.setItem('adminUser', JSON.stringify(data.user));
