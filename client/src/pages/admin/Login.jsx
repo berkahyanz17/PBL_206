@@ -26,9 +26,11 @@ export default function AdminLogin() {
       const data = await res.json();
       console.log('Login response:', data);
       if (data.success) {
+        console.log('saving tokens and navigating...');
         localStorage.setItem('accessToken', data.accessToken);
         localStorage.setItem('refreshToken', data.refreshToken);
         localStorage.setItem('adminUser', JSON.stringify(data.user));
+        console.log('tokens saved, navigating to dashboard');
         navigate('/admin/dashboard');
       } else {
         setError(data.message || 'Login gagal.');
