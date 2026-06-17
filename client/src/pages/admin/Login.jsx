@@ -24,6 +24,7 @@ export default function AdminLogin() {
         body: JSON.stringify({ username, password, captchaToken })
       });
       const data = await res.json();
+      console.log('Login response:', data);
       if (data.success) {
         localStorage.setItem('accessToken', data.accessToken);
         localStorage.setItem('refreshToken', data.refreshToken);
