@@ -36,6 +36,7 @@ export default function AdminLogin() {
         setCaptchaToken('');
       }
     } catch (err) {
+      console.log('Login error:', err);
       setError('Tidak dapat terhubung ke server.');
     } finally {
       setLoading(false);
