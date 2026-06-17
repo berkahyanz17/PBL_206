@@ -4,6 +4,8 @@ import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from '../uti
 
 export default function ProtectedRoute({ children, role }) {
   const token = getAccessToken();
+  console.log('ProtectedRoute token:', token);
+  console.log('ProtectedRoute role:', role);
 
   if (!token) {
     if (role === 'admin') return <Navigate to="/admin/login" />;
@@ -14,6 +16,9 @@ export default function ProtectedRoute({ children, role }) {
 
   try {
     const decoded = jwtDecode(token);
+    console.log('decoded:', decoded);
+    console.log('expired:', decoded.exp * 1000 < Date.now());
+    console.log('role match:', decoded.role === role);
 
     if (decoded.exp * 1000 < Date.now()) {
       // Token expired — try refresh synchronously isn't possible here
