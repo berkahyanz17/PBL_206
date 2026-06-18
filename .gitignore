@@ -15,6 +15,12 @@ npm-debug.log*
 
 # Docker
 .dockerignore
+docker-compose.override.yml
+
+# Volumes / persistent data
+mysql_data/
+redis_data/
+mariadb_data/
 
 # OS
 .DS_Store
