@@ -1,6 +1,10 @@
 # PBL_206
 Secure Mini Enterprise Infrastructure Deployment
 
+ssh dari wsl ke vm server
+```
+ssh -i /mnt/d/TLID_SSH_KEY/tlid -p 2223 berkah@192.168.56.105
+```
 fitur cepat update dari github + jalanin server
 ```
 git pull --rebase && docker compose down && docker compose up --build -d
