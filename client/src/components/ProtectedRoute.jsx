@@ -1,48 +1,14 @@
 import { Navigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
-import { getAccessToken, getRefreshToken, saveTokens, clearTokens } from '../utils/api';
+import { getAccessToken } from '../utils/api';
 
 export default function ProtectedRoute({ children, role }) {
   const token = getAccessToken();
-  console.log('ProtectedRoute token:', token);
-  console.log('ProtectedRoute role:', role);
 
   if (!token) {
-    if (role === 'admin') return <Navigate to="/admin/login" />;
-    if (role === 'dokter') return <Navigate to="/dokter/login" />;
-    if (role === 'pasien') return <Navigate to="/pasien/login" />;
-    return <Navigate to="/" />;
-  }
-
-  try {
-    const decoded = jwtDecode(token);
-    console.log('decoded:', decoded);
-    console.log('expired:', decoded.exp * 1000 < Date.now());
-    console.log('role match:', decoded.role === role);
-
-    if (decoded.exp * 1000 < Date.now()) {
-      // Token expired — try refresh synchronously isn't possible here
-      // Clear and redirect, apiFetch will handle refresh on next API call
-      const refreshToken = getRefreshToken();
-      if (!refreshToken) {
-        clearTokens();
-        if (role === 'admin') return <Navigate to="/admin/login" />;
-        if (role === 'dokter') return <Navigate to="/dokter/login" />;
-        if (role === 'pasien') return <Navigate to="/pasien/login" />;
-        return <Navigate to="/" />;
-      }
-      // Has refresh token — let them through, apiFetch will refresh
-    }
-
-    if (decoded.role !== role) {
-      if (decoded.role === 'admin') return <Navigate to="/admin/dashboard" />;
-      if (decoded.role === 'dokter') return <Navigate to="/dokter/jadwal" />;
-      if (decoded.role === 'pasien') return <Navigate to="/pasien/home" />;
-      return <Navigate to="/" />;
-    }
-  } catch {
-    clearTokens();
-    return <Navigate to="/" />;
+    if (role === 'admin')  return <Navigate to="/admin/login" replace />;
+    if (role === 'dokter') return <Navigate to="/dokter/login" replace />;
+    if (role === 'pasien') return <Navigate to="/pasien/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return children;
