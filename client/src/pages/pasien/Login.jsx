@@ -24,6 +24,7 @@ export default function PasienLogin() {
         localStorage.setItem('accessToken', data.accessToken);
         localStorage.setItem('refreshToken', data.refreshToken);
         localStorage.setItem('pasienUser', JSON.stringify(data.user));
+        localStorage.setItem('pasienNama', data.user.nama);
         navigate('/pasien/home');
       } else {
         setError(data.message || 'Login gagal.');
