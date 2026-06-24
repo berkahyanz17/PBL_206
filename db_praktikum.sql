@@ -48,6 +48,7 @@ CREATE TABLE `chats` (
   `receiver_role` enum('admin','dokter') DEFAULT NULL,
   `receiver_id` int(11) DEFAULT NULL,
   `pesan` text DEFAULT NULL,
+  `is_read` tinyint(1) DEFAULT 0,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
@@ -66,6 +67,7 @@ CREATE TABLE `dokters` (
   `telegram_chat_id` varchar(100) DEFAULT NULL,
   `notif_chat_admin` tinyint(1) DEFAULT 1,
   `notif_appointment` tinyint(1) DEFAULT 1,
+  `last_active` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `no_str` (`no_str`)
@@ -275,6 +277,34 @@ INSERT INTO `klinik_settings` (`key`, `value`, `label`, `kategori`) VALUES
   ('mamoru_darurat_msg','Untuk kondisi darurat, segera hubungi IGD terdekat atau hubungi klinik kami.', 'Pesan Darurat Mamoru', 'mamoru'),
   ('mamoru_context_extra', '', 'Konteks Tambahan untuk Mamoru (opsional)', 'mamoru')
 ON DUPLICATE KEY UPDATE `key` = `key`; -- idempotent, aman dijalankan ulang
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- MIGRATION: Fase 2 — unread badge (chats.is_read) + status online dokter (dokters.last_active)
+-- Jalankan sekali di DB yang sudah ada, ATAU tambahkan ke db_praktikum.sql
+-- sebelum 'docker compose down -v && up --build'
+-- ════════════════════════════════════════════════════════════════════════════
+
+SET @col_exists = (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chats' AND COLUMN_NAME = 'is_read'
+);
+SET @sql = IF(@col_exists = 0,
+  'ALTER TABLE `chats` ADD COLUMN `is_read` TINYINT(1) DEFAULT 0',
+  'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dokters' AND COLUMN_NAME = 'last_active'
+);
+SET @sql = IF(@col_exists = 0,
+  'ALTER TABLE `dokters` ADD COLUMN `last_active` TIMESTAMP NULL DEFAULT NULL',
+  'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
