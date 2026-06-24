@@ -12,10 +12,13 @@ export function clearTokens() {
 }
 
 export async function apiFetch(url, options = {}) {
+  const isFormData = options.body instanceof FormData; // ✅ detect FormData
+
   const makeRequest = (token) => fetch(`${BASE}${url}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      // ✅ skip Content-Type for FormData so browser sets multipart boundary
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...options.headers,
       ...(token ? { Authorization: `Bearer ${token}` } : {})
     }
