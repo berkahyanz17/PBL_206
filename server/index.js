@@ -534,13 +534,13 @@ app.post('/api/appointments', verifyToken, async (req, res) => {
     for (const a of admins) {
       await createNotif('admin', a.id, '📅', 'blue', `Booking baru dari ${pnama} ke ${dnama}`);
       if (a.notif_appointment && a.telegram_chat_id) {
-        await sendTelegram(a.telegram_chat_id, `📅 *Booking Baru*\nPasien: *${pnama}*\nDokter: ${dnama}\nTgl: ${tgl} · ${jam?.slice(0,5)}`);
+        await sendTelegram(a.telegram_chat_id, `📅 *Booking Baru*\nPasien: *${pnama}*\nDokter: ${dnama}\nTgl: ${new Date(tgl).toLocaleDateString('id-ID')} · ${jam?.slice(0,5)}`);
       }
     }
-    await createNotif('dokter', dokter_id, '📅', 'green', `Pasien baru booking: ${pnama} · ${tgl} ${jam?.slice(0,5)}`);
+    await createNotif('dokter', dokter_id, '📅', 'green', `Pasien baru booking: ${pnama} · ${new Date(tgl).toLocaleDateString('id-ID')} ${jam?.slice(0,5)}`);
     const [dokterNotif] = await db.query('SELECT telegram_chat_id, notif_appointment FROM dokters WHERE id = ?', [dokter_id]);
     if (dokterNotif[0]?.notif_appointment && dokterNotif[0]?.telegram_chat_id) {
-      await sendTelegram(dokterNotif[0].telegram_chat_id, `📅 *Booking Baru*\nPasien: *${pnama}*\nTgl: ${tgl} · ${jam?.slice(0,5)}\nKeluhan: ${keluhan}`);
+      await sendTelegram(dokterNotif[0].telegram_chat_id, `📅 *Booking Baru*\nPasien: *${pnama}*\nTgl: ${new Date(tgl).toLocaleDateString('id-ID')} · ${jam?.slice(0,5)}\nKeluhan: ${keluhan}`);
     }
 
     res.json({ success: true, message: 'Appointment berhasil dibuat.' });
@@ -566,16 +566,16 @@ app.patch('/api/appointments/:id/status', verifyToken, async (req, res) => {
         const { pasien_id, tgl, jam, dnama } = rows[0];
         const [pasienRow] = await db.query('SELECT email, nama, notif_approve FROM pasiens WHERE id = ?', [pasien_id]);
         if (status === 'dikonfirmasi') {
-          await createNotif('pasien', pasien_id, '✅', 'green', `${dnama} menyetujui appointment kamu · ${tgl} ${jam?.slice(0,5)}`);
+          await createNotif('pasien', pasien_id, '✅', 'green', `${dnama} menyetujui appointment kamu · ${new Date(tgl).toLocaleDateString('id-ID')} ${jam?.slice(0,5)}`);
           if (pasienRow[0]?.notif_approve && pasienRow[0]?.email) {
             await sendEmail(pasienRow[0].email, '✅ Appointment Dikonfirmasi — HealthSync',
-              `<p>Halo <b>${pasienRow[0].nama}</b>,</p><p>Appointment kamu dengan <b>${dnama}</b> pada <b>${tgl} · ${jam?.slice(0,5)}</b> telah dikonfirmasi.</p>`);
+              `<p>Halo <b>${pasienRow[0].nama}</b>,</p><p>Appointment kamu dengan <b>${dnama}</b> pada <b>${new Date(tgl).toLocaleDateString('id-ID')} · ${jam?.slice(0,5)}</b> telah dikonfirmasi.</p>`);
           }
         } else {
-          await createNotif('pasien', pasien_id, '❌', 'orange', `${dnama} menolak appointment kamu · ${tgl}`);
+          await createNotif('pasien', pasien_id, '❌', 'orange', `${dnama} menolak appointment kamu · ${new Date(tgl).toLocaleDateString('id-ID')}`);
           if (pasienRow[0]?.notif_approve && pasienRow[0]?.email) {
             await sendEmail(pasienRow[0].email, '❌ Appointment Ditolak — HealthSync',
-              `<p>Halo <b>${pasienRow[0].nama}</b>,</p><p>Mohon maaf, appointment kamu dengan <b>${dnama}</b> pada <b>${tgl}</b> ditolak. Silakan booking ulang.</p>`);
+              `<p>Halo <b>${pasienRow[0].nama}</b>,</p><p>Mohon maaf, appointment kamu dengan <b>${dnama}</b> pada <b>${new Date(tgl).toLocaleDateString('id-ID')}</b> ditolak. Silakan booking ulang.</p>`);
           }
         }
       }

@@ -89,6 +89,25 @@ CREATE TABLE `jadwal_dokter` (
   KEY `dokter_id` (`dokter_id`),
   CONSTRAINT `jadwal_dokter_ibfk_1` FOREIGN KEY (`dokter_id`) REFERENCES `dokters` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+-- Default jadwal praktik untuk semua dokter: Senin s/d Jumat, 08:00 - 16:00
+LOCK TABLES `jadwal_dokter` WRITE;
+INSERT INTO `jadwal_dokter` (`dokter_id`, `hari`, `jam_mulai`, `jam_selesai`) VALUES
+(1,'Senin','08:00:00','16:00:00'),
+(1,'Selasa','08:00:00','16:00:00'),
+(1,'Rabu','08:00:00','16:00:00'),
+(1,'Kamis','08:00:00','16:00:00'),
+(1,'Jumat','08:00:00','16:00:00'),
+(2,'Senin','08:00:00','16:00:00'),
+(2,'Selasa','08:00:00','16:00:00'),
+(2,'Rabu','08:00:00','16:00:00'),
+(2,'Kamis','08:00:00','16:00:00'),
+(2,'Jumat','08:00:00','16:00:00'),
+(3,'Senin','08:00:00','16:00:00'),
+(3,'Selasa','08:00:00','16:00:00'),
+(3,'Rabu','08:00:00','16:00:00'),
+(3,'Kamis','08:00:00','16:00:00'),
+(3,'Jumat','08:00:00','16:00:00');
+UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `pasiens`;
 CREATE TABLE `pasiens` (
