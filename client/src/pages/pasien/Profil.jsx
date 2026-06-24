@@ -35,21 +35,18 @@ export default function PasienProfil() {
     const file = e.target.files[0];
     if (file) { const r = new FileReader(); r.onload = ev => setFoto(ev.target.result); r.readAsDataURL(file); }
   }
-
   async function simpan() {
     setSaving(true);
     const formData = new FormData();
     Object.entries(form).forEach(([k, v]) => formData.append(k, v));
     if (fileRef.current?.files[0]) formData.append('foto', fileRef.current.files[0]);
-
-    const res = await apiFetch(`/api/pasien/${user.id}/profil`, {
+  
+    const res = await apiFetch(`/pasien/${user.id}/profil`, { // ✅ no /api prefix
       method: 'PUT',
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` },
       body: formData
     });
-    const data = await res.json();
     setSaving(false);
-    if (data.success) {
+    if (res?.success) { // ✅ res is already parsed, no .json()
       alert('Profil berhasil disimpan!');
       const res2 = await apiFetch(`/pasien/${user.id}/profil`);
       if (res2?.success && res2.data.foto) setFoto(res2.data.foto);
