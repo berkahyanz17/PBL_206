@@ -284,27 +284,8 @@ ON DUPLICATE KEY UPDATE `key` = `key`; -- idempotent, aman dijalankan ulang
 -- sebelum 'docker compose down -v && up --build'
 -- ════════════════════════════════════════════════════════════════════════════
 
-SET @col_exists = (
-  SELECT COUNT(*) FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chats' AND COLUMN_NAME = 'is_read'
-);
-SET @sql = IF(@col_exists = 0,
-  'ALTER TABLE `chats` ADD COLUMN `is_read` TINYINT(1) DEFAULT 0',
-  'SELECT 1');
-PREPARE stmt FROM @sql;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
-SET @col_exists = (
-  SELECT COUNT(*) FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dokters' AND COLUMN_NAME = 'last_active'
-);
-SET @sql = IF(@col_exists = 0,
-  'ALTER TABLE `dokters` ADD COLUMN `last_active` TIMESTAMP NULL DEFAULT NULL',
-  'SELECT 1');
-PREPARE stmt FROM @sql;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+ALTER TABLE chats ADD COLUMN is_read TINYINT(1) DEFAULT 0;
+ALTER TABLE dokters ADD COLUMN last_active TIMESTAMP NULL DEFAULT NULL;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
