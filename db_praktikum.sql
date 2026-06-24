@@ -75,12 +75,12 @@ CREATE TABLE `dokters` (
 
 LOCK TABLES `dokters` WRITE;
 INSERT INTO `dokters` VALUES
-(1,'dr. Kuro Tetsuro','kuro@klinik.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','Umum','STR-2025-1111',150000,NULL,NULL,NULL,1,1),
-(2,'dr. Ichinose Guren','guren@klinik.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','Spesialis Dalam','STR-2025-2222',200000,NULL,NULL,NULL,1,1),
-(3,'dr. Dazai Osamu','dazai@klinik.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','Anak','STR-2025-3333',100000,NULL,NULL,NULL,1,1),
-(4,'dr. Rina Wulandari','rina@klinik.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','Umum','STR-2025-4444',150000,NULL,NULL,NULL,1,1),
-(5,'dr. Budi Sanjaya','budisanjaya@klinik.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','Umum','STR-2025-5555',150000,NULL,NULL,NULL,1,1),
-(6,'dr. Sari Handayani','sari@klinik.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','Spesialis Dalam','STR-2025-6666',200000,NULL,NULL,NULL,1,1);
+(1,'dr. Kuro Tetsuro','kuro@klinik.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','Umum','STR-2025-1111',150000,NULL,NULL,NULL,1,1,NULL),
+(2,'dr. Ichinose Guren','guren@klinik.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','Spesialis Dalam','STR-2025-2222',200000,NULL,NULL,NULL,1,1,NULL),
+(3,'dr. Dazai Osamu','dazai@klinik.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','Anak','STR-2025-3333',100000,NULL,NULL,NULL,1,1,NULL),
+(4,'dr. Rina Wulandari','rina@klinik.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','Umum','STR-2025-4444',150000,NULL,NULL,NULL,1,1,NULL),
+(5,'dr. Budi Sanjaya','budisanjaya@klinik.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','Umum','STR-2025-5555',150000,NULL,NULL,NULL,1,1,NULL),
+(6,'dr. Sari Handayani','sari@klinik.com','$2b$10$S8CIXcEMu6SfDh1tjeYw1OkVmCFc71AhVxZw3V1u7WYi.EBGSq/Fa','Spesialis Dalam','STR-2025-6666',200000,NULL,NULL,NULL,1,1,NULL);
 UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `jadwal_dokter`;
@@ -271,7 +271,7 @@ INSERT INTO `klinik_settings` (`key`, `value`, `label`, `kategori`) VALUES
   ('klinik_alamat',     'Jl. Sehat No. 1, Kota Sehat',               'Alamat',                 'umum'),
   ('klinik_jam_buka',   'Senin–Jumat 08.00–17.00, Sabtu 08.00–13.00','Jam Operasional',        'umum'),
   ('klinik_telepon',    '(021) 1234-5678',                            'Nomor Telepon',          'kontak'),
-  ('klinik_email',      'info@healthsync.id',                         'Email Klinik',           'kontak'),
+  ('klinik_email',      'info@healthsync.web.id',                     'Email Klinik',           'kontak'),
   ('klinik_whatsapp',   '08xx-xxxx-xxxx',                             'WhatsApp',               'kontak'),
   ('mamoru_greeting',   'Halo! Saya Mamoru, asisten virtual HealthSync Clinic. Ada yang bisa saya bantu?', 'Sapaan Mamoru', 'mamoru'),
   ('mamoru_darurat_msg','Untuk kondisi darurat, segera hubungi IGD terdekat atau hubungi klinik kami.', 'Pesan Darurat Mamoru', 'mamoru'),
@@ -284,27 +284,8 @@ ON DUPLICATE KEY UPDATE `key` = `key`; -- idempotent, aman dijalankan ulang
 -- sebelum 'docker compose down -v && up --build'
 -- ════════════════════════════════════════════════════════════════════════════
 
-SET @col_exists = (
-  SELECT COUNT(*) FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chats' AND COLUMN_NAME = 'is_read'
-);
-SET @sql = IF(@col_exists = 0,
-  'ALTER TABLE `chats` ADD COLUMN `is_read` TINYINT(1) DEFAULT 0',
-  'SELECT 1');
-PREPARE stmt FROM @sql;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
-SET @col_exists = (
-  SELECT COUNT(*) FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dokters' AND COLUMN_NAME = 'last_active'
-);
-SET @sql = IF(@col_exists = 0,
-  'ALTER TABLE `dokters` ADD COLUMN `last_active` TIMESTAMP NULL DEFAULT NULL',
-  'SELECT 1');
-PREPARE stmt FROM @sql;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+ALTER TABLE chats ADD COLUMN is_read TINYINT(1) DEFAULT 0;
+ALTER TABLE dokters ADD COLUMN last_active TIMESTAMP NULL DEFAULT NULL;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
