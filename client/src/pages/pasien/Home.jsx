@@ -8,20 +8,67 @@ import MamoruChat from './Mamoruchat';
 export default function PasienHome() {
   const navigate = useNavigate();
   const nama = localStorage.getItem('pasienNama') || 'Pasien';
-  const token = localStorage.getItem('accessToken') || '';
   const user = JSON.parse(localStorage.getItem('pasienUser') || '{}');
   const { bellButton, popup } = useNotif('notif-pasien', { background: 'rgba(255,255,255,0.4)' });
   const [appointments, setAppointments] = useState([]);
+
+  // Rating popup state
+  const [ratingPending, setRatingPending] = useState(null);
+  const [bintang, setBintang] = useState(0);
+  const [hoverBintang, setHoverBintang] = useState(0);
+  const [komentar, setKomentar] = useState('');
+  const [ratingLoading, setRatingLoading] = useState(false);
+  const [ratingMsg, setRatingMsg] = useState('');
 
   useEffect(() => {
     async function load() {
       const res = await apiFetch(`/appointments/pasien/${user.id}`);
       if (res?.success) setAppointments(res.data);
+
+      // Cek apakah ada rekam medis yang belum dirating
+      const pending = await apiFetch('/ulasan/pending');
+      if (pending?.success && pending?.data) setRatingPending(pending.data);
     }
     load();
   }, []);
 
-  async function logout() { const rt = localStorage.getItem('refreshToken'); if (rt) { await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); } sessionStorage.clear(); localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); navigate('/pasien/login'); }
+  async function logout() {
+    const rt = localStorage.getItem('refreshToken');
+    if (rt) {
+      await fetch('/api/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: rt })
+      });
+    }
+    sessionStorage.clear();
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    navigate('/pasien/login');
+  }
+
+  async function submitRating() {
+    if (!bintang) { setRatingMsg('Pilih bintang dulu!'); return; }
+    setRatingLoading(true);
+    setRatingMsg('');
+    const res = await apiFetch('/ulasan', {
+      method: 'POST',
+      body: JSON.stringify({
+        appointment_id: ratingPending.appointment_id,
+        dokter_id: ratingPending.dokter_id,
+        bintang,
+        komentar
+      })
+    });
+    setRatingLoading(false);
+    if (res?.success) {
+      setRatingPending(null);
+      setBintang(0);
+      setKomentar('');
+    } else {
+      setRatingMsg(res?.message || 'Gagal menyimpan ulasan.');
+    }
+  }
 
   const upcoming = appointments.filter(a => a.status === 'dikonfirmasi' || a.status === 'menunggu');
   const recent = appointments.filter(a => a.status === 'selesai').slice(0, 1);
@@ -44,7 +91,12 @@ export default function PasienHome() {
           </div>
 
           <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-dark)', marginBottom: 12 }}>Appointment Mendatang</div>
-          {upcoming.length === 0 && <div style={{ background: '#F9FAFB', borderRadius: 12, padding: '16px 20px', marginBottom: 10, fontSize: 13, color: 'var(--text-muted)' }}>Tidak ada appointment mendatang. <span onClick={() => navigate('/pasien/cari-dokter')} style={{ color: 'var(--blue)', fontWeight: 600, cursor: 'pointer' }}>Booking sekarang →</span></div>}
+          {upcoming.length === 0 && (
+            <div style={{ background: '#F9FAFB', borderRadius: 12, padding: '16px 20px', marginBottom: 10, fontSize: 13, color: 'var(--text-muted)' }}>
+              Tidak ada appointment mendatang.{' '}
+              <span onClick={() => navigate('/pasien/cari-dokter')} style={{ color: 'var(--blue)', fontWeight: 600, cursor: 'pointer' }}>Booking sekarang →</span>
+            </div>
+          )}
           {upcoming.map(a => (
             <div key={a.id} style={{ background: '#EFF6FF', borderRadius: 12, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <div>
@@ -53,12 +105,16 @@ export default function PasienHome() {
                   {new Date(a.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} · {a.jam?.slice(0, 5)}
                 </div>
               </div>
-              <span style={{ background: '#1d4ed8', color: 'white', padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>{a.status === 'dikonfirmasi' ? 'Terkonfirmasi' : 'Menunggu'}</span>
+              <span style={{ background: '#1d4ed8', color: 'white', padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+                {a.status === 'dikonfirmasi' ? 'Terkonfirmasi' : 'Menunggu'}
+              </span>
             </div>
           ))}
 
           <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-dark)', marginBottom: 12, marginTop: 20 }}>Riwayat Konsultasi Terakhir</div>
-          {recent.length === 0 && <div style={{ background: '#F9FAFB', borderRadius: 12, padding: '16px 20px', marginBottom: 10, fontSize: 13, color: 'var(--text-muted)' }}>Belum ada riwayat konsultasi.</div>}
+          {recent.length === 0 && (
+            <div style={{ background: '#F9FAFB', borderRadius: 12, padding: '16px 20px', marginBottom: 10, fontSize: 13, color: 'var(--text-muted)' }}>Belum ada riwayat konsultasi.</div>
+          )}
           {recent.map(a => (
             <div key={a.id} style={{ background: '#F9FAFB', borderRadius: 12, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <div>
@@ -72,6 +128,54 @@ export default function PasienHome() {
           ))}
         </div>
       </div>
+
+      {/* ── POPUP RATING (muncul kalau ada pending) ── */}
+      {ratingPending && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: 20, padding: '32px 28px', width: '100%', maxWidth: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', textAlign: 'center' }}>
+            <div style={{ fontSize: 40, marginBottom: 8 }}>⭐</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#1e3a5f', marginBottom: 4 }}>Bagaimana konsultasinya?</div>
+            <div style={{ fontSize: 13, color: '#6B7280', marginBottom: 20 }}>
+              Berikan penilaian untuk <strong>{ratingPending.dokter_nama}</strong>
+            </div>
+
+            {/* Bintang */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 20 }}>
+              {[1,2,3,4,5].map(n => (
+                <span
+                  key={n}
+                  onClick={() => setBintang(n)}
+                  onMouseEnter={() => setHoverBintang(n)}
+                  onMouseLeave={() => setHoverBintang(0)}
+                  style={{ fontSize: 36, cursor: 'pointer', color: n <= (hoverBintang || bintang) ? '#FBBF24' : '#D1D5DB', transition: 'color 0.15s' }}
+                >★</span>
+              ))}
+            </div>
+
+            {/* Komentar */}
+            <textarea
+              placeholder="Tulis komentar (opsional)..."
+              value={komentar}
+              onChange={e => setKomentar(e.target.value)}
+              rows={3}
+              style={{ width: '100%', borderRadius: 10, border: '1.5px solid #E5E7EB', padding: '10px 14px', fontSize: 13, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box', marginBottom: 10 }}
+            />
+
+            {ratingMsg && (
+              <div style={{ color: '#EF4444', fontSize: 13, marginBottom: 10, fontWeight: 600 }}>{ratingMsg}</div>
+            )}
+
+            <button
+              onClick={submitRating}
+              disabled={ratingLoading}
+              style={{ width: '100%', padding: 13, background: ratingLoading ? '#6B7280' : '#1d4ed8', color: 'white', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              {ratingLoading ? 'Menyimpan...' : 'Kirim Ulasan →'}
+            </button>
+          </div>
+        </div>
+      )}
+
       <MamoruChat />
       {popup}
     </div>
