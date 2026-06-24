@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { apiFetch } from '../../utils/api';
 
 const QUICK_REPLIES = [
   { label: '📅 Cara Booking Dokter',     text: 'Bagaimana cara booking dokter?' },
@@ -84,28 +85,21 @@ export default function MamoruChat() {
   async function sendToMamoru(userText) {
     const text = userText.trim();
     if (!text || loading) return;
-
+  
     setMessages(prev => [...prev, { type: 'user', text }]);
     setInput('');
     setShowQuick(false);
     setLoading(true);
-
+  
     try {
-      const res = await apiFetch('/api/mamoru', {
+      const data = await apiFetch('/mamoru', {  // ✅ use apiFetch, no /api prefix, no manual auth
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pesan: text, history: messages, pasienNama: nama })
       });
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const reply = data.reply || 'Maaf, ada gangguan. Coba lagi ya.';
-
+  
+      const reply = data.reply || 'Maaf, ada gangguan. Coba lagi ya.';  // ✅ data is already parsed
       setMessages(prev => [...prev, { type: 'bot', text: reply }]);
-      // Kalau chat tertutup, naikkan badge
       if (!chatOpen) setUnread(n => n + 1);
     } catch (err) {
       console.error('[MamoruChat] Error:', err.message);
