@@ -375,7 +375,7 @@ app.post('/api/forgot-password', async (req, res) => {
     const token = crypto.randomBytes(32).toString('hex');
     const expires = new Date(Date.now() + 3600000);
     await db.query('INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)', [email, token, expires]);
-    const resetLink = `https://192.168.56.105/pasien/reset-password?token=${token}`;
+    const resetLink = `https://healthsync.web.id/pasien/reset-password?token=${token}`;
     await transporter.sendMail({
       from: 'onboarding@resend.dev',
       to: email,
@@ -466,6 +466,22 @@ app.delete('/api/pasien/:id', verifyToken, async (req, res) => {
   try {
     await db.query('DELETE FROM pasiens WHERE id = ?', [req.params.id]);
     res.json({ success: true, message: 'Pasien berhasil dihapus.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+app.get('/api/admin/stats', verifyToken, async (req, res) => {
+  try {
+    const [[{ total_pasien }]] = await db.query('SELECT COUNT(*) as total_pasien FROM pasiens');
+    const [[{ total_dokter }]] = await db.query('SELECT COUNT(*) as total_dokter FROM dokters');
+    const [[{ appointments_hari_ini }]] = await db.query(
+      'SELECT COUNT(*) as appointments_hari_ini FROM appointments WHERE tgl = CURDATE()'
+    );
+    res.json({
+      success: true,
+      data: { total_pasien, total_dokter, appointments_hari_ini }
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
   }
@@ -651,6 +667,22 @@ app.post('/api/rekam-medis', verifyToken, async (req, res) => {
   }
 });
 
+app.get('/api/rekam-medis/pasien/:id', verifyToken, async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT r.*, a.keluhan, a.tgl, d.nama as dokter_nama, d.spesialis
+      FROM rekam_medis r
+      JOIN appointments a ON r.appointment_id = a.id
+      JOIN dokters d ON a.dokter_id = d.id
+      WHERE a.pasien_id = ?
+      ORDER BY r.created_at DESC
+    `, [req.params.id]);
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
 // ════════════════════════════════════════════════════════════════════════════
 // JADWAL DOKTER
 // ════════════════════════════════════════════════════════════════════════════
@@ -768,6 +800,35 @@ app.put('/api/pasien/:id/profil', verifyToken, upload.single('foto'), async (req
 // ════════════════════════════════════════════════════════════════════════════
 // CHAT (admin ↔ dokter)
 // ════════════════════════════════════════════════════════════════════════════
+
+app.get('/api/chat/preview', verifyToken, async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT c.*
+      FROM chats c
+      WHERE c.id IN (
+        SELECT MAX(id) FROM chats
+        WHERE (sender_role='dokter' AND receiver_role='admin')
+           OR (sender_role='admin' AND receiver_role='dokter')
+        GROUP BY IF(sender_role='dokter', sender_id, receiver_id)
+      )
+      ORDER BY c.created_at DESC
+    `);
+    const dokterIds = rows.map(r => r.sender_role === 'dokter' ? r.sender_id : r.receiver_id);
+    let dokters = [];
+    if (dokterIds.length > 0) {
+      [dokters] = await db.query('SELECT id, nama FROM dokters WHERE id IN (?)', [dokterIds]);
+    }
+    const data = rows.map(r => {
+      const dokterId = r.sender_role === 'dokter' ? r.sender_id : r.receiver_id;
+      const dok = dokters.find(d => d.id === dokterId);
+      return { ...r, dokter_id: dokterId, dokter_nama: dok?.nama || 'Dokter' };
+    });
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
 
 app.get('/api/chat/:sender_role/:sender_id/:receiver_role/:receiver_id', verifyToken, async (req, res) => {
   try {
