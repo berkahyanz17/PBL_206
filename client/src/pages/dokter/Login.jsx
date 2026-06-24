@@ -24,6 +24,7 @@ export default function DokterLogin() {
         localStorage.setItem('accessToken', data.accessToken);
         localStorage.setItem('refreshToken', data.refreshToken);
         localStorage.setItem('dokterUser', JSON.stringify(data.user));
+        localStorage.setItem('dokterNama', data.user.nama);
         navigate('/dokter/jadwal');
       } else {
         setError(data.message || 'Login gagal.');
