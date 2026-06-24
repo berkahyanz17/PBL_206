@@ -29,21 +29,19 @@ export default function DokterProfil() {
     const file = e.target.files[0];
     if (file) { const r = new FileReader(); r.onload = ev => setFoto(ev.target.result); r.readAsDataURL(file); }
   }
-
+  
   async function simpan() {
     setSaving(true);
     const formData = new FormData();
     Object.entries(form).forEach(([k, v]) => formData.append(k, v));
     if (fileRef.current?.files[0]) formData.append('foto', fileRef.current.files[0]);
-
-    const res = await apiFetch(`/api/dokter/${user.id}/profil`, {
+  
+    const res = await apiFetch(`/dokter/${user.id}/profil`, { // ✅ no /api prefix
       method: 'PUT',
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` },
-      body: formData
+      body: formData  // ✅ remove manual Authorization header
     });
-    const data = await res.json();
     setSaving(false);
-    if (data.success) alert('Profil berhasil diupdate!');
+    if (res?.success) alert('Profil berhasil diupdate!'); // ✅ res already parsed, no .json()
   }
 
   async function logout() { const rt = localStorage.getItem('refreshToken'); if (rt) { await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); } sessionStorage.clear(); localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); navigate('/dokter/login'); }
