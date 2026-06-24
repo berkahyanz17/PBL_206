@@ -375,7 +375,7 @@ app.post('/api/forgot-password', async (req, res) => {
     const token = crypto.randomBytes(32).toString('hex');
     const expires = new Date(Date.now() + 3600000);
     await db.query('INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)', [email, token, expires]);
-    const resetLink = `https://192.168.56.105/pasien/reset-password?token=${token}`;
+    const resetLink = `https://healthsync.web.id/pasien/reset-password?token=${token}`;
     await transporter.sendMail({
       from: 'onboarding@resend.dev',
       to: email,
