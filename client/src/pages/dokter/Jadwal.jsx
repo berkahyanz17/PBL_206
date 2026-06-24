@@ -64,9 +64,9 @@ export default function DokterJadwal() {
                 <tbody>
                   {pending.map(a => (
                     <tr key={a.id}>
-                      <td>{new Date(a.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} · {a.jam?.slice(0, 5)}</td>
+                      <td>{a.pasien_nama}</td>
                       <td>{a.keluhan}</td>
-                      <td>{a.tgl} · {a.jam}</td>
+                      <td>{new Date(a.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} · {a.jam?.slice(0, 5)}</td>
                       <td>
                         <button className="btn-action btn-approve" onClick={() => updateStatus(a.id, 'dikonfirmasi')}>Approve</button>
                         <button className="btn-action btn-tolak" onClick={() => { if (window.confirm('Tolak?')) updateStatus(a.id, 'ditolak'); }}>Tolak</button>
