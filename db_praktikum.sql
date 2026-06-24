@@ -197,7 +197,7 @@ INSERT INTO `klinik_settings` (`key`, `value`, `label`, `kategori`) VALUES
   ('klinik_alamat',     'Jl. Sehat No. 1, Kota Sehat',               'Alamat',                 'umum'),
   ('klinik_jam_buka',   'Senin–Jumat 08.00–16.00, Sabtu 08.00–13.00','Jam Operasional',        'umum'),
   ('klinik_telepon',    '(021) 1234-5678',                            'Nomor Telepon',          'kontak'),
-  ('klinik_email',      'info@healthsync.web.id',                     'Email Klinik',           'kontak'),
+  ('klinik_email',      'info@healthsync.web.id',                         'Email Klinik',           'kontak'),
   ('klinik_whatsapp',   '08xx-xxxx-xxxx',                             'WhatsApp',               'kontak'),
   ('mamoru_greeting',   'Halo! Saya Mamoru, asisten virtual HealthSync Clinic. Ada yang bisa saya bantu?', 'Sapaan Mamoru', 'mamoru'),
   ('mamoru_darurat_msg','Untuk kondisi darurat, segera hubungi IGD terdekat atau hubungi klinik kami.', 'Pesan Darurat Mamoru', 'mamoru'),
