@@ -89,6 +89,7 @@ CREATE TABLE `jadwal_dokter` (
   KEY `dokter_id` (`dokter_id`),
   CONSTRAINT `jadwal_dokter_ibfk_1` FOREIGN KEY (`dokter_id`) REFERENCES `dokters` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
 -- Default jadwal praktik untuk semua dokter: Senin s/d Jumat, 08:00 - 16:00
 LOCK TABLES `jadwal_dokter` WRITE;
 INSERT INTO `jadwal_dokter` (`dokter_id`, `hari`, `jam_mulai`, `jam_selesai`) VALUES
@@ -194,9 +195,9 @@ CREATE TABLE IF NOT EXISTS `klinik_settings` (
 INSERT INTO `klinik_settings` (`key`, `value`, `label`, `kategori`) VALUES
   ('klinik_nama',       'HealthSync Clinic',                          'Nama Klinik',            'umum'),
   ('klinik_alamat',     'Jl. Sehat No. 1, Kota Sehat',               'Alamat',                 'umum'),
-  ('klinik_jam_buka',   'Senin–Jumat 08.00–17.00, Sabtu 08.00–13.00','Jam Operasional',        'umum'),
+  ('klinik_jam_buka',   'Senin–Jumat 08.00–16.00, Sabtu 08.00–13.00','Jam Operasional',        'umum'),
   ('klinik_telepon',    '(021) 1234-5678',                            'Nomor Telepon',          'kontak'),
-  ('klinik_email',      'info@healthsync.id',                         'Email Klinik',           'kontak'),
+  ('klinik_email',      'info@healthsync.web.id',                     'Email Klinik',           'kontak'),
   ('klinik_whatsapp',   '08xx-xxxx-xxxx',                             'WhatsApp',               'kontak'),
   ('mamoru_greeting',   'Halo! Saya Mamoru, asisten virtual HealthSync Clinic. Ada yang bisa saya bantu?', 'Sapaan Mamoru', 'mamoru'),
   ('mamoru_darurat_msg','Untuk kondisi darurat, segera hubungi IGD terdekat atau hubungi klinik kami.', 'Pesan Darurat Mamoru', 'mamoru'),
