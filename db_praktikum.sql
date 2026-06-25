@@ -49,6 +49,9 @@ CREATE TABLE `chats` (
   `receiver_id` int(11) DEFAULT NULL,
   `pesan` text DEFAULT NULL,
   `is_read` tinyint(1) DEFAULT 0,
+  `file_url` varchar(255) DEFAULT NULL,
+  `file_type` varchar(20) DEFAULT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
