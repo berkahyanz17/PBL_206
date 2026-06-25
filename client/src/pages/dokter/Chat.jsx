@@ -47,8 +47,6 @@ export default function DokterChat() {
   const [showJumpBtn, setShowJumpBtn] = useState(false);
   const [jumpMode, setJumpMode] = useState('neutral');
   const prevCount = useRef(0);
-  const [jumpMode, setJumpMode] = useState('neutral');
-  const prevCount = useRef(0);
   const [adminId, setAdminId] = useState(1);
   const { bellButton, popup } = useNotif('notif-dokter');
   const user = JSON.parse(localStorage.getItem('dokterUser') || '{}');
