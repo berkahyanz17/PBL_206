@@ -184,19 +184,42 @@
 
   /* CHAT PAGE */
   #section-admin .chat-layout { display: grid; grid-template-columns: 280px 1fr; gap: 0; background: white; border-radius: 14px; overflow: hidden; min-height: 500px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-  #section-admin .chat-sidebar { border-right: 1px solid var(--border); padding: 16px; }
+  #section-admin .chat-sidebar { border-right: 1px solid var(--border); padding: 16px; display: flex; flex-direction: column; }
   #section-admin .chat-sidebar-title { font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 12px; }
-  #section-admin .chat-contact { padding: 12px; border-radius: 10px; cursor: pointer; margin-bottom: 4px; }
+  #section-admin .chat-search-wrap { position: relative; margin-bottom: 14px; }
+  #section-admin .chat-search-wrap::before { content: '🔍'; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; opacity: .7; }
+  #section-admin .chat-search-input { width: 100%; box-sizing: border-box; padding: 9px 12px 9px 34px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 12.5px; font-family: inherit; outline: none; }
+  #section-admin .chat-search-input:focus { border-color: var(--navy); }
+  #section-admin .chat-contact-list { flex: 1; overflow-y: auto; }
+  #section-admin .chat-contact { padding: 10px 12px; border-radius: 10px; cursor: pointer; margin-bottom: 4px; }
   #section-admin .chat-contact.active { background: #EFF6FF; border-left: 3px solid var(--navy); }
   #section-admin .chat-contact:hover:not(.active) { background: #F9FAFB; }
-  #section-admin .chat-contact-name { font-size: 13px; font-weight: 600; }
-  #section-admin .chat-contact-sub { font-size: 12px; color: var(--text-muted); }
+  #section-admin .chat-contact-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  #section-admin .chat-contact-name { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  #section-admin .chat-contact-time { font-size: 10.5px; color: var(--text-muted); flex-shrink: 0; }
+  #section-admin .chat-contact-bottom { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 2px; }
+  #section-admin .chat-contact-sub { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #section-admin .chat-contact-preview { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 165px; }
+  #section-admin .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+  #section-admin .status-dot.online { background: var(--green); box-shadow: 0 0 0 2px rgba(34,197,94,0.15); }
+  #section-admin .status-dot.offline { background: #D1D5DB; }
+  #section-admin .chat-unread-badge { background: var(--navy); color: white; font-size: 10.5px; font-weight: 700; min-width: 18px; height: 18px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; padding: 0 5px; flex-shrink: 0; }
+  #section-admin .chat-empty-list { text-align: center; color: var(--text-muted); font-size: 12.5px; padding: 24px 8px; }
   #section-admin .chat-main { display: flex; flex-direction: column; }
   #section-admin .chat-header { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-  #section-admin .chat-messages { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 12px; min-height: 300px; }
+  #section-admin .chat-header-status { font-size: 11.5px; font-weight: 600; color: var(--text-muted); margin-left: auto; display: flex; align-items: center; gap: 5px; }
+  #section-admin .chat-messages { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 12px; min-height: 300px; overflow-y: auto; }
   #section-admin .msg { max-width: 65%; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5; }
   #section-admin .msg.received { background: #F3F4F6; align-self: flex-start; border-radius: 4px 12px 12px 12px; }
   #section-admin .msg.sent { background: var(--navy); color: white; align-self: flex-end; border-radius: 12px 4px 12px 12px; }
+  #section-admin .msg-meta { font-size: 10.5px; opacity: .7; margin-top: 4px; text-align: right; }
+  #section-admin .msg.received .msg-meta { text-align: left; }
+  #section-admin .chat-empty-state { margin: auto; text-align: center; color: var(--text-muted); font-size: 13px; line-height: 1.6; }
+  #section-admin .typing-indicator { display: flex; gap: 4px; padding: 12px 14px !important; }
+  #section-admin .typing-indicator span { width: 6px; height: 6px; border-radius: 50%; background: #9CA3AF; animation: typingBounce 1.2s infinite ease-in-out; }
+  #section-admin .typing-indicator span:nth-child(2) { animation-delay: .15s; }
+  #section-admin .typing-indicator span:nth-child(3) { animation-delay: .3s; }
+  @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); opacity:.5; } 30% { transform: translateY(-4px); opacity:1; } }
   #section-admin .chat-input-row { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
   #section-admin .chat-input { flex: 1; padding: 10px 16px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 13px; font-family: inherit; outline: none; }
   #section-admin .chat-input:focus { border-color: var(--navy); }
@@ -362,10 +385,22 @@
   #section-dokter .chat-box { background: white; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
   #section-dokter .chat-header-bar { background: #F9FAFB; padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
   #section-dokter .chat-header-name { font-size: 15px; font-weight: 700; }
-  #section-dokter .chat-messages { min-height: 340px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  #section-dokter .chat-header-status { font-size: 11.5px; font-weight: 600; color: var(--text-muted); margin-left: auto; display: flex; align-items: center; gap: 5px; }
+  #section-dokter .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+  #section-dokter .status-dot.online { background: var(--green-dark); box-shadow: 0 0 0 2px rgba(22,163,74,0.15); }
+  #section-dokter .status-dot.offline { background: #D1D5DB; }
+  #section-dokter .chat-messages { min-height: 340px; padding: 20px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; max-height: 480px; }
   #section-dokter .msg { max-width: 60%; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5; }
   #section-dokter .msg.received { background: #F3F4F6; align-self: flex-start; border-radius: 4px 12px 12px 12px; }
   #section-dokter .msg.sent { background: var(--green-dark); color: white; align-self: flex-end; border-radius: 12px 4px 12px 12px; }
+  #section-dokter .msg-meta { font-size: 10.5px; opacity: .7; margin-top: 4px; text-align: right; }
+  #section-dokter .msg.received .msg-meta { text-align: left; }
+  #section-dokter .chat-empty-state { margin: auto; text-align: center; color: var(--text-muted); font-size: 13px; line-height: 1.6; }
+  #section-dokter .typing-indicator { display: flex; gap: 4px; padding: 12px 14px !important; }
+  #section-dokter .typing-indicator span { width: 6px; height: 6px; border-radius: 50%; background: #9CA3AF; animation: typingBounceD 1.2s infinite ease-in-out; }
+  #section-dokter .typing-indicator span:nth-child(2) { animation-delay: .15s; }
+  #section-dokter .typing-indicator span:nth-child(3) { animation-delay: .3s; }
+  @keyframes typingBounceD { 0%, 60%, 100% { transform: translateY(0); opacity:.5; } 30% { transform: translateY(-4px); opacity:1; } }
   #section-dokter .chat-input-row { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
   #section-dokter .chat-input { flex: 1; padding: 10px 16px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 13px; font-family: inherit; outline: none; }
   #section-dokter .chat-input:focus { border-color: var(--green); }
@@ -551,6 +586,12 @@
   #section-pasien .dokter-card[data-tersedia="tidak"] .dokter-avatar { filter:grayscale(100%); }
 
   /* BOOKING MODAL */
+  #section-pasien .btn-booking-toggle { width:100%; padding:13px; background:#EFF6FF; color:#1d4ed8; border:1.5px dashed #93C5FD; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:8px; transition:all .2s; }
+  #section-pasien .btn-booking-toggle:hover { background:#DBEAFE; }
+  #section-pasien .btn-booking-toggle .chevron { transition:transform .25s; }
+  #section-pasien .btn-booking-toggle.open .chevron { transform:rotate(180deg); }
+  #section-pasien #p-booking-form-wrap { max-height:0; overflow:hidden; transition:max-height .3s ease; }
+  #section-pasien #p-booking-form-wrap.open { max-height:600px; margin-top:16px; }
   #section-pasien .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:400; display:none; align-items:center; justify-content:center; }
   #section-pasien .modal-overlay.open { display:flex; }
   #section-pasien .modal-box { background:white; border-radius:16px; padding:28px; width:100%; max-width:420px; animation:slideUp 0.3s ease; }
@@ -846,21 +887,7 @@
               <div class="card-title">💬 Chat Dokter</div>
               <a class="card-link" onclick="showPage('page-chat')">Buka Semua</a>
             </div>
-            <div class="chat-item" onclick="openChat('dr. Rina Wulandari','Umum')">
-              <div class="avatar" style="background:#22c55e">RW</div>
-              <div class="chat-info"><div class="chat-name">dr. Rina Wulandari</div><div class="chat-preview">Nyam nyam</div></div>
-              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="chat-time">10.10</div><div class="online-dot"></div></div>
-            </div>
-            <div class="chat-item" onclick="openChat('dr. Budi Sanjaya','Spesialis Dalam')">
-              <div class="avatar" style="background:#3b82f6">BS</div>
-              <div class="chat-info"><div class="chat-name">dr. Budi Sanjaya</div><div class="chat-preview">Yehoo</div></div>
-              <div class="chat-time">12.15</div>
-            </div>
-            <div class="chat-item" onclick="openChat('dr. Sari Handayani','Anak')">
-              <div class="avatar" style="background:#f59e0b">SH</div>
-              <div class="chat-info"><div class="chat-name">dr. Sari Handayani</div><div class="chat-preview">Saya bisanya ja...</div></div>
-              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="chat-time">14.50</div><div class="online-dot"></div></div>
-            </div>
+            <div id="dash-chat-preview-list"><!-- diisi otomatis oleh JS dari chatData --></div>
             <div style="margin-top:12px;padding:10px;background:#FFFBEB;border-radius:8px;font-size:12px;color:#92400E;">
               ⚠️ Preview pesan terakhir akan dari database saat backend terhubung
             </div>
@@ -1159,28 +1186,18 @@
         <div class="chat-layout">
           <div class="chat-sidebar">
             <div class="chat-sidebar-title">Chat dengan Dokter</div>
-            <div class="chat-contact active" onclick="switchChat(this,'dr. Kuro Tetsuro','Umum')" data-nama="dr. Kuro Tetsuro">
-              <div class="chat-contact-name">dr. Kuro Tetsuro</div>
-              <div class="chat-contact-sub">Umum</div>
+            <div class="chat-search-wrap">
+              <input type="text" class="chat-search-input" id="chat-search-input" placeholder="Cari nama dokter..." oninput="filterChatContacts(this.value)">
             </div>
-            <div class="chat-contact" onclick="switchChat(this,'dr. Ichinose Guren','Spesialis Dalam')" data-nama="dr. Ichinose Guren">
-              <div class="chat-contact-name">dr. Ichinose Guren</div>
-              <div class="chat-contact-sub">Spesialis Dalam</div>
-            </div>
-            <div class="chat-contact" onclick="switchChat(this,'dr. Dazai Osamu','Anak')" data-nama="dr. Dazai Osamu">
-              <div class="chat-contact-name">dr. Dazai Osamu</div>
-              <div class="chat-contact-sub">Anak</div>
-            </div>
+            <div class="chat-contact-list" id="chat-contact-list"><!-- diisi otomatis oleh JS --></div>
           </div>
           <div class="chat-main">
             <div class="chat-header" id="chat-header">
               <div class="avatar" id="chat-avatar" style="background:#22c55e;width:32px;height:32px;font-size:11px">KT</div>
               <span id="chat-header-name">dr. Kuro Tetsuro</span>
+              <span class="chat-header-status" id="chat-header-status"><span class="status-dot online"></span> Online</span>
             </div>
-            <div class="chat-messages" id="chat-messages">
-              <div class="msg received">Halo ada yang bisa saya bantu?</div>
-              <div class="msg sent">Mohon konfirmasi jadwal besok</div>
-            </div>
+            <div class="chat-messages" id="chat-messages"><!-- diisi otomatis oleh JS --></div>
             <div class="chat-input-row">
               <input class="chat-input" type="text" id="chat-input" placeholder="Ketik pesan" onkeydown="if(event.key==='Enter')sendMsg()">
               <button class="btn-send" onclick="sendMsg()">Kirim</button>
@@ -1628,11 +1645,12 @@
       <div class="topbar"><h1>Chat Admin</h1><div class="topbar-right"><button class="btn-notif" onclick="toggleNotif('notif-dokter')" style="position:relative">🔔</button><button class="btn-logout" onclick="showPage('d-page-login')">🚪 Logout</button></div></div>
       <div class="content-area">
         <div class="chat-box">
-          <div class="chat-header-bar"><div class="avatar" style="background:#22c55e;width:36px;height:36px;font-size:13px">AK</div><div class="chat-header-name">Admin Klinik</div></div>
-          <div class="chat-messages" id="d-chat-messages">
-            <div class="msg received">Halo Dokter, ada yang bisa dibantu?</div>
-            <div class="msg sent">Mohon konfirmasi jadwal besok</div>
+          <div class="chat-header-bar">
+            <div class="avatar" style="background:#22c55e;width:36px;height:36px;font-size:13px">AK</div>
+            <div class="chat-header-name">Admin Klinik</div>
+            <span class="chat-header-status" id="d-chat-header-status"><span class="status-dot online"></span> Online</span>
           </div>
+          <div class="chat-messages" id="d-chat-messages"><!-- diisi otomatis oleh JS --></div>
           <div class="chat-input-row">
             <input class="chat-input" type="text" id="d-chat-input" placeholder="Ketik disini" onkeydown="if(event.key==='Enter')d_sendDokterMsg()">
             <button class="btn-kirim" onclick="d_sendDokterMsg()">Kirim</button>
@@ -2027,7 +2045,7 @@
               </div>
               <div class="dokter-bottom">
                 <span class="tersedia">● Tersedia</span>
-                <button class="btn-booking" onclick="p_openBooking('Dr. Sarah Melati')">Booking</button>
+                <button class="btn-booking" onclick="p_openDetail('Dr. Sarah Melati')">Detail</button>
               </div>
             </div>
             <div class="dokter-card" data-spesialis="umum" data-tersedia="ya">
@@ -2042,7 +2060,7 @@
               </div>
               <div class="dokter-bottom">
                 <span class="tersedia">● Tersedia</span>
-                <button class="btn-booking" onclick="p_openBooking('Dr. Kuro Tetsuro')">Booking</button>
+                <button class="btn-booking" onclick="p_openDetail('Dr. Kuro Tetsuro')">Detail</button>
               </div>
             </div>
             <div class="dokter-card" data-spesialis="spesialis dalam" data-tersedia="ya">
@@ -2057,7 +2075,7 @@
               </div>
               <div class="dokter-bottom">
                 <span class="tersedia">● Tersedia</span>
-                <button class="btn-booking" onclick="p_openBooking('Dr. Ichinose Guren')">Booking</button>
+                <button class="btn-booking" onclick="p_openDetail('Dr. Ichinose Guren')">Detail</button>
               </div>
             </div>
             <div class="dokter-card" data-spesialis="anak" data-tersedia="tidak">
@@ -2072,7 +2090,7 @@
               </div>
               <div class="dokter-bottom">
                 <span class="tidak-tersedia">● Tidak Tersedia</span>
-                <button class="btn-booking" disabled>Booking</button>
+                <button class="btn-booking" onclick="p_openDetail('Dr. Dazai Osamu')">Detail</button>
               </div>
             </div>
           </div>
@@ -2190,20 +2208,80 @@
   </div>
 </div>
 
-<!-- BOOKING MODAL -->
-<div class="modal-overlay" id="p-booking-modal">
-  <div class="modal-box">
-    <div class="modal-title" id="p-modal-dokter-name">Booking Dokter</div>
-    <div class="form-group"><label>Tanggal</label><input type="date" id="p-booking-tanggal" onchange="p_updateJam()"></div>
-    <div class="form-group"><label>Jam</label>
-      <select id="p-booking-jam"></select>
-      <div id="p-jam-info" style="font-size:12px;color:#6B7280;margin-top:6px;display:none;"></div>
+<!-- DETAIL DOKTER MODAL (reviews + booking) -->
+<div class="modal-overlay" id="p-detail-modal">
+  <div class="modal-box" style="max-width:500px;max-height:85vh;overflow-y:auto">
+
+    <!-- Info Dokter -->
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+      <div class="dokter-avatar" style="width:60px;height:60px;font-size:28px;flex-shrink:0">👤</div>
+      <div>
+        <div id="p-detail-nama" style="font-size:17px;font-weight:800"></div>
+        <div id="p-detail-spesialis" style="font-size:13px;color:#6B7280"></div>
+        <div id="p-detail-harga" style="font-size:14px;font-weight:700;color:#1d4ed8;margin-top:2px"></div>
+      </div>
     </div>
-    <div class="form-group"><label>Keluhan</label><textarea placeholder="Ceritakan keluhan Anda..." id="p-booking-keluhan"></textarea></div>
-    <div class="modal-footer">
-      <button class="btn-cancel" onclick="p_closeBooking()">Batal</button>
-      <button class="btn-confirm" onclick="p_konfirmasiBooking()">Kirim Booking →</button>
+
+    <!-- Rata-rata bintang -->
+    <div style="background:#FFF7ED;border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+      <span id="p-detail-avg" style="font-size:32px;font-weight:800;color:#D97706">–</span>
+      <div>
+        <div id="p-detail-stars-avg" style="font-size:20px;color:#D1D5DB">★★★★★</div>
+        <div id="p-detail-total" style="font-size:12px;color:#92400E;margin-top:2px">0 ulasan</div>
+      </div>
     </div>
+
+    <!-- Daftar Ulasan -->
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px">Ulasan Pasien</div>
+    <div id="p-detail-ulasan-list">
+      <div style="color:#9CA3AF;font-size:13px;margin-bottom:12px">Belum ada ulasan.</div>
+    </div>
+
+    <hr style="border:none;border-top:1.5px solid #E5E7EB;margin:16px 0">
+
+    <!-- Toggle Booking -->
+    <button type="button" class="btn-booking-toggle" id="p-booking-toggle-btn" onclick="p_toggleBookingForm()">
+      <span>📅 Booking Dokter Ini</span><span class="chevron">▾</span>
+    </button>
+
+    <!-- Form Booking (tersembunyi sampai tombol di atas dipencet) -->
+    <div id="p-booking-form-wrap">
+      <div class="modal-title" id="p-detail-booking-title" style="margin-bottom:12px">Booking Dokter</div>
+      <div class="form-group"><label>Tanggal</label><input type="date" id="p-booking-tanggal" onchange="p_updateJam()"></div>
+      <div class="form-group"><label>Jam</label>
+        <select id="p-booking-jam"></select>
+        <div id="p-jam-info" style="font-size:12px;color:#6B7280;margin-top:6px;display:none;"></div>
+      </div>
+      <div class="form-group"><label>Keluhan</label><textarea placeholder="Ceritakan keluhan Anda..." id="p-booking-keluhan"></textarea></div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="p_closeDetail()">Batal</button>
+        <button class="btn-confirm" onclick="p_konfirmasiBooking()">Kirim Booking →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP RATING -->
+<div class="modal-overlay" id="p-rating-modal">
+  <div class="modal-box" style="text-align:center;max-width:420px">
+    <div style="font-size:40px;margin-bottom:8px">⭐</div>
+    <div style="font-size:18px;font-weight:800;color:#1e3a5f;margin-bottom:4px">Bagaimana konsultasinya?</div>
+    <div style="font-size:13px;color:#6B7280;margin-bottom:20px">Berikan penilaian untuk <strong id="p-rating-dokter-nama"></strong></div>
+    <!-- Bintang interaktif -->
+    <div id="p-rating-stars" style="display:flex;justify-content:center;gap:8px;margin-bottom:20px">
+      <span class="rating-star" data-val="1" onclick="p_setBintang(1)" style="font-size:36px;cursor:pointer;color:#D1D5DB;transition:color 0.15s">★</span>
+      <span class="rating-star" data-val="2" onclick="p_setBintang(2)" style="font-size:36px;cursor:pointer;color:#D1D5DB;transition:color 0.15s">★</span>
+      <span class="rating-star" data-val="3" onclick="p_setBintang(3)" style="font-size:36px;cursor:pointer;color:#D1D5DB;transition:color 0.15s">★</span>
+      <span class="rating-star" data-val="4" onclick="p_setBintang(4)" style="font-size:36px;cursor:pointer;color:#D1D5DB;transition:color 0.15s">★</span>
+      <span class="rating-star" data-val="5" onclick="p_setBintang(5)" style="font-size:36px;cursor:pointer;color:#D1D5DB;transition:color 0.15s">★</span>
+    </div>
+    <textarea id="p-rating-komentar" placeholder="Tulis komentar (opsional)..." rows="3"
+      style="width:100%;border-radius:10px;border:1.5px solid #E5E7EB;padding:10px 14px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box;margin-bottom:10px"></textarea>
+    <div id="p-rating-msg" style="color:#EF4444;font-size:13px;font-weight:600;margin-bottom:10px;display:none"></div>
+    <button onclick="p_submitRating()"
+      style="width:100%;padding:13px;background:#1d4ed8;color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">
+      Kirim Ulasan →
+    </button>
   </div>
 </div>
 
@@ -2457,31 +2535,184 @@ function tutupModalAppt() {
   document.getElementById('modal-appt-detail').style.display = 'none';
 }
 
-// Data percakapan per dokter
+// Data percakapan per dokter (Chat Dokter - sisi Admin)
 const chatData = {
   'dr. Kuro Tetsuro': {
-    avatar: 'KT', color: '#22c55e',
+    avatar: 'KT', color: '#22c55e', spesialis: 'Umum', online: true, unread: 0,
     messages: [
-      {type:'received', text:'Halo ada yang bisa saya bantu?'},
-      {type:'sent', text:'Mohon konfirmasi jadwal besok'}
+      {type:'received', text:'Halo ada yang bisa saya bantu?', time:'09:10'},
+      {type:'sent', text:'Mohon konfirmasi jadwal besok', time:'09:12', status:'read'}
     ]
   },
   'dr. Ichinose Guren': {
-    avatar: 'IG', color: '#3b82f6',
+    avatar: 'IG', color: '#3b82f6', spesialis: 'Spesialis Dalam', online: false, unread: 2,
     messages: [
-      {type:'received', text:'Selamat siang Admin'},
-      {type:'sent', text:'Siang dok, ada update jadwal?'},
-      {type:'received', text:'Besok saya bisa sampai jam 3 sore'}
+      {type:'received', text:'Selamat siang Admin', time:'08:00'},
+      {type:'sent', text:'Siang dok, ada update jadwal?', time:'08:05', status:'read'},
+      {type:'received', text:'Besok saya bisa sampai jam 3 sore', time:'08:07'}
     ]
   },
   'dr. Dazai Osamu': {
-    avatar: 'DO', color: '#f59e0b',
+    avatar: 'DO', color: '#f59e0b', spesialis: 'Anak', online: true, unread: 1,
     messages: [
-      {type:'received', text:'Permisi admin, ada pasien baru?'},
-      {type:'sent', text:'Ada 2 pasien baru untuk besok dok'}
+      {type:'received', text:'Permisi admin, ada pasien baru?', time:'07:30'},
+      {type:'sent', text:'Ada 2 pasien baru untuk besok dok', time:'07:32', status:'sent'}
     ]
   }
 };
+
+let currentChatNama = 'dr. Kuro Tetsuro';
+
+function p_jamSekarang() {
+  const now = new Date();
+  return String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+}
+
+// Render daftar kontak dokter di sidebar kiri (preview pesan terakhir, waktu, badge unread, status online)
+function renderChatContacts(filterText) {
+  const wrap = document.getElementById('chat-contact-list');
+  if (!wrap) return;
+  const q = (filterText || '').trim().toLowerCase();
+  const namaList = Object.keys(chatData).filter(n => n.toLowerCase().includes(q));
+
+  if (namaList.length === 0) {
+    wrap.innerHTML = '<div class="chat-empty-list">😕 Dokter "' + (filterText || '') + '" tidak ditemukan.</div>';
+    return;
+  }
+
+  wrap.innerHTML = namaList.map(nama => {
+    const d = chatData[nama];
+    const last = d.messages[d.messages.length - 1];
+    const preview = last ? ((last.type === 'sent' ? 'Anda: ' : '') + last.text) : 'Belum ada pesan';
+    const time = last ? last.time : '';
+    const activeClass = nama === currentChatNama ? 'active' : '';
+    return `
+      <div class="chat-contact ${activeClass}" onclick="switchChat(this,'${nama}')" data-nama="${nama}">
+        <div class="chat-contact-top">
+          <span class="chat-contact-name"><span class="status-dot ${d.online ? 'online' : 'offline'}"></span>${nama}</span>
+          <span class="chat-contact-time">${time}</span>
+        </div>
+        <div class="chat-contact-bottom">
+          <span class="chat-contact-preview">${preview}</span>
+          ${d.unread > 0 ? `<span class="chat-unread-badge">${d.unread}</span>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function filterChatContacts(val) {
+  renderChatContacts(val);
+}
+
+// Render isi pesan untuk dokter yang sedang dipilih, termasuk empty state
+function renderChatMessages() {
+  const data = chatData[currentChatNama];
+  const box = document.getElementById('chat-messages');
+  if (!data || !box) return;
+  if (!data.messages.length) {
+    box.innerHTML = '<div class="chat-empty-state">💬 Belum ada percakapan.<br>Mulai chat dengan ' + currentChatNama + '.</div>';
+    return;
+  }
+  box.innerHTML = data.messages.map(m => {
+    const statusIcon = m.type === 'sent' ? (m.status === 'read' ? ' · ✓✓ Dibaca' : ' · ✓ Terkirim') : '';
+    return `<div class="msg ${m.type}"><div>${m.text}</div><div class="msg-meta">${m.time}${statusIcon}</div></div>`;
+  }).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+function showTypingIndicator(boxId) {
+  const box = document.getElementById(boxId);
+  if (!box) return;
+  const div = document.createElement('div');
+  div.className = 'msg received typing-indicator';
+  div.id = boxId + '-typing';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function hideTypingIndicator(boxId) {
+  const el = document.getElementById(boxId + '-typing');
+  if (el) el.remove();
+}
+
+// CHAT SWITCH
+function switchChat(el, nama) {
+  currentChatNama = nama;
+  const data = chatData[nama];
+  data.unread = 0; // pesan jadi terbaca begitu dokter dibuka
+
+  document.getElementById('chat-header-name').textContent = nama;
+  document.getElementById('chat-avatar').textContent = data.avatar;
+  document.getElementById('chat-avatar').style.background = data.color;
+  document.getElementById('chat-header-status').innerHTML = `<span class="status-dot ${data.online ? 'online' : 'offline'}"></span> ${data.online ? 'Online' : 'Offline'}`;
+
+  renderChatMessages();
+  renderChatContacts(document.getElementById('chat-search-input') ? document.getElementById('chat-search-input').value : '');
+  renderDashboardChatPreview();
+}
+
+function openChat(nama) {
+  showPage('page-chat');
+  setTimeout(() => {
+    renderChatContacts();
+    const el = document.querySelector('.chat-contact[data-nama="' + nama + '"]');
+    if (el) switchChat(el, nama);
+  }, 50);
+}
+
+function sendMsg() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const data = chatData[currentChatNama];
+
+  data.messages.push({ type: 'sent', text, time: p_jamSekarang(), status: 'sent' });
+  input.value = '';
+  renderChatMessages();
+  renderChatContacts(document.getElementById('chat-search-input') ? document.getElementById('chat-search-input').value : '');
+  renderDashboardChatPreview();
+
+  // Loading indicator: simulasi dokter "membaca" pesan setelah beberapa saat
+  showTypingIndicator('chat-messages');
+  setTimeout(() => {
+    hideTypingIndicator('chat-messages');
+    const lastMsg = data.messages[data.messages.length - 1];
+    if (lastMsg && lastMsg.type === 'sent') lastMsg.status = 'read';
+    renderChatMessages();
+    renderDashboardChatPreview();
+  }, 1400);
+}
+
+// Render preview chat dokter di Dashboard (3 chat terbaru, konsisten dengan chatData)
+function renderDashboardChatPreview() {
+  const wrap = document.getElementById('dash-chat-preview-list');
+  if (!wrap) return;
+  const namaList = Object.keys(chatData).slice(0, 3);
+  wrap.innerHTML = namaList.map(nama => {
+    const d = chatData[nama];
+    const last = d.messages[d.messages.length - 1];
+    const preview = last ? ((last.type === 'sent' ? 'Anda: ' : '') + last.text) : 'Belum ada pesan';
+    const time = last ? last.time : '';
+    return `
+      <div class="chat-item" onclick="openChat('${nama}')">
+        <div class="avatar" style="background:${d.color}">${d.avatar}</div>
+        <div class="chat-info"><div class="chat-name">${nama}</div><div class="chat-preview">${preview}</div></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <div class="chat-time">${time}</div>
+          ${d.online ? '<div class="online-dot"></div>' : ''}
+          ${d.unread > 0 ? `<span class="chat-unread-badge">${d.unread}</span>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// Inisialisasi tampilan chat saat halaman dimuat
+document.addEventListener('DOMContentLoaded', () => {
+  renderChatContacts();
+  renderChatMessages();
+  renderDashboardChatPreview();
+});
 
 function doAdminLogin() {
   const username = document.getElementById('admin-username').value.trim();
@@ -2575,56 +2806,7 @@ function hapusPasien(btn) {
   }
 }
 
-// CHAT SWITCH
-function switchChat(el, nama, spesialis) {
-  document.querySelectorAll('.chat-contact').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-
-  const data = chatData[nama];
-  document.getElementById('chat-header-name').textContent = nama;
-  document.getElementById('chat-avatar').textContent = data.avatar;
-  document.getElementById('chat-avatar').style.background = data.color;
-
-  const box = document.getElementById('chat-messages');
-  box.innerHTML = '';
-  data.messages.forEach(m => {
-    const div = document.createElement('div');
-    div.className = 'msg ' + m.type;
-    div.textContent = m.text;
-    box.appendChild(div);
-  });
-  box.scrollTop = box.scrollHeight;
-}
-
-function openChat(nama, spesialis) {
-  showPage('page-chat');
-  setTimeout(() => {
-    const contacts = document.querySelectorAll('.chat-contact');
-    contacts.forEach(c => {
-      if (c.dataset.nama === nama) switchChat(c, nama, spesialis);
-    });
-  }, 50);
-}
-
-function sendMsg() {
-  const input = document.getElementById('chat-input');
-  const text = input.value.trim();
-  if (!text) return;
-  const messages = document.getElementById('chat-messages');
-  const msg = document.createElement('div');
-  msg.className = 'msg sent';
-  msg.textContent = text;
-  messages.appendChild(msg);
-  input.value = '';
-  messages.scrollTop = messages.scrollHeight;
-
-  // Simpan ke chatData
-  const activeContact = document.querySelector('.chat-contact.active');
-  if (activeContact) {
-    const nama = activeContact.dataset.nama;
-    if (chatData[nama]) chatData[nama].messages.push({type:'sent', text});
-  }
-}
+// (switchChat, openChat, sendMsg sudah didefinisikan di atas dengan fitur timestamp/status/online/search)
 
 
 // ========== DOKTER JS ==========
@@ -2850,19 +3032,76 @@ function tampilRekamPasien(namaPasien, inisial, warna) {
     ${entriesHtml}`;
 }
 
-// CHAT
+// CHAT (Dokter <-> Admin)
+const dChatData = {
+  online: true,
+  messages: [
+    { type: 'received', text: 'Halo Dokter, ada yang bisa dibantu?', time: '08:55' },
+    { type: 'sent', text: 'Mohon konfirmasi jadwal besok', time: '08:57', status: 'read' }
+  ]
+};
+
+function d_jamSekarang() {
+  const now = new Date();
+  return String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+}
+
+function d_renderChatMessages() {
+  const box = document.getElementById('d-chat-messages');
+  if (!box) return;
+  if (!dChatData.messages.length) {
+    box.innerHTML = '<div class="chat-empty-state">💬 Belum ada percakapan dengan Admin.</div>';
+    return;
+  }
+  box.innerHTML = dChatData.messages.map(m => {
+    const statusIcon = m.type === 'sent' ? (m.status === 'read' ? ' · ✓✓ Dibaca' : ' · ✓ Terkirim') : '';
+    return `<div class="msg ${m.type}"><div>${m.text}</div><div class="msg-meta">${m.time}${statusIcon}</div></div>`;
+  }).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+function d_showTyping() {
+  const box = document.getElementById('d-chat-messages');
+  if (!box) return;
+  const div = document.createElement('div');
+  div.className = 'msg received typing-indicator';
+  div.id = 'd-chat-typing';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function d_hideTyping() {
+  const el = document.getElementById('d-chat-typing');
+  if (el) el.remove();
+}
+
 function d_sendDokterMsg() {
   const input = document.getElementById('d-chat-input');
   const text = input.value.trim();
   if (!text) return;
-  const messages = document.getElementById('d-chat-messages');
-  const msg = document.createElement('div');
-  msg.className = 'msg sent';
-  msg.textContent = text;
-  messages.appendChild(msg);
+
+  dChatData.messages.push({ type: 'sent', text, time: d_jamSekarang(), status: 'sent' });
   input.value = '';
-  messages.scrollTop = messages.scrollHeight;
+  d_renderChatMessages();
+
+  // Loading indicator: simulasi admin "membaca" pesan setelah beberapa saat
+  d_showTyping();
+  setTimeout(() => {
+    d_hideTyping();
+    const lastMsg = dChatData.messages[dChatData.messages.length - 1];
+    if (lastMsg && lastMsg.type === 'sent') lastMsg.status = 'read';
+    d_renderChatMessages();
+  }, 1400);
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  d_renderChatMessages();
+  const statusEl = document.getElementById('d-chat-header-status');
+  if (statusEl) {
+    statusEl.innerHTML = `<span class="status-dot ${dChatData.online ? 'online' : 'offline'}"></span> ${dChatData.online ? 'Online' : 'Offline'}`;
+  }
+});
 
 // PROFIL FOTO
 function d_previewFoto(input) {
@@ -2938,10 +3177,11 @@ function p_doLogin() {
     errEl.style.display = 'block'; return;
   }
   errEl.style.display = 'none';
-  // Ambil nama dari email sebagai simulasi (nanti dari backend)
   p_namaLogin = email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1);
   document.getElementById('welcome-nama').textContent = p_namaLogin;
   showPage('p-page-home');
+  // Cek apakah ada rekam medis yang belum dirating
+  p_cekRatingPending();
 }
 
 // DAFTAR — validasi semua field
@@ -3107,6 +3347,138 @@ const semuaJam = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00
 
 const namaHari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 
+// ── DATA ULASAN (simulasi, di real app dari API) ──
+const ulasanData = {
+  'Dr. Sarah Melati': [
+    { nama: 'Andi Yohee', bintang: 5, komentar: 'Dokternya ramah dan penjelasannya sangat jelas!', tgl: '10 Juni 2026' },
+    { nama: 'Budiman', bintang: 4, komentar: 'Pelayanan bagus, antriannya cepat.', tgl: '5 Juni 2026' },
+  ],
+  'Dr. Kuro Tetsuro': [
+    { nama: 'Megumi Fushiguro', bintang: 5, komentar: 'Sangat profesional, diagnosanya tepat.', tgl: '12 Juni 2026' },
+  ],
+  'Dr. Ichinose Guren': [
+    { nama: 'Andi Yohee', bintang: 5, komentar: 'Luar biasa! Sangat detail dalam menjelaskan kondisi saya.', tgl: '8 Juni 2026' },
+    { nama: 'Budiman', bintang: 4, komentar: 'Dokter yang baik dan sabar.', tgl: '3 Juni 2026' },
+    { nama: 'Megumi Fushiguro', bintang: 5, komentar: 'Terbaik!', tgl: '1 Juni 2026' },
+  ],
+  'Dr. Dazai Osamu': [],
+};
+
+const dokterInfo = {
+  'Dr. Sarah Melati':   { spesialis: 'Umum', harga: 'Rp. 150.000' },
+  'Dr. Kuro Tetsuro':   { spesialis: 'Umum', harga: 'Rp. 150.000' },
+  'Dr. Ichinose Guren': { spesialis: 'Spesialis Dalam', harga: 'Rp. 200.000' },
+  'Dr. Dazai Osamu':    { spesialis: 'Anak', harga: 'Rp. 100.000' },
+};
+
+function p_renderBintang(nilai, ukuran) {
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    html += `<span style="color:${i <= Math.round(nilai) ? '#FBBF24' : '#D1D5DB'};font-size:${ukuran || 16}px">★</span>`;
+  }
+  return html;
+}
+
+function p_openDetail(nama) {
+  p_currentDokter = nama;
+
+  // Isi info dokter
+  const info = dokterInfo[nama] || {};
+  document.getElementById('p-detail-nama').textContent = nama;
+  document.getElementById('p-detail-spesialis').textContent = info.spesialis || '';
+  document.getElementById('p-detail-harga').textContent = info.harga || '';
+
+  // Isi ulasan
+  const ulasanList = ulasanData[nama] || [];
+  const avg = ulasanList.length ? (ulasanList.reduce((s, u) => s + u.bintang, 0) / ulasanList.length).toFixed(1) : null;
+
+  document.getElementById('p-detail-avg').textContent = avg ?? '–';
+  document.getElementById('p-detail-stars-avg').innerHTML = avg ? p_renderBintang(avg, 20) : '★★★★★';
+  document.getElementById('p-detail-total').textContent = ulasanList.length + ' ulasan';
+
+  const listEl = document.getElementById('p-detail-ulasan-list');
+  if (ulasanList.length === 0) {
+    listEl.innerHTML = '<div style="color:#9CA3AF;font-size:13px;margin-bottom:12px">Belum ada ulasan untuk dokter ini.</div>';
+  } else {
+    listEl.innerHTML = ulasanList.map(u => `
+      <div style="background:#F9FAFB;border-radius:10px;padding:12px 14px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:13px;font-weight:600">${u.nama}</span>
+          <span>${p_renderBintang(u.bintang, 14)}</span>
+        </div>
+        ${u.komentar ? `<div style="font-size:13px;color:#4B5563">${u.komentar}</div>` : ''}
+        <div style="font-size:11px;color:#9CA3AF;margin-top:4px">${u.tgl}</div>
+      </div>
+    `).join('');
+  }
+
+  // Reset form booking
+  document.getElementById('p-detail-booking-title').textContent = 'Booking - ' + nama;
+  document.getElementById('p-booking-tanggal').value = '';
+  document.getElementById('p-booking-keluhan').value = '';
+  document.getElementById('p-jam-info').style.display = 'none';
+  p_updateJam();
+
+  // Form booking selalu ditutup dulu, baru terbuka kalau tombol "Booking" dipencet
+  document.getElementById('p-booking-form-wrap').classList.remove('open');
+  document.getElementById('p-booking-toggle-btn').classList.remove('open');
+
+  document.getElementById('p-detail-modal').classList.add('open');
+}
+
+function p_toggleBookingForm() {
+  document.getElementById('p-booking-form-wrap').classList.toggle('open');
+  document.getElementById('p-booking-toggle-btn').classList.toggle('open');
+}
+
+function p_closeDetail() {
+  document.getElementById('p-detail-modal').classList.remove('open');
+}
+
+// ── RATING POPUP ──
+let p_ratingBintang = 0;
+
+function p_showRatingPopup(dokterNama) {
+  p_ratingBintang = 0;
+  document.getElementById('p-rating-dokter-nama').textContent = dokterNama;
+  document.getElementById('p-rating-komentar').value = '';
+  document.getElementById('p-rating-msg').style.display = 'none';
+  p_updateStarDisplay(0);
+  document.getElementById('p-rating-modal').classList.add('open');
+}
+
+function p_setBintang(val) {
+  p_ratingBintang = val;
+  p_updateStarDisplay(val);
+}
+
+function p_updateStarDisplay(val) {
+  document.querySelectorAll('.rating-star').forEach(s => {
+    s.style.color = parseInt(s.dataset.val) <= val ? '#FBBF24' : '#D1D5DB';
+  });
+}
+
+function p_submitRating() {
+  if (!p_ratingBintang) {
+    const msg = document.getElementById('p-rating-msg');
+    msg.textContent = 'Pilih bintang dulu!';
+    msg.style.display = 'block';
+    return;
+  }
+  // Di real app: kirim ke API
+  document.getElementById('p-rating-modal').classList.remove('open');
+  alert('✅ Ulasan berhasil dikirim! Terima kasih atas penilaiannya.');
+}
+
+// Simulasi: tampilkan popup rating otomatis saat masuk halaman home
+// (di real app, ini dicek dari API /ulasan/pending setelah login)
+function p_cekRatingPending() {
+  // Simulasi: anggap ada konsultasi selesai dengan Dr. Sarah Melati yang belum dirating
+  setTimeout(() => {
+    p_showRatingPopup('Dr. Sarah Melati');
+  }, 800);
+}
+
 let p_currentDokter = '';
 
 function p_updateJam() {
@@ -3140,7 +3512,6 @@ function p_updateJam() {
   const hariTerpilih = tglObj.getDay();
   const hariLibur = !jadwal.hari.includes(hariTerpilih);
 
-  // Tampilkan info jadwal
   const hariKerja = jadwal.hari.map(h => namaHari[h]).join(', ');
   if (hariLibur) {
     infoEl.textContent = `⛔ Dokter ini libur hari ${namaHari[hariTerpilih]}. Jadwal: ${hariKerja}, ${jadwal.jamMulai}–${jadwal.jamSelesai}`;
@@ -3155,7 +3526,6 @@ function p_updateJam() {
   semuaJam.forEach(j => {
     const opt = document.createElement('option');
     opt.value = j;
-    // Cek apakah jam ini dalam rentang dokter dan harinya bukan libur
     const jamInt = parseInt(j.replace(':',''));
     const mulaiInt = parseInt(jadwal.jamMulai.replace(':',''));
     const selesaiInt = parseInt(jadwal.jamSelesai.replace(':',''));
@@ -3172,26 +3542,11 @@ function p_updateJam() {
     selectJam.appendChild(opt);
   });
 
-  // Auto-select ke opsi pertama yang available
   if (adaYangBisa) {
     for (let o of selectJam.options) {
       if (!o.disabled) { o.selected = true; break; }
     }
   }
-}
-
-function p_openBooking(nama) {
-  p_currentDokter = nama;
-  document.getElementById('p-modal-dokter-name').textContent = 'Booking - ' + nama;
-  document.getElementById('p-booking-tanggal').value = '';
-  document.getElementById('p-booking-keluhan').value = '';
-  document.getElementById('p-jam-info').style.display = 'none';
-  p_updateJam();
-  document.getElementById('p-booking-modal').classList.add('open');
-}
-
-function p_closeBooking() {
-  document.getElementById('p-booking-modal').classList.remove('open');
 }
 
 function p_konfirmasiBooking() {
@@ -3202,14 +3557,12 @@ function p_konfirmasiBooking() {
   if (!tgl) { alert('Pilih tanggal dulu!'); return; }
   if (!keluhan) { alert('Isi keluhan dulu!'); return; }
 
-  // Cek apakah jam yang dipilih valid
   const selectedOpt = selectJam.options[selectJam.selectedIndex];
   if (selectedOpt && selectedOpt.disabled) {
     alert('⚠️ Jam yang dipilih tidak tersedia untuk dokter ini. Silakan pilih jam lain.');
     return;
   }
 
-  // Cek hari libur dokter
   const jadwal = jadwalDokter[p_currentDokter];
   if (jadwal) {
     const tglObj = new Date(tgl);
@@ -3219,8 +3572,14 @@ function p_konfirmasiBooking() {
     }
   }
 
-  p_closeBooking();
+  p_closeDetail();
   alert('✅ Booking berhasil!\nDokter: ' + p_currentDokter + '\nTanggal: ' + tgl + '\nJam: ' + jam + '\nTunggu konfirmasi dari klinik.');
+}
+
+function p_openBooking(nama) {
+  p_openDetail(nama);
+  // Dipanggil dari tombol "Booking" di card dokter -> langsung buka form bookingnya
+  p_toggleBookingForm();
 }
 
 function p_previewFoto(input) {
