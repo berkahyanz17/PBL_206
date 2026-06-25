@@ -56,6 +56,8 @@ export default function AdminChat() {
   const [fileError, setFileError] = useState('');
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const [showJumpBtn, setShowJumpBtn] = useState(false);
+  const [jumpMode, setJumpMode] = useState('neutral');
+  const prevCount = useRef(0);
   const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
   const scrollRef = useRef();
   const bottomRef = useRef();
@@ -72,6 +74,7 @@ export default function AdminChat() {
   useEffect(() => {
     if (!active) return;
     hasScrolledInitial.current = false;
+    setJumpMode('neutral');
     loadMessages(true);
     markRead(active.id);
     const interval = setInterval(() => loadMessages(false), 5000);
@@ -87,23 +90,37 @@ export default function AdminChat() {
         setTimeout(() => { el.scrollTop = el.scrollHeight; }, 150);
       });
       hasScrolledInitial.current = true;
+      prevCount.current = messages.length;
       setShowJumpBtn(false);
       return;
     }
     const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    setShowJumpBtn(distFromBottom > NEAR_BOTTOM_PX);
+    const hasNew = messages.length > prevCount.current;
+    prevCount.current = messages.length;
+    if (distFromBottom > NEAR_BOTTOM_PX) {
+      setShowJumpBtn(true);
+      if (hasNew) setJumpMode('new');
+    } else {
+      setShowJumpBtn(false);
+    }
   }, [messages]);
 
   function handleScroll() {
     const el = scrollRef.current;
     if (!el) return;
     const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    setShowJumpBtn(distFromBottom > NEAR_BOTTOM_PX);
+    if (distFromBottom > NEAR_BOTTOM_PX) {
+      setShowJumpBtn(true);
+    } else {
+      setShowJumpBtn(false);
+      setJumpMode('neutral');
+    }
   }
 
   function jumpToBottom() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     setShowJumpBtn(false);
+    setJumpMode('neutral');
   }
 
   async function loadDokters() {
@@ -309,7 +326,9 @@ export default function AdminChat() {
                 <div ref={bottomRef} />
               </div>
               {showJumpBtn && (
-                <button className="chat-jump-btn" onClick={jumpToBottom}>↓ Pesan baru</button>
+                <button className={`chat-jump-btn ${jumpMode === 'new' ? '' : 'neutral'}`} onClick={jumpToBottom}>
+                  {jumpMode === 'new' ? '↓ Pesan baru' : '↓'}
+                </button>
               )}
               </div>
 
