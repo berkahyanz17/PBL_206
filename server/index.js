@@ -829,7 +829,6 @@ app.put('/api/pasien/:id/profil', verifyToken, upload.single('foto'), async (req
 // CHAT (admin ↔ dokter)
 // ════════════════════════════════════════════════════════════════════════════
 
-
 app.get('/api/chat/preview', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(`
@@ -874,7 +873,7 @@ app.get('/api/chat/preview', verifyToken, async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
-
+ 
 app.get('/api/chat/:sender_role/:sender_id/:receiver_role/:receiver_id', verifyToken, async (req, res) => {
   try {
     const { sender_role, sender_id, receiver_role, receiver_id } = req.params;
@@ -895,8 +894,7 @@ app.get('/api/chat/:sender_role/:sender_id/:receiver_role/:receiver_id', verifyT
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
-
-
+ 
 // POST /api/chat — sekarang menerima multipart/form-data (field "file" opsional)
 // Kalau tidak ada file, tetap berfungsi seperti biasa (JSON body).
 app.post('/api/chat', verifyToken, uploadChat.single('file'), async (req, res) => {
@@ -947,7 +945,7 @@ app.post('/api/chat', verifyToken, uploadChat.single('file'), async (req, res) =
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
-
+ 
 app.patch('/api/chat/read/:dokter_id', verifyToken, async (req, res) => {
   try {
     const { dokter_id } = req.params;
