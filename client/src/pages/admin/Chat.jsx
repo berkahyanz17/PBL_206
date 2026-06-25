@@ -5,78 +5,99 @@ import { apiFetch } from '../../utils/api';
 import { useNotif } from '../../components/NotifPopup';
 
 const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#6366f1'];
+const ONLINE_THRESHOLD_MS = 2 * 60 * 1000; // 2 menit
+
+function fmtTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+}
+
+function isOnline(lastActive) {
+  if (!lastActive) return false;
+  return Date.now() - new Date(lastActive).getTime() < ONLINE_THRESHOLD_MS;
+}
 
 export default function AdminChat() {
   const navigate = useNavigate();
   const [dokters, setDokters] = useState([]);
+  const [search, setSearch] = useState('');
   const [active, setActive] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [loadingMsgs, setLoadingMsgs] = useState(false);
   const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
   const bottomRef = useRef();
   const { bellButton, popup } = useNotif('notif-admin');
 
   useEffect(() => {
-    loadDokters(true);
-    const interval = setInterval(() => loadDokters(false), 5000);
+    loadDokters();
+    const interval = setInterval(loadDokters, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  async function markRead(dokterId) {
-    await apiFetch(`/chat/read/${dokterId}`, { method: 'PATCH' });
-  }
-
-  async function loadDokters(isFirstLoad) {
-    const res = await apiFetch('/chat/preview');
-    if (res?.success) {
-      setDokters(res.data);
-      if (isFirstLoad && res.data.length > 0) {
-        const first = res.data[0];
-        setActive(first);
-        if (first.unread_count > 0) await markRead(first.dokter_id);
-      }
-    }
-  }
-
-  function isOnline(lastActive) {
-    if (!lastActive) return false;
-    return (Date.now() - new Date(lastActive).getTime()) < 2 * 60 * 1000;
-  }
-
   useEffect(() => {
     if (!active) return;
-    loadMessages();
-    const interval = setInterval(loadMessages, 5000);
+    loadMessages(true);
+    markRead(active.id);
+    const interval = setInterval(() => loadMessages(false), 5000);
     return () => clearInterval(interval);
   }, [active]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  async function loadMessages() {
-    if (!active) return;
-    const res = await apiFetch(`/chat/admin/${adminUser.id}/dokter/${active.dokter_id}`);
-    if (res?.success) setMessages(res.data);
+  async function loadDokters() {
+    const [resDokter, resPreview] = await Promise.all([
+      apiFetch('/dokter'),
+      apiFetch('/chat/preview')
+    ]);
+    if (!resDokter?.success) return;
+    const previews = resPreview?.success ? resPreview.data : [];
+    const merged = resDokter.data.map(d => {
+      const p = previews.find(pv => pv.dokter_id === d.id);
+      return {
+        ...d,
+        lastMsg: p?.pesan || '',
+        lastTime: p?.created_at || null,
+        lastActive: p?.last_active || null,
+        unread: p?.unread_count || 0
+      };
+    }).sort((a, b) => new Date(b.lastTime || 0) - new Date(a.lastTime || 0));
+    setDokters(merged);
+    setActive(prev => prev ?? merged[0] ?? null);
   }
 
-  async function selectDokter(d) {
-    setActive(d);
-    if (d.unread_count > 0) {
-      await markRead(d.dokter_id);
-      loadDokters(false);
-    }
+  async function loadMessages(showLoading) {
+    if (!active) return;
+    if (showLoading) setLoadingMsgs(true);
+    const res = await apiFetch(`/chat/admin/${adminUser.id}/dokter/${active.id}`);
+    if (res?.success) setMessages(res.data);
+    if (showLoading) setLoadingMsgs(false);
+  }
+
+  async function markRead(dokterId) {
+    await apiFetch(`/chat/read/${dokterId}`, { method: 'PATCH' });
+    setDokters(prev => prev.map(d => d.id === dokterId ? { ...d, unread: 0 } : d));
   }
 
   async function send() {
     if (!input.trim() || !active) return;
     await apiFetch('/chat', {
       method: 'POST',
-      body: JSON.stringify({ sender_role: 'admin', sender_id: adminUser.id, receiver_role: 'dokter', receiver_id: active.dokter_id, pesan: input.trim() })
+      body: JSON.stringify({ sender_role: 'admin', sender_id: adminUser.id, receiver_role: 'dokter', receiver_id: active.id, pesan: input.trim() })
     });
     setInput('');
-    loadMessages();
+    loadMessages(false);
   }
 
   async function logout() { const rt = localStorage.getItem('refreshToken'); if (rt) { await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); } sessionStorage.clear(); localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); navigate('/admin/login'); }
+
+  function selectDokter(d) {
+    setActive(d);
+    if (d.unread > 0) markRead(d.id);
+  }
+
+  const filteredDokters = dokters.filter(d => d.nama?.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="dashboard-layout">
@@ -90,43 +111,76 @@ export default function AdminChat() {
         </div>
         <div className="content-area">
           <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', background: 'white', borderRadius: 14, overflow: 'hidden', minHeight: 500, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-            <div style={{ borderRight: '1px solid var(--border)', padding: 16 }}>
+            <div style={{ borderRight: '1px solid var(--border)', padding: 16, display: 'flex', flexDirection: 'column' }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 12 }}>Chat dengan Dokter</div>
-              {dokters.map((d, i) => (
-                <div key={d.dokter_id} onClick={() => selectDokter(d)}
-                  style={{ padding: 12, borderRadius: 10, cursor: 'pointer', marginBottom: 4, background: active?.dokter_id === d.dokter_id ? '#EFF6FF' : '', borderLeft: active?.dokter_id === d.dokter_id ? '3px solid var(--navy)' : '3px solid transparent', display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ position: 'relative' }}>
-                    <div className="avatar" style={{ background: colors[i % colors.length], width: 30, height: 30, fontSize: 11 }}>{d.dokter_nama?.charAt(0)}</div>
-                    <div style={{ position: 'absolute', bottom: -1, right: -1, width: 9, height: 9, borderRadius: '50%', background: isOnline(d.last_active) ? '#22c55e' : '#9ca3af', border: '2px solid white' }} />
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{d.dokter_nama}</div>
-                  {d.unread_count > 0 && (
-                    <div style={{ background: '#ef4444', color: 'white', fontSize: 11, fontWeight: 700, minWidth: 18, height: 18, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>
-                      {d.unread_count}
+              <input
+                placeholder="Cari dokter..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, marginBottom: 12, fontFamily: 'inherit' }}
+              />
+              {filteredDokters.map((d) => {
+                const i = dokters.findIndex(x => x.id === d.id);
+                const online = isOnline(d.lastActive);
+                return (
+                  <div key={d.id} onClick={() => selectDokter(d)}
+                    style={{ padding: 12, borderRadius: 10, cursor: 'pointer', marginBottom: 4, background: active?.id === d.id ? '#EFF6FF' : '', borderLeft: active?.id === d.id ? '3px solid var(--navy)' : '3px solid transparent', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                      <div className="avatar" style={{ background: colors[i % colors.length], width: 30, height: 30, fontSize: 11 }}>{d.nama?.charAt(0)}</div>
+                      <div style={{ position: 'absolute', bottom: -2, right: -2, width: 9, height: 9, borderRadius: '50%', background: online ? '#22c55e' : '#9ca3af', border: '2px solid white' }} />
                     </div>
-                  )}
-                </div>
-              ))}
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{d.nama}</div>
+                      {d.lastMsg && (
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {d.lastMsg}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+                      {d.lastTime && <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{fmtTime(d.lastTime)}</div>}
+                      {d.unread > 0 && (
+                        <div style={{ background: '#ef4444', color: 'white', fontSize: 10, fontWeight: 700, borderRadius: 10, minWidth: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>
+                          {d.unread}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {filteredDokters.length === 0 && (
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', marginTop: 20 }}>Dokter tidak ditemukan.</div>
+              )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {active && (
                 <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div className="avatar" style={{ background: colors[dokters.findIndex(d => d.dokter_id === active.dokter_id) % colors.length], width: 32, height: 32, fontSize: 11 }}>{active.dokter_nama?.charAt(0)}</div>
+                  <div style={{ position: 'relative' }}>
+                    <div className="avatar" style={{ background: colors[dokters.findIndex(d => d.id === active.id) % colors.length], width: 32, height: 32, fontSize: 11 }}>{active.nama?.charAt(0)}</div>
+                    <div style={{ position: 'absolute', bottom: -2, right: -2, width: 9, height: 9, borderRadius: '50%', background: isOnline(active.lastActive) ? '#22c55e' : '#9ca3af', border: '2px solid white' }} />
+                  </div>
                   <div>
-                    <div>{active.dokter_nama}</div>
-                    <div style={{ fontSize: 11, fontWeight: 500, color: isOnline(active.last_active) ? '#22c55e' : 'var(--text-muted)' }}>
-                      {isOnline(active.last_active) ? 'Online' : 'Offline'}
+                    {active.nama}
+                    <div style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-muted)' }}>
+                      {isOnline(active.lastActive) ? 'Online' : 'Offline'}
                     </div>
                   </div>
                 </div>
               )}
               <div style={{ flex: 1, padding: 20, display: 'flex', flexDirection: 'column', gap: 12, minHeight: 300, overflowY: 'auto' }}>
-                {messages.map((m, i) => {
+                {loadingMsgs ? (
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, marginTop: 40 }}>Memuat pesan...</div>
+                ) : messages.length === 0 ? (
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, marginTop: 40 }}>Belum ada pesan. Mulai percakapan!</div>
+                ) : messages.map((m, i) => {
                   const isSent = m.sender_role === 'admin';
                   return (
-                    <div key={i} className={`msg ${isSent ? 'sent' : 'received'}`}
-                      style={isSent ? { background: 'var(--navy)', color: 'white', alignSelf: 'flex-end', borderRadius: '12px 4px 12px 12px' } : {}}>
-                      {m.pesan}
+                    <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: isSent ? 'flex-end' : 'flex-start' }}>
+                      <div className={`msg ${isSent ? 'sent' : 'received'}`}
+                        style={isSent ? { background: 'var(--navy)', color: 'white', borderRadius: '12px 4px 12px 12px' } : {}}>
+                        {m.pesan}
+                      </div>
+                      <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>{fmtTime(m.created_at)}</div>
                     </div>
                   );
                 })}
