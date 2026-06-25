@@ -51,6 +51,7 @@ export default function DokterChat() {
   const scrollRef = useRef();
   const bottomRef = useRef();
   const fileInputRef = useRef();
+  const hasScrolledInitial = useRef(false);
 
   useEffect(() => {
     loadMessages(true);
@@ -62,13 +63,18 @@ export default function DokterChat() {
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    if (distFromBottom < NEAR_BOTTOM_PX) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!hasScrolledInitial.current) {
+      // Scroll instan ke bawah saat pertama buka chat (tunggu gambar mulai render)
+      requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight;
+        setTimeout(() => { el.scrollTop = el.scrollHeight; }, 150);
+      });
+      hasScrolledInitial.current = true;
       setShowJumpBtn(false);
-    } else {
-      setShowJumpBtn(true);
+      return;
     }
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setShowJumpBtn(distFromBottom > NEAR_BOTTOM_PX);
   }, [messages]);
 
   function handleScroll() {
@@ -155,6 +161,7 @@ export default function DokterChat() {
                 <div style={{ fontSize: 15, fontWeight: 700 }}>Admin Klinik</div>
               </div>
 
+              <div className="chat-messages-wrap">
               <div className="chat-messages" ref={scrollRef} onScroll={handleScroll}>
                 {loadingMsgs ? (
                   <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, marginTop: 40 }}>Memuat pesan...</div>
@@ -180,7 +187,7 @@ export default function DokterChat() {
                             <>
                               {m.file_url && m.file_type === 'image' && (
                                 <a href={m.file_url} target="_blank" rel="noreferrer">
-                                  <img src={m.file_url} alt="lampiran" className="msg-img" style={{ marginBottom: m.pesan ? 6 : 0 }} />
+                                  <img src={m.file_url} alt="lampiran" className="msg-img" onLoad={() => { if (hasScrolledInitial.current) { const el = scrollRef.current; if (el && el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX + 250) el.scrollTop = el.scrollHeight; } }} style={{ marginBottom: m.pesan ? 6 : 0 }} />
                                 </a>
                               )}
                               {m.file_url && m.file_type === 'file' && (
@@ -197,16 +204,17 @@ export default function DokterChat() {
                       <div className="msg-meta">
                         {fmtTime(m.created_at)}
                         {isSent && !isDeleted && (
-                          <span style={{ color: m.is_read ? '#3b82f6' : 'var(--text-muted)' }}>{m.is_read ? '✓✓' : '✓'}</span>
+                          <span style={{ color: m.is_read ? 'var(--green-dark)' : 'var(--text-muted)' }}>{m.is_read ? '✓✓' : '✓'}</span>
                         )}
                       </div>
                     </div>
                   );
                 })}
                 <div ref={bottomRef} />
-                {showJumpBtn && (
-                  <button className="chat-jump-btn" onClick={jumpToBottom}>↓ Pesan baru</button>
-                )}
+              </div>
+              {showJumpBtn && (
+                <button className="chat-jump-btn green" onClick={jumpToBottom}>↓ Pesan baru</button>
+              )}
               </div>
 
               {fileError && <div className="chat-file-error">{fileError}</div>}
