@@ -6,11 +6,12 @@ import { useNotif } from '../../components/NotifPopup';
 
 const colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#6366f1'];
 const ONLINE_THRESHOLD_MS = 2 * 60 * 1000; // 2 menit
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const NEAR_BOTTOM_PX = 80;
 
 function fmtTime(ts) {
   if (!ts) return '';
-  const d = new Date(ts);
-  return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  return new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 }
 
 function isOnline(lastActive) {
@@ -18,7 +19,31 @@ function isOnline(lastActive) {
   return Date.now() - new Date(lastActive).getTime() < ONLINE_THRESHOLD_MS;
 }
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+function dateLabel(ts) {
+  const d = new Date(ts);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  const sameDay = (a, b) => a.toDateString() === b.toDateString();
+  if (sameDay(d, today)) return 'Hari ini';
+  if (sameDay(d, yesterday)) return 'Kemarin';
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// Sisipkan separator tanggal sebelum pesan pertama tiap hari
+function withDateSeparators(messages) {
+  const out = [];
+  let lastDay = null;
+  for (const m of messages) {
+    const day = new Date(m.created_at).toDateString();
+    if (day !== lastDay) {
+      out.push({ type: 'sep', key: `sep-${day}`, label: dateLabel(m.created_at) });
+      lastDay = day;
+    }
+    out.push({ type: 'msg', key: m.id, data: m });
+  }
+  return out;
+}
 
 export default function AdminChat() {
   const navigate = useNavigate();
@@ -30,7 +55,9 @@ export default function AdminChat() {
   const [file, setFile] = useState(null);
   const [fileError, setFileError] = useState('');
   const [loadingMsgs, setLoadingMsgs] = useState(false);
+  const [showJumpBtn, setShowJumpBtn] = useState(false);
   const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
+  const scrollRef = useRef();
   const bottomRef = useRef();
   const fileInputRef = useRef();
   const { bellButton, popup } = useNotif('notif-admin');
@@ -49,7 +76,30 @@ export default function AdminChat() {
     return () => clearInterval(interval);
   }, [active]);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  // Auto-scroll hanya kalau user sudah dekat bawah; kalau tidak, tampilkan tombol jump
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distFromBottom < NEAR_BOTTOM_PX) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      setShowJumpBtn(false);
+    } else {
+      setShowJumpBtn(true);
+    }
+  }, [messages]);
+
+  function handleScroll() {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setShowJumpBtn(distFromBottom > NEAR_BOTTOM_PX);
+  }
+
+  function jumpToBottom() {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setShowJumpBtn(false);
+  }
 
   async function loadDokters() {
     const [resDokter, resPreview] = await Promise.all([
@@ -132,6 +182,7 @@ export default function AdminChat() {
   }
 
   const filteredDokters = dokters.filter(d => d.nama?.toLowerCase().includes(search.toLowerCase()));
+  const rows = withDateSeparators(messages);
 
   return (
     <div className="dashboard-layout">
@@ -144,8 +195,8 @@ export default function AdminChat() {
           </div>
         </div>
         <div className="content-area">
-          <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', background: 'white', borderRadius: 14, overflow: 'hidden', minHeight: 500, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-            <div style={{ borderRight: '1px solid var(--border)', padding: 16, display: 'flex', flexDirection: 'column' }}>
+          <div className="chat-panel with-list">
+            <div className="chat-sidebar">
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 12 }}>Chat dengan Dokter</div>
               <input
                 placeholder="Cari dokter..."
@@ -186,45 +237,47 @@ export default function AdminChat() {
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', marginTop: 20 }}>Dokter tidak ditemukan.</div>
               )}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+
+            <div className="chat-main">
               {active && (
-                <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div className="chat-header">
                   <div style={{ position: 'relative' }}>
                     <div className="avatar" style={{ background: colors[dokters.findIndex(d => d.id === active.id) % colors.length], width: 32, height: 32, fontSize: 11 }}>{active.nama?.charAt(0)}</div>
                     <div style={{ position: 'absolute', bottom: -2, right: -2, width: 9, height: 9, borderRadius: '50%', background: isOnline(active.lastActive) ? '#22c55e' : '#9ca3af', border: '2px solid white' }} />
                   </div>
                   <div>
-                    {active.nama}
-                    <div style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-muted)' }}>
-                      {isOnline(active.lastActive) ? 'Online' : 'Offline'}
-                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 700 }}>{active.nama}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{isOnline(active.lastActive) ? 'Online' : 'Offline'}</div>
                   </div>
                 </div>
               )}
-              <div style={{ flex: 1, padding: 20, display: 'flex', flexDirection: 'column', gap: 12, minHeight: 300, overflowY: 'auto' }}>
+
+              <div className="chat-messages" ref={scrollRef} onScroll={handleScroll}>
                 {loadingMsgs ? (
                   <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, marginTop: 40 }}>Memuat pesan...</div>
-                ) : messages.length === 0 ? (
+                ) : rows.length === 0 ? (
                   <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, marginTop: 40 }}>Belum ada pesan. Mulai percakapan!</div>
-                ) : messages.map((m) => {
+                ) : rows.map((row) => {
+                  if (row.type === 'sep') {
+                    return <div key={row.key} className="chat-date-sep"><span>{row.label}</span></div>;
+                  }
+                  const m = row.data;
                   const isSent = m.sender_role === 'admin';
                   const isDeleted = !!m.deleted_at;
                   return (
-                    <div key={m.id} className="msg-row" style={{ display: 'flex', flexDirection: 'column', alignItems: isSent ? 'flex-end' : 'flex-start' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div key={row.key} className={`msg-row ${isSent ? 'sent' : 'received'}`}>
+                      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
                         {isSent && !isDeleted && (
-                          <button onClick={() => deleteMessage(m.id)} title="Hapus pesan"
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-muted)', opacity: 0.6 }}>🗑</button>
+                          <button className="msg-del-btn" onClick={() => deleteMessage(m.id)} title="Hapus pesan">🗑</button>
                         )}
-                        <div className={`msg ${isSent ? 'sent' : 'received'}`}
-                          style={isSent ? { background: 'var(--navy)', color: 'white', borderRadius: '12px 4px 12px 12px' } : {}}>
+                        <div className={`msg ${isSent ? 'sent' : 'received'}`}>
                           {isDeleted ? (
                             <span style={{ fontStyle: 'italic', opacity: 0.7 }}>Pesan telah dihapus</span>
                           ) : (
                             <>
                               {m.file_url && m.file_type === 'image' && (
                                 <a href={m.file_url} target="_blank" rel="noreferrer">
-                                  <img src={m.file_url} alt="lampiran" style={{ maxWidth: 200, borderRadius: 8, display: 'block', marginBottom: m.pesan ? 6 : 0 }} />
+                                  <img src={m.file_url} alt="lampiran" className="msg-img" style={{ marginBottom: m.pesan ? 6 : 0 }} />
                                 </a>
                               )}
                               {m.file_url && m.file_type === 'file' && (
@@ -238,7 +291,7 @@ export default function AdminChat() {
                           )}
                         </div>
                       </div>
-                      <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 4, alignItems: 'center' }}>
+                      <div className="msg-meta">
                         {fmtTime(m.created_at)}
                         {isSent && !isDeleted && (
                           <span style={{ color: m.is_read ? '#3b82f6' : 'var(--text-muted)' }}>{m.is_read ? '✓✓' : '✓'}</span>
@@ -248,22 +301,23 @@ export default function AdminChat() {
                   );
                 })}
                 <div ref={bottomRef} />
-              </div>
-              <div>
-                {fileError && <div style={{ padding: '6px 20px', fontSize: 12, color: '#ef4444' }}>{fileError}</div>}
-                {file && (
-                  <div style={{ padding: '6px 20px', fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    📎 {file.name} ({(file.size / 1024).toFixed(0)} KB)
-                    <button onClick={() => setFile(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 12 }}>✕ batal</button>
-                  </div>
+                {showJumpBtn && (
+                  <button className="chat-jump-btn" onClick={jumpToBottom}>↓ Pesan baru</button>
                 )}
-                <div className="chat-input-row">
-                  <input type="file" ref={fileInputRef} accept="image/jpeg,image/png,image/webp,application/pdf" onChange={handlePickFile} style={{ display: 'none' }} />
-                  <button onClick={() => fileInputRef.current?.click()} title="Lampirkan file"
-                    style={{ padding: '10px 14px', background: '#F3F4F6', border: 'none', borderRadius: 20, fontSize: 15, cursor: 'pointer' }}>📎</button>
-                  <input className="chat-input" placeholder="Ketik pesan" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} />
-                  <button onClick={send} style={{ padding: '10px 20px', background: 'var(--navy)', color: 'white', border: 'none', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Kirim</button>
+              </div>
+
+              {fileError && <div className="chat-file-error">{fileError}</div>}
+              {file && (
+                <div className="chat-file-preview">
+                  📎 {file.name} ({(file.size / 1024).toFixed(0)} KB)
+                  <button onClick={() => setFile(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 12 }}>✕ batal</button>
                 </div>
+              )}
+              <div className="chat-input-row">
+                <input type="file" ref={fileInputRef} accept="image/jpeg,image/png,image/webp,application/pdf" onChange={handlePickFile} style={{ display: 'none' }} />
+                <button className="chat-attach-btn" onClick={() => fileInputRef.current?.click()} title="Lampirkan file">📎</button>
+                <input className="chat-input" placeholder="Ketik pesan" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} />
+                <button onClick={send} style={{ padding: '10px 20px', background: 'var(--navy)', color: 'white', border: 'none', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Kirim</button>
               </div>
             </div>
           </div>
