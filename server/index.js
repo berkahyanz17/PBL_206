@@ -71,6 +71,34 @@ const upload = multer({
     }
   }
 });
+
+// ─── Multer khusus lampiran chat (maks 2MB, izinkan gambar + PDF) ────────────
+const CHAT_ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+ 
+const chatStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = '/app/uploads/chat';
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, crypto.randomUUID() + ext);
+  }
+});
+ 
+const uploadChat = multer({
+  storage: chatStorage,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB max
+  fileFilter: (req, file, cb) => {
+    if (CHAT_ALLOWED_MIME.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Tipe file tidak didukung. Gunakan JPG, PNG, WEBP, atau PDF.'), false);
+    }
+  }
+});
+
 // ─── Nodemailer ──────────────────────────────────────────────────────────────
 const transporter = nodemailer.createTransport({
   host: 'smtp.resend.com',
@@ -801,6 +829,7 @@ app.put('/api/pasien/:id/profil', verifyToken, upload.single('foto'), async (req
 // CHAT (admin ↔ dokter)
 // ════════════════════════════════════════════════════════════════════════════
 
+
 app.get('/api/chat/preview', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(`
@@ -819,11 +848,10 @@ app.get('/api/chat/preview', verifyToken, async (req, res) => {
     let unreadRows = [];
     if (dokterIds.length > 0) {
       [dokters] = await db.query('SELECT id, nama, last_active FROM dokters WHERE id IN (?)', [dokterIds]);
-      // Hitung pesan dari dokter ke admin yang belum dibaca
       [unreadRows] = await db.query(`
         SELECT sender_id AS dokter_id, COUNT(*) AS unread
         FROM chats
-        WHERE sender_role='dokter' AND receiver_role='admin' AND is_read=0 AND sender_id IN (?)
+        WHERE sender_role='dokter' AND receiver_role='admin' AND is_read=0 AND deleted_at IS NULL AND sender_id IN (?)
         GROUP BY sender_id
       `, [dokterIds]);
     }
@@ -836,7 +864,9 @@ app.get('/api/chat/preview', verifyToken, async (req, res) => {
         dokter_id: dokterId,
         dokter_nama: dok?.nama || 'Dokter',
         last_active: dok?.last_active || null,
-        unread_count: unread?.unread || 0
+        unread_count: unread?.unread || 0,
+        // Jangan tampilkan teks asli kalau pesan terakhir sudah dihapus
+        pesan: r.deleted_at ? 'Pesan telah dihapus' : r.pesan
       };
     });
     res.json({ success: true, data });
@@ -855,49 +885,69 @@ app.get('/api/chat/:sender_role/:sender_id/:receiver_role/:receiver_id', verifyT
       ORDER BY created_at ASC
     `, [sender_role, sender_id, receiver_role, receiver_id,
         receiver_role, receiver_id, sender_role, sender_id]);
-
-    // Update last_active dokter setiap kali dokter membuka/poll chat-nya sendiri
+ 
     if (sender_role === 'dokter') {
       db.query('UPDATE dokters SET last_active = NOW() WHERE id = ?', [sender_id]).catch(() => {});
     }
-
+ 
     res.json({ success: true, data: rows });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
 
-app.post('/api/chat', verifyToken, async (req, res) => {
+
+// POST /api/chat — sekarang menerima multipart/form-data (field "file" opsional)
+// Kalau tidak ada file, tetap berfungsi seperti biasa (JSON body).
+app.post('/api/chat', verifyToken, uploadChat.single('file'), async (req, res) => {
   try {
     const { sender_role, sender_id, receiver_role, receiver_id, pesan } = req.body;
+ 
+    if (!pesan?.trim() && !req.file) {
+      return res.status(400).json({ success: false, message: 'Pesan atau lampiran wajib diisi.' });
+    }
+ 
+    let fileUrl = null;
+    let fileType = null;
+    if (req.file) {
+      fileUrl = `/uploads/chat/${req.file.filename}`;
+      fileType = req.file.mimetype === 'application/pdf' ? 'file' : 'image';
+    }
+ 
     await db.query(
-      'INSERT INTO chats (sender_role, sender_id, receiver_role, receiver_id, pesan, is_read) VALUES (?, ?, ?, ?, ?, 0)',
-      [sender_role, sender_id, receiver_role, receiver_id, pesan]
+      'INSERT INTO chats (sender_role, sender_id, receiver_role, receiver_id, pesan, file_url, file_type, is_read) VALUES (?, ?, ?, ?, ?, ?, ?, 0)',
+      [sender_role, sender_id, receiver_role, receiver_id, pesan?.trim() || null, fileUrl, fileType]
     );
-    // Notify recipient
+ 
+    const notifText = req.file
+      ? (fileType === 'image' ? '📷 Mengirim gambar' : '📎 Mengirim file')
+      : pesan;
+ 
     if (sender_role === 'dokter' && receiver_role === 'admin') {
       const [dok] = await db.query('SELECT nama FROM dokters WHERE id = ?', [sender_id]);
       const [admins] = await db.query('SELECT id, telegram_chat_id, notif_chat_dokter FROM admins');
       for (const a of admins) {
         await createNotif('admin', a.id, '💬', 'blue', `Pesan baru dari ${dok[0]?.nama || 'Dokter'}`);
         if (a.notif_chat_dokter && a.telegram_chat_id) {
-          await sendTelegram(a.telegram_chat_id, `💬 *Pesan dari ${dok[0]?.nama || 'Dokter'}*\n${pesan}`);
+          await sendTelegram(a.telegram_chat_id, `💬 *Pesan dari ${dok[0]?.nama || 'Dokter'}*\n${notifText}`);
         }
       }
     } else if (sender_role === 'admin' && receiver_role === 'dokter') {
       await createNotif('dokter', receiver_id, '💬', 'blue', 'Admin mengirim pesan baru');
       const [dokNotif] = await db.query('SELECT telegram_chat_id, notif_chat_admin FROM dokters WHERE id = ?', [receiver_id]);
       if (dokNotif[0]?.notif_chat_admin && dokNotif[0]?.telegram_chat_id) {
-        await sendTelegram(dokNotif[0].telegram_chat_id, `💬 *Pesan dari Admin*\n${pesan}`);
+        await sendTelegram(dokNotif[0].telegram_chat_id, `💬 *Pesan dari Admin*\n${notifText}`);
       }
     }
     res.json({ success: true, message: 'Pesan terkirim.' });
   } catch (err) {
+    if (err.message?.includes('Tipe file') || err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ success: false, message: err.code === 'LIMIT_FILE_SIZE' ? 'Ukuran file maksimal 2MB.' : err.message });
+    }
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
 
-// PATCH baru — tandai semua pesan dari satu dokter (ke admin) sebagai sudah dibaca
 app.patch('/api/chat/read/:dokter_id', verifyToken, async (req, res) => {
   try {
     const { dokter_id } = req.params;
@@ -907,6 +957,41 @@ app.patch('/api/chat/read/:dokter_id', verifyToken, async (req, res) => {
       [dokter_id]
     );
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+ 
+// Dipanggil dari sisi DOKTER — tandai pesan dari admin ke dokter ini sebagai dibaca
+app.patch('/api/chat/read-admin/:dokter_id', verifyToken, async (req, res) => {
+  try {
+    const { dokter_id } = req.params;
+    await db.query(
+      `UPDATE chats SET is_read = 1
+       WHERE sender_role='admin' AND receiver_role='dokter' AND receiver_id=? AND is_read=0`,
+      [dokter_id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+ 
+// DELETE /api/chat/:id — soft delete, hanya pengirim pesan yang boleh hapus
+app.delete('/api/chat/:id', verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await db.query('SELECT * FROM chats WHERE id = ?', [id]);
+    const msg = rows[0];
+    if (!msg) return res.status(404).json({ success: false, message: 'Pesan tidak ditemukan.' });
+ 
+    // Hanya pengirim asli (cocok role + id dari token) yang boleh hapus
+    if (msg.sender_role !== req.user.role || msg.sender_id !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Tidak diizinkan menghapus pesan ini.' });
+    }
+ 
+    await db.query('UPDATE chats SET deleted_at = NOW() WHERE id = ?', [id]);
+    res.json({ success: true, message: 'Pesan dihapus.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
   }
