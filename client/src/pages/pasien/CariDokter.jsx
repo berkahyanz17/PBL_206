@@ -230,7 +230,7 @@ export default function PasienCari() {
                 alignItems: 'center', justifyContent: 'space-between',
                 marginBottom: showBookingForm ? 16 : 0
               }}>
-              <span>📅 Booking Dokter Ini</span>
+              <span>📅 Buat Janji Temu</span>
               <span>{showBookingForm ? '▲' : '▾'}</span>
             </button>
 
