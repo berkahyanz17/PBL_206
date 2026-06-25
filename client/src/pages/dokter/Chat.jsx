@@ -5,11 +5,36 @@ import { apiFetch } from '../../utils/api';
 import { useNotif } from '../../components/NotifPopup';
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const NEAR_BOTTOM_PX = 80;
 
 function fmtTime(ts) {
   if (!ts) return '';
+  return new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+}
+
+function dateLabel(ts) {
   const d = new Date(ts);
-  return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  const sameDay = (a, b) => a.toDateString() === b.toDateString();
+  if (sameDay(d, today)) return 'Hari ini';
+  if (sameDay(d, yesterday)) return 'Kemarin';
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function withDateSeparators(messages) {
+  const out = [];
+  let lastDay = null;
+  for (const m of messages) {
+    const day = new Date(m.created_at).toDateString();
+    if (day !== lastDay) {
+      out.push({ type: 'sep', key: `sep-${day}`, label: dateLabel(m.created_at) });
+      lastDay = day;
+    }
+    out.push({ type: 'msg', key: m.id, data: m });
+  }
+  return out;
 }
 
 export default function DokterChat() {
@@ -19,9 +44,11 @@ export default function DokterChat() {
   const [file, setFile] = useState(null);
   const [fileError, setFileError] = useState('');
   const [loadingMsgs, setLoadingMsgs] = useState(true);
+  const [showJumpBtn, setShowJumpBtn] = useState(false);
   const [adminId, setAdminId] = useState(1);
   const { bellButton, popup } = useNotif('notif-dokter');
   const user = JSON.parse(localStorage.getItem('dokterUser') || '{}');
+  const scrollRef = useRef();
   const bottomRef = useRef();
   const fileInputRef = useRef();
 
@@ -32,7 +59,29 @@ export default function DokterChat() {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distFromBottom < NEAR_BOTTOM_PX) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      setShowJumpBtn(false);
+    } else {
+      setShowJumpBtn(true);
+    }
+  }, [messages]);
+
+  function handleScroll() {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setShowJumpBtn(distFromBottom > NEAR_BOTTOM_PX);
+  }
+
+  function jumpToBottom() {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setShowJumpBtn(false);
+  }
 
   async function loadMessages(showLoading) {
     if (showLoading) setLoadingMsgs(true);
@@ -86,6 +135,8 @@ export default function DokterChat() {
 
   async function logout() { const rt = localStorage.getItem('refreshToken'); if (rt) { await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); } sessionStorage.clear(); localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); navigate('/dokter/login'); }
 
+  const rows = withDateSeparators(messages);
+
   return (
     <div className="dashboard-layout">
       <DokterSidebar />
@@ -97,71 +148,77 @@ export default function DokterChat() {
           </div>
         </div>
         <div className="content-area">
-          <div style={{ background: 'white', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-            <div style={{ background: '#F9FAFB', padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div className="avatar" style={{ background: '#22c55e', width: 36, height: 36, fontSize: 13 }}>AK</div>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>Admin Klinik</div>
-            </div>
-            <div style={{ minHeight: 340, maxHeight: 400, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {loadingMsgs ? (
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, marginTop: 40 }}>Memuat pesan...</div>
-              ) : messages.length === 0 ? (
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, marginTop: 40 }}>Belum ada pesan. Mulai percakapan!</div>
-              ) : messages.map((m) => {
-                const isSent = m.sender_role === 'dokter';
-                const isDeleted = !!m.deleted_at;
-                return (
-                  <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isSent ? 'flex-end' : 'flex-start' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      {isSent && !isDeleted && (
-                        <button onClick={() => deleteMessage(m.id)} title="Hapus pesan"
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-muted)', opacity: 0.6 }}>🗑</button>
-                      )}
-                      <div className={`msg ${isSent ? 'sent' : 'received'}`}
-                        style={isSent ? { background: 'var(--green-dark)', color: 'white', borderRadius: '12px 4px 12px 12px' } : {}}>
-                        {isDeleted ? (
-                          <span style={{ fontStyle: 'italic', opacity: 0.7 }}>Pesan telah dihapus</span>
-                        ) : (
-                          <>
-                            {m.file_url && m.file_type === 'image' && (
-                              <a href={m.file_url} target="_blank" rel="noreferrer">
-                                <img src={m.file_url} alt="lampiran" style={{ maxWidth: 200, borderRadius: 8, display: 'block', marginBottom: m.pesan ? 6 : 0 }} />
-                              </a>
-                            )}
-                            {m.file_url && m.file_type === 'file' && (
-                              <a href={m.file_url} target="_blank" rel="noreferrer"
-                                style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'inherit', textDecoration: 'underline', marginBottom: m.pesan ? 6 : 0 }}>
-                                📎 Lihat file
-                              </a>
-                            )}
-                            {m.pesan}
-                          </>
+          <div className="chat-panel">
+            <div className="chat-main">
+              <div className="chat-header">
+                <div className="avatar" style={{ background: '#22c55e', width: 36, height: 36, fontSize: 13 }}>AK</div>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>Admin Klinik</div>
+              </div>
+
+              <div className="chat-messages" ref={scrollRef} onScroll={handleScroll}>
+                {loadingMsgs ? (
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, marginTop: 40 }}>Memuat pesan...</div>
+                ) : rows.length === 0 ? (
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, marginTop: 40 }}>Belum ada pesan. Mulai percakapan!</div>
+                ) : rows.map((row) => {
+                  if (row.type === 'sep') {
+                    return <div key={row.key} className="chat-date-sep"><span>{row.label}</span></div>;
+                  }
+                  const m = row.data;
+                  const isSent = m.sender_role === 'dokter';
+                  const isDeleted = !!m.deleted_at;
+                  return (
+                    <div key={row.key} className={`msg-row ${isSent ? 'sent' : 'received'}`}>
+                      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
+                        {isSent && !isDeleted && (
+                          <button className="msg-del-btn" onClick={() => deleteMessage(m.id)} title="Hapus pesan">🗑</button>
+                        )}
+                        <div className={`msg ${isSent ? 'sent' : 'received'}`} style={isSent ? { background: 'var(--green-dark)' } : {}}>
+                          {isDeleted ? (
+                            <span style={{ fontStyle: 'italic', opacity: 0.7 }}>Pesan telah dihapus</span>
+                          ) : (
+                            <>
+                              {m.file_url && m.file_type === 'image' && (
+                                <a href={m.file_url} target="_blank" rel="noreferrer">
+                                  <img src={m.file_url} alt="lampiran" className="msg-img" style={{ marginBottom: m.pesan ? 6 : 0 }} />
+                                </a>
+                              )}
+                              {m.file_url && m.file_type === 'file' && (
+                                <a href={m.file_url} target="_blank" rel="noreferrer"
+                                  style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'inherit', textDecoration: 'underline', marginBottom: m.pesan ? 6 : 0 }}>
+                                  📎 Lihat file
+                                </a>
+                              )}
+                              {m.pesan}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="msg-meta">
+                        {fmtTime(m.created_at)}
+                        {isSent && !isDeleted && (
+                          <span style={{ color: m.is_read ? '#3b82f6' : 'var(--text-muted)' }}>{m.is_read ? '✓✓' : '✓'}</span>
                         )}
                       </div>
                     </div>
-                    <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 4, alignItems: 'center' }}>
-                      {fmtTime(m.created_at)}
-                      {isSent && !isDeleted && (
-                        <span style={{ color: m.is_read ? '#3b82f6' : 'var(--text-muted)' }}>{m.is_read ? '✓✓' : '✓'}</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-              <div ref={bottomRef} />
-            </div>
-            <div>
-              {fileError && <div style={{ padding: '6px 20px', fontSize: 12, color: '#ef4444' }}>{fileError}</div>}
+                  );
+                })}
+                <div ref={bottomRef} />
+                {showJumpBtn && (
+                  <button className="chat-jump-btn" onClick={jumpToBottom}>↓ Pesan baru</button>
+                )}
+              </div>
+
+              {fileError && <div className="chat-file-error">{fileError}</div>}
               {file && (
-                <div style={{ padding: '6px 20px', fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div className="chat-file-preview">
                   📎 {file.name} ({(file.size / 1024).toFixed(0)} KB)
                   <button onClick={() => setFile(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 12 }}>✕ batal</button>
                 </div>
               )}
               <div className="chat-input-row">
                 <input type="file" ref={fileInputRef} accept="image/jpeg,image/png,image/webp,application/pdf" onChange={handlePickFile} style={{ display: 'none' }} />
-                <button onClick={() => fileInputRef.current?.click()} title="Lampirkan file"
-                  style={{ padding: '10px 14px', background: '#F3F4F6', border: 'none', borderRadius: 20, fontSize: 15, cursor: 'pointer' }}>📎</button>
+                <button className="chat-attach-btn" onClick={() => fileInputRef.current?.click()} title="Lampirkan file">📎</button>
                 <input className="chat-input" placeholder="Ketik disini" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} />
                 <button onClick={send} style={{ padding: '10px 20px', background: 'var(--green-dark)', color: 'white', border: 'none', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Kirim</button>
               </div>
