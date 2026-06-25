@@ -60,6 +60,7 @@ export default function AdminChat() {
   const scrollRef = useRef();
   const bottomRef = useRef();
   const fileInputRef = useRef();
+  const hasScrolledInitial = useRef(false);
   const { bellButton, popup } = useNotif('notif-admin');
 
   useEffect(() => {
@@ -70,23 +71,27 @@ export default function AdminChat() {
 
   useEffect(() => {
     if (!active) return;
+    hasScrolledInitial.current = false;
     loadMessages(true);
     markRead(active.id);
     const interval = setInterval(() => loadMessages(false), 5000);
     return () => clearInterval(interval);
   }, [active]);
 
-  // Auto-scroll hanya kalau user sudah dekat bawah; kalau tidak, tampilkan tombol jump
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    if (distFromBottom < NEAR_BOTTOM_PX) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!hasScrolledInitial.current) {
+      requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight;
+        setTimeout(() => { el.scrollTop = el.scrollHeight; }, 150);
+      });
+      hasScrolledInitial.current = true;
       setShowJumpBtn(false);
-    } else {
-      setShowJumpBtn(true);
+      return;
     }
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setShowJumpBtn(distFromBottom > NEAR_BOTTOM_PX);
   }, [messages]);
 
   function handleScroll() {
@@ -252,6 +257,7 @@ export default function AdminChat() {
                 </div>
               )}
 
+              <div className="chat-messages-wrap">
               <div className="chat-messages" ref={scrollRef} onScroll={handleScroll}>
                 {loadingMsgs ? (
                   <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, marginTop: 40 }}>Memuat pesan...</div>
@@ -277,7 +283,7 @@ export default function AdminChat() {
                             <>
                               {m.file_url && m.file_type === 'image' && (
                                 <a href={m.file_url} target="_blank" rel="noreferrer">
-                                  <img src={m.file_url} alt="lampiran" className="msg-img" style={{ marginBottom: m.pesan ? 6 : 0 }} />
+                                  <img src={m.file_url} alt="lampiran" className="msg-img" onLoad={() => { if (hasScrolledInitial.current) { const el = scrollRef.current; if (el && el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX + 250) el.scrollTop = el.scrollHeight; } }} style={{ marginBottom: m.pesan ? 6 : 0 }} />
                                 </a>
                               )}
                               {m.file_url && m.file_type === 'file' && (
@@ -301,9 +307,10 @@ export default function AdminChat() {
                   );
                 })}
                 <div ref={bottomRef} />
-                {showJumpBtn && (
-                  <button className="chat-jump-btn" onClick={jumpToBottom}>↓ Pesan baru</button>
-                )}
+              </div>
+              {showJumpBtn && (
+                <button className="chat-jump-btn" onClick={jumpToBottom}>↓ Pesan baru</button>
+              )}
               </div>
 
               {fileError && <div className="chat-file-error">{fileError}</div>}
