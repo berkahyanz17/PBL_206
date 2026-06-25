@@ -271,21 +271,12 @@ INSERT INTO `klinik_settings` (`key`, `value`, `label`, `kategori`) VALUES
   ('klinik_alamat',     'Jl. Sehat No. 1, Kota Sehat',               'Alamat',                 'umum'),
   ('klinik_jam_buka',   'Senin–Jumat 08.00–17.00, Sabtu 08.00–13.00','Jam Operasional',        'umum'),
   ('klinik_telepon',    '(021) 1234-5678',                            'Nomor Telepon',          'kontak'),
-  ('klinik_email',      'info@healthsync.web.id',                     'Email Klinik',           'kontak'),
+  ('klinik_email',      'info@healthsync.id',                         'Email Klinik',           'kontak'),
   ('klinik_whatsapp',   '08xx-xxxx-xxxx',                             'WhatsApp',               'kontak'),
   ('mamoru_greeting',   'Halo! Saya Mamoru, asisten virtual HealthSync Clinic. Ada yang bisa saya bantu?', 'Sapaan Mamoru', 'mamoru'),
   ('mamoru_darurat_msg','Untuk kondisi darurat, segera hubungi IGD terdekat atau hubungi klinik kami.', 'Pesan Darurat Mamoru', 'mamoru'),
   ('mamoru_context_extra', '', 'Konteks Tambahan untuk Mamoru (opsional)', 'mamoru')
 ON DUPLICATE KEY UPDATE `key` = `key`; -- idempotent, aman dijalankan ulang
-
--- ════════════════════════════════════════════════════════════════════════════
--- MIGRATION: Fase 2 — unread badge (chats.is_read) + status online dokter (dokters.last_active)
--- Jalankan sekali di DB yang sudah ada, ATAU tambahkan ke db_praktikum.sql
--- sebelum 'docker compose down -v && up --build'
--- ════════════════════════════════════════════════════════════════════════════
-
-ALTER TABLE chats ADD COLUMN is_read TINYINT(1) DEFAULT 0;
-ALTER TABLE dokters ADD COLUMN last_active TIMESTAMP NULL DEFAULT NULL;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
