@@ -45,6 +45,10 @@ export default function DokterChat() {
   const [fileError, setFileError] = useState('');
   const [loadingMsgs, setLoadingMsgs] = useState(true);
   const [showJumpBtn, setShowJumpBtn] = useState(false);
+  const [jumpMode, setJumpMode] = useState('neutral');
+  const prevCount = useRef(0);
+  const [jumpMode, setJumpMode] = useState('neutral');
+  const prevCount = useRef(0);
   const [adminId, setAdminId] = useState(1);
   const { bellButton, popup } = useNotif('notif-dokter');
   const user = JSON.parse(localStorage.getItem('dokterUser') || '{}');
@@ -70,23 +74,37 @@ export default function DokterChat() {
         setTimeout(() => { el.scrollTop = el.scrollHeight; }, 150);
       });
       hasScrolledInitial.current = true;
+      prevCount.current = messages.length;
       setShowJumpBtn(false);
       return;
     }
     const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    setShowJumpBtn(distFromBottom > NEAR_BOTTOM_PX);
+    const hasNew = messages.length > prevCount.current;
+    prevCount.current = messages.length;
+    if (distFromBottom > NEAR_BOTTOM_PX) {
+      setShowJumpBtn(true);
+      if (hasNew) setJumpMode('new');
+    } else {
+      setShowJumpBtn(false);
+    }
   }, [messages]);
 
   function handleScroll() {
     const el = scrollRef.current;
     if (!el) return;
     const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    setShowJumpBtn(distFromBottom > NEAR_BOTTOM_PX);
+    if (distFromBottom > NEAR_BOTTOM_PX) {
+      setShowJumpBtn(true);
+    } else {
+      setShowJumpBtn(false);
+      setJumpMode('neutral');
+    }
   }
 
   function jumpToBottom() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     setShowJumpBtn(false);
+    setJumpMode('neutral');
   }
 
   async function loadMessages(showLoading) {
@@ -213,7 +231,9 @@ export default function DokterChat() {
                 <div ref={bottomRef} />
               </div>
               {showJumpBtn && (
-                <button className="chat-jump-btn green" onClick={jumpToBottom}>↓ Pesan baru</button>
+                <button className={`chat-jump-btn ${jumpMode === 'new' ? 'green' : 'neutral'}`} onClick={jumpToBottom}>
+                  {jumpMode === 'new' ? '↓ Pesan baru' : '↓'}
+                </button>
               )}
               </div>
 
