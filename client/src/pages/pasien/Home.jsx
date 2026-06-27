@@ -27,7 +27,7 @@ export default function PasienHome() {
 
       // Cek apakah ada rekam medis yang belum dirating
       const pending = await apiFetch('/ulasan/pending');
-      if (pending?.success && pending?.data) setRatingPending(pending.data);
+      if (pending?.success && pending?.data?.length > 0) setRatingPending(pending.data[0]);
     }
     load();
   }, []);
@@ -35,9 +35,8 @@ export default function PasienHome() {
   async function logout() {
     const rt = localStorage.getItem('refreshToken');
     if (rt) {
-      await fetch('/api/logout', {
+      await apiFetch('/logout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken: rt })
       });
     }
