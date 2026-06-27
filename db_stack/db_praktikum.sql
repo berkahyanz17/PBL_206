@@ -40,6 +40,25 @@ CREATE TABLE `appointments` (
   CONSTRAINT `appointments_ibfk_2` FOREIGN KEY (`dokter_id`) REFERENCES `dokters` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
+DROP TABLE IF EXISTS `ulasan`;
+CREATE TABLE `ulasan` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `appointment_id` int(11) NOT NULL,
+  `pasien_id` int(11) NOT NULL,
+  `dokter_id` int(11) NOT NULL,
+  `bintang` tinyint(1) NOT NULL,
+  `komentar` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `appointment_id` (`appointment_id`),
+  KEY `pasien_id` (`pasien_id`),
+  KEY `dokter_id` (`dokter_id`),
+  CONSTRAINT `ulasan_ibfk_1` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `ulasan_ibfk_2` FOREIGN KEY (`pasien_id`) REFERENCES `pasiens` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `ulasan_ibfk_3` FOREIGN KEY (`dokter_id`) REFERENCES `dokters` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `bintang_check` CHECK (`bintang` BETWEEN 1 AND 5)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
 DROP TABLE IF EXISTS `chats`;
 CREATE TABLE `chats` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
