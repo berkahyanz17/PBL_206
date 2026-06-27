@@ -1,0 +1,43 @@
+services:
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "192.168.56.113:3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db_praktikum.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./mysql-encryption/:/etc/mysql/encryption/:ro
+    command: >
+      --plugin-load-add=file_key_management
+      --file-key-management-filename=/etc/mysql/encryption/keyfile
+      --file-key-management-filekey=/etc/mysql/encryption/keyfile.key
+      --innodb-encrypt-tables=ON
+      --innodb-encrypt-log=ON
+      --innodb-encryption-threads=4
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  phpmyadmin:
+      image: phpmyadmin:latest
+      restart: unless-stopped
+      environment:
+        PMA_HOST: db          # nama service db di compose ini
+        PMA_PORT: 3306
+        UPLOAD_LIMIT: 64M
+      ports:
+        - "8080:80"
+      depends_on:
+        - db
+
+volumes:
+  db_data:
