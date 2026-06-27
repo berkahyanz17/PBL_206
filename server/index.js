@@ -1424,6 +1424,109 @@ app.post('/api/logout', async (req, res) => {
   res.json({ success: true, message: 'Logout berhasil.' });
 });
 
+// ─── GET /api/ulasan/dokter/:id ──────────────────────────────────────────────
+// Ambil semua ulasan untuk satu dokter + rata-rata bintang + total ulasan.
+// Dipakai di CariDokter.jsx saat pasien buka detail dokter.
+app.get('/api/ulasan/dokter/:id', async (req, res) => {
+  try {
+    const dokterId = req.params.id;
+
+    const [rows] = await db.query(
+      `SELECT u.id, u.bintang, u.komentar, u.created_at, p.nama AS pasien_nama
+       FROM ulasan u
+       JOIN pasiens p ON p.id = u.pasien_id
+       WHERE u.dokter_id = ?
+       ORDER BY u.created_at DESC`,
+      [dokterId]
+    );
+
+    const total = rows.length;
+    const rataRata = total > 0
+      ? Math.round((rows.reduce((sum, r) => sum + r.bintang, 0) / total) * 10) / 10
+      : null;
+
+    res.json({ success: true, data: rows, total, rata_rata: rataRata });
+  } catch (err) {
+    logger.error('[Ulasan] GET dokter error:', err.message);
+    res.status(500).json({ success: false, message: 'Gagal memuat ulasan.' });
+  }
+});
+
+// ─── GET /api/ulasan/pending ─────────────────────────────────────────────────
+// Ambil appointment milik pasien yang sudah 'selesai' tapi belum diberi ulasan.
+// Dipakai di Home.jsx pasien untuk memunculkan prompt "beri ulasan".
+// Membutuhkan req.user.id (pasien yang sedang login) — pasang verifyToken di route ini.
+app.get('/api/ulasan/pending', verifyToken, async (req, res) => {
+  try {
+    const pasienId = req.user.id;
+
+    const [rows] = await db.query(
+      `SELECT a.id AS appointment_id, a.tgl, a.jam, d.id AS dokter_id, d.nama AS dokter_nama, d.spesialis, d.foto
+       FROM appointments a
+       JOIN dokters d ON d.id = a.dokter_id
+       LEFT JOIN ulasan u ON u.appointment_id = a.id
+       WHERE a.pasien_id = ? AND a.status = 'selesai' AND u.id IS NULL
+       ORDER BY a.tgl DESC, a.jam DESC`,
+      [pasienId]
+    );
+
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    logger.error('[Ulasan] GET pending error:', err.message);
+    res.status(500).json({ success: false, message: 'Gagal memuat ulasan pending.' });
+  }
+});
+
+// ─── POST /api/ulasan ─────────────────────────────────────────────────────────
+// Submit ulasan baru untuk satu appointment yang sudah selesai.
+// Body: { appointment_id, bintang, komentar }
+app.post('/api/ulasan', verifyToken, async (req, res) => {
+  try {
+    const pasienId = req.user.id;
+    const { appointment_id, bintang, komentar } = req.body;
+
+    if (!appointment_id || !bintang) {
+      return res.status(400).json({ success: false, message: 'appointment_id dan bintang wajib diisi.' });
+    }
+    if (bintang < 1 || bintang > 5) {
+      return res.status(400).json({ success: false, message: 'Bintang harus antara 1-5.' });
+    }
+
+    // Pastikan appointment ini benar milik pasien yang login, sudah selesai, dan belum ada ulasannya
+    const [[appt]] = await db.query(
+      `SELECT a.id, a.dokter_id, a.pasien_id, a.status
+       FROM appointments a
+       WHERE a.id = ?`,
+      [appointment_id]
+    );
+
+    if (!appt) {
+      return res.status(404).json({ success: false, message: 'Appointment tidak ditemukan.' });
+    }
+    if (appt.pasien_id !== pasienId) {
+      return res.status(403).json({ success: false, message: 'Appointment ini bukan milik Anda.' });
+    }
+    if (appt.status !== 'selesai') {
+      return res.status(400).json({ success: false, message: 'Hanya appointment yang sudah selesai bisa diulas.' });
+    }
+
+    await db.query(
+      `INSERT INTO ulasan (appointment_id, pasien_id, dokter_id, bintang, komentar)
+       VALUES (?, ?, ?, ?, ?)`,
+      [appointment_id, pasienId, appt.dokter_id, bintang, komentar || null]
+    );
+
+    res.json({ success: true, message: 'Ulasan berhasil dikirim.' });
+  } catch (err) {
+    // Error 1062 = duplicate entry, karena UNIQUE KEY appointment_id sudah terisi
+    if (err.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ success: false, message: 'Appointment ini sudah diulas sebelumnya.' });
+    }
+    logger.error('[Ulasan] POST error:', err.message);
+    res.status(500).json({ success: false, message: 'Gagal mengirim ulasan.' });
+  }
+});
+
 // ─── Centralized error handler ──────────────────────────────────────────────
 app.use((err, req, res, next) => {
   logger.error(err.stack);
