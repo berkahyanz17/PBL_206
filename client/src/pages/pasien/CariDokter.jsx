@@ -35,8 +35,8 @@ export default function PasienCari() {
       setDokters(res.data);
       const map = {};
       for (const d of res.data) {
-        const j = await fetch(`/api/jadwal-publik/${d.id}`).then(r => r.json());
-        map[d.id] = j.data?.length > 0;
+        const j = await apiFetch(`/jadwal-publik/${d.id}`);
+        map[d.id] = j?.data?.length > 0;
       }
       setTersediaMap(map);
     }
@@ -49,13 +49,13 @@ export default function PasienCari() {
     setTanggal(''); setJam(''); setKeluhan('');
     setLoadingUlasan(true);
     const [ulasanRes, jadwalRes] = await Promise.all([
-      fetch(`/api/ulasan/dokter/${d.id}`).then(r => r.json()),
-      fetch(`/api/jadwal-publik/${d.id}`, { cache: 'no-store' }).then(r => r.json())
+      apiFetch(`/ulasan/dokter/${d.id}`),
+      apiFetch(`/jadwal-publik/${d.id}`, { cache: 'no-store' })
     ]);
-    setUlasan(ulasanRes.data || []);
-    setRataRata(ulasanRes.rata_rata);
-    setTotalUlasan(ulasanRes.total || 0);
-    setJadwalDokter(jadwalRes.data || []);
+    setUlasan(ulasanRes?.data || []);
+    setRataRata(ulasanRes?.rata_rata);
+    setTotalUlasan(ulasanRes?.total || 0);
+    setJadwalDokter(jadwalRes?.data || []);
     setLoadingUlasan(false);
   }
 
@@ -115,7 +115,7 @@ export default function PasienCari() {
             <button className="btn-logout" style={{ background: 'rgba(255,255,255,0.4)', color: '#1e3a5f', borderColor: 'rgba(255,255,255,0.5)' }}
               onClick={async () => {
                 const rt = localStorage.getItem('refreshToken');
-                if (rt) await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) });
+                if (rt) await apiFetch('/logout', { method: 'POST', body: JSON.stringify({ refreshToken: rt }) });
                 localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); localStorage.removeItem('pasienUser');
                 navigate('/pasien/login');
               }}>🚪 Logout</button>
