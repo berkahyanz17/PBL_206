@@ -64,7 +64,7 @@ trivy image pbl_206-client:latest
 ```
 # HealthSync Clinic
 
-Frontend-only React app served by Nginx via Docker.
+Full stack app of a clinic website
 
 ## URL Structure
 
@@ -76,6 +76,7 @@ Frontend-only React app served by Nginx via Docker.
 /admin/dokter
 /admin/pasien
 /admin/chat
+/admin/settings
 
 /dokter/login
 /dokter/lupa-password
@@ -85,6 +86,7 @@ Frontend-only React app served by Nginx via Docker.
 /dokter/kelola-jadwal
 /dokter/chat
 /dokter/profil
+/dokter/settings
 
 /pasien/login
 /pasien/daftar
@@ -94,32 +96,83 @@ Frontend-only React app served by Nginx via Docker.
 /pasien/cari-dokter
 /pasien/riwayat
 /pasien/profil
+/pasien/settings
 ```
 
-## Setup & Run
+## Project Structure
 
-### 1. Install & Build React
-
-```bash
-cd client
-npm install
-npm run build
-cd ..
 ```
-
-### 2. Run with Docker
-
-```bash
-docker-compose up -d
+berkah@uiserver:~/PBL_206$ tree
+.
+├── backup.sh
+├── client
+│   ├── dist
+│   ├── Dockerfile
+│   ├── index.html
+│   ├── nginx.conf
+│   ├── package.json
+│   ├── src
+│   │   ├── App.jsx
+│   │   ├── components
+│   │   │   ├── AdminSidebar.jsx
+│   │   │   ├── DokterSidebar.jsx
+│   │   │   ├── NotifPopup.jsx
+│   │   │   ├── PasienSidebar.jsx
+│   │   │   └── ProtectedRoute.jsx
+│   │   ├── index.css
+│   │   ├── main.jsx
+│   │   ├── pages
+│   │   │   ├── admin
+│   │   │   │   ├── Appointments.jsx
+│   │   │   │   ├── Chat.jsx
+│   │   │   │   ├── Dashboard.jsx
+│   │   │   │   ├── Dokter.jsx
+│   │   │   │   ├── KlinikSettings.jsx
+│   │   │   │   ├── Login.jsx
+│   │   │   │   ├── Pasien.jsx
+│   │   │   │   └── Settings.jsx
+│   │   │   ├── dokter
+│   │   │   │   ├── Chat.jsx
+│   │   │   │   ├── Jadwal.jsx
+│   │   │   │   ├── KelolaJadwal.jsx
+│   │   │   │   ├── Login.jsx
+│   │   │   │   ├── LupaPassword.jsx
+│   │   │   │   ├── Profil.jsx
+│   │   │   │   ├── RekamMedis.jsx
+│   │   │   │   ├── Riwayat.jsx
+│   │   │   │   └── Settings.jsx
+│   │   │   ├── Index.jsx
+│   │   │   └── pasien
+│   │   │       ├── CariDokter.jsx
+│   │   │       ├── Daftar.jsx
+│   │   │       ├── Home.jsx
+│   │   │       ├── Login.jsx
+│   │   │       ├── LupaPassword.jsx
+│   │   │       ├── Mamoruchat.jsx
+│   │   │       ├── Profil.jsx
+│   │   │       ├── ResetPassword.jsx
+│   │   │       ├── Riwayat.jsx
+│   │   │       └── Settings.jsx
+│   │   └── utils
+│   │       └── api.js
+│   └── vite.config.js
+├── db_praktikum.sql
+├── docker-compose.yml
+├── env.example
+├── healthsync_final.html
+├── healthsync-tls-tutorial.md
+├── MonitorPBL206.ps1
+├── nginx
+│   └── nginx.conf
+├── README.md
+└── server
+    ├── backup-strategy.md
+    ├── crypto.js
+    ├── Dockerfile
+    ├── ENKRIPSI_GUIDE.md
+    ├── index.js
+    ├── migrate_encrypt_existing.js
+    └── package.json
+12 directories, 58 files
+berkah@uiserver:~/PBL_206$
 ```
-
-Site is now accessible at **http://<your-ip>** (port 80).
-
-### 3. Dev Mode (optional, no Docker needed)
-
-```bash
-cd client
-npm run dev
-```
-
-Opens at http://localhost:5173
