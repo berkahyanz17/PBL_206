@@ -4,11 +4,14 @@ import PasienSidebar from '../../components/PasienSidebar';
 import MamoruChat from './Mamoruchat';
 import { apiFetch } from '../../utils/api';
 import { useNotif } from '../../components/NotifPopup';
+import FotoAdjustModal from '../../components/FotoAdjustModal';
 
 export default function PasienProfil() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ nama: '', email: '', no_hp: '', nik: '', tgl_lahir: '', gender: '', alamat: '', riwayat_penyakit: '', alergi: '' });
   const [foto, setFoto] = useState(null);
+  const [fotoBlob, setFotoBlob] = useState(null);
+  const [adjustSrc, setAdjustSrc] = useState(null);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef();
   const user = JSON.parse(localStorage.getItem('pasienUser') || '{}');
@@ -31,16 +34,26 @@ export default function PasienProfil() {
     load();
   }, []);
 
+  // Foto mentah dari file picker dibuka dulu di modal adjust, belum langsung dipakai
   function previewFoto(e) {
     const file = e.target.files[0];
-    if (file) { const r = new FileReader(); r.onload = ev => setFoto(ev.target.result); r.readAsDataURL(file); }
+    if (file) { const r = new FileReader(); r.onload = ev => setAdjustSrc(ev.target.result); r.readAsDataURL(file); }
   }
+
+  // Dipanggil setelah user selesai crop/zoom & klik "Simpan" di modal adjust
+  function handleFotoAdjustSave(dataUrl, blob) {
+    setFoto(dataUrl);
+    setFotoBlob(blob);
+    setAdjustSrc(null);
+    if (fileRef.current) fileRef.current.value = '';
+  }
+
   async function simpan() {
     setSaving(true);
     const formData = new FormData();
     Object.entries(form).forEach(([k, v]) => formData.append(k, v));
-    if (fileRef.current?.files[0]) formData.append('foto', fileRef.current.files[0]);
-  
+    if (fotoBlob) formData.append('foto', fotoBlob, 'foto.jpg');
+
     const res = await apiFetch(`/pasien/${user.id}/profil`, { // ✅ no /api prefix
       method: 'PUT',
       body: formData
@@ -105,6 +118,7 @@ export default function PasienProfil() {
       </div>
       <MamoruChat />
       {popup}
+      <FotoAdjustModal src={adjustSrc} onCancel={() => setAdjustSrc(null)} onSave={handleFotoAdjustSave} />
     </div>
   );
 }
