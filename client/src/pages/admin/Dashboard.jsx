@@ -60,7 +60,7 @@ export default function AdminDashboard() {
               </div>
             ))}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+          <div className="dash-split-grid">
             <div className="card">
               <div className="card-header">
                 <div className="card-title">⏰ Appointment Terbaru</div>
