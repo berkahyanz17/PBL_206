@@ -193,6 +193,14 @@ tr:hover td { background: #F9FAFB; }
 /* ===== SECTION TITLE ===== */
 .section-title { font-size: 20px; font-weight: 800; color: var(--text-dark); margin-bottom: 20px; }
 
+/* ===== 2-COLUMN SPLIT LAYOUTS (dashboard admin, riwayat dokter, cari dokter) ===== */
+.dash-split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.riwayat-split-grid { display: grid; grid-template-columns: 240px 1fr; gap: 18px; }
+.riwayat-sidebar-card, .riwayat-content-card { background: white; border-radius: 14px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.riwayat-content-card { padding: 20px; }
+.dokter-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.dokter-card { background: white; border-radius: 14px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+
 /* ===== STAT GRID ===== */
 .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 24px; }
 .stat-card { background: white; border-radius: 14px; padding: 22px 24px; display: flex; align-items: center; gap: 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
@@ -330,10 +338,27 @@ tr:hover td { background: #F9FAFB; }
   .filter-row { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
   .filter-row::-webkit-scrollbar { display: none; }
 
-  /* Card dokter grid: 1 kolom */
+  /* Card dokter grid: 1 kolom, mengalir ke bawah */
   .dokter-grid, [style*="grid-template-columns: repeat(2"] {
     grid-template-columns: 1fr !important;
+    gap: 12px;
   }
+
+  /* Dashboard admin: Appointment Terbaru & Dokter Terdaftar jadi 1 kolom, urut ke bawah */
+  .dash-split-grid, [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  /* Riwayat konsultasi dokter: daftar pasien pindah ke atas, konten di bawah */
+  .riwayat-split-grid, [style*="grid-template-columns: 240px 1fr"] {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+  .riwayat-sidebar-card { padding: 14px; max-height: 260px; overflow-y: auto; }
+
+  /* Card dokter: item di dalam card jangan kepotong saat sempit */
+  .dokter-card { padding: 16px; }
 
   /* Chat layout: full lebar */
   .chat-layout { grid-template-columns: 1fr !important; }
