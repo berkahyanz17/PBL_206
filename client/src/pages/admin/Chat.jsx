@@ -217,7 +217,7 @@ export default function AdminChat() {
           </div>
         </div>
         <div className="content-area">
-          <div className="chat-panel with-list">
+          <div className={`chat-panel with-list${active ? ' mobile-chat-open' : ''}`}>
             <div className="chat-sidebar">
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 12 }}>Chat dengan Dokter</div>
               <input
@@ -263,6 +263,7 @@ export default function AdminChat() {
             <div className="chat-main">
               {active && (
                 <div className="chat-header">
+                  <button className="chat-back-btn" onClick={() => setActive(null)} title="Kembali ke daftar dokter">←</button>
                   <div style={{ position: 'relative' }}>
                     <div className="avatar" style={{ background: colors[dokters.findIndex(d => d.id === active.id) % colors.length], width: 32, height: 32, fontSize: 11 }}>{active.nama?.charAt(0)}</div>
                     <div style={{ position: 'absolute', bottom: -2, right: -2, width: 9, height: 9, borderRadius: '50%', background: isOnline(active.lastActive) ? '#22c55e' : '#9ca3af', border: '2px solid white' }} />
