@@ -40,6 +40,7 @@ export default function DokterRekam() {
             <input type="text" placeholder="Cari nama pasien..." style={{ flex: 1, border: 'none', background: 'none', fontSize: 13, fontFamily: 'inherit', outline: 'none' }} value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="table-wrap">
             <table>
               <thead><tr><th>Tanggal</th><th>Pasien</th><th>Diagnosa</th><th>Aksi</th></tr></thead>
               <tbody>
@@ -54,6 +55,7 @@ export default function DokterRekam() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       </div>
