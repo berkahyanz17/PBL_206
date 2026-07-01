@@ -42,8 +42,8 @@ export default function DokterRiwayat() {
           </div>
         </div>
         <div className="content-area">
-          <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 18 }}>
-            <div style={{ background: 'white', borderRadius: 14, padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <div className="riwayat-split-grid">
+            <div className="riwayat-sidebar-card">
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 12 }}>👥 Daftar Pasien</div>
               {pasienList.length === 0 && <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Belum ada rekam medis.</div>}
               {pasienList.map((p, i) => (
@@ -57,7 +57,7 @@ export default function DokterRiwayat() {
                 </div>
               ))}
             </div>
-            <div style={{ background: 'white', borderRadius: 14, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+            <div className="riwayat-content-card">
               {active ? (
                 <>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18, paddingBottom: 14, borderBottom: '1px solid var(--border)' }}>
