@@ -3,11 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import DokterSidebar from '../../components/DokterSidebar';
 import { apiFetch } from '../../utils/api';
 import { useNotif } from '../../components/NotifPopup';
+import FotoAdjustModal from '../../components/FotoAdjustModal';
 
 export default function DokterProfil() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ nama: '', spesialis: '', no_str: '', email: '', harga: '', bio: '' });
   const [foto, setFoto] = useState(null);
+  const [fotoBlob, setFotoBlob] = useState(null);
+  const [adjustSrc, setAdjustSrc] = useState(null);
   const [saving, setSaving] = useState(false);
   const { bellButton, popup } = useNotif('notif-dokter');
   const fileRef = useRef();
@@ -25,17 +28,26 @@ export default function DokterProfil() {
     load();
   }, []);
 
+  // Foto mentah dari file picker dibuka dulu di modal adjust, belum langsung dipakai
   function previewFoto(e) {
     const file = e.target.files[0];
-    if (file) { const r = new FileReader(); r.onload = ev => setFoto(ev.target.result); r.readAsDataURL(file); }
+    if (file) { const r = new FileReader(); r.onload = ev => setAdjustSrc(ev.target.result); r.readAsDataURL(file); }
   }
-  
+
+  // Dipanggil setelah user selesai crop/zoom & klik "Simpan" di modal adjust
+  function handleFotoAdjustSave(dataUrl, blob) {
+    setFoto(dataUrl);
+    setFotoBlob(blob);
+    setAdjustSrc(null);
+    if (fileRef.current) fileRef.current.value = '';
+  }
+
   async function simpan() {
     setSaving(true);
     const formData = new FormData();
     Object.entries(form).forEach(([k, v]) => formData.append(k, v));
-    if (fileRef.current?.files[0]) formData.append('foto', fileRef.current.files[0]);
-  
+    if (fotoBlob) formData.append('foto', fotoBlob, 'foto.jpg');
+
     const res = await apiFetch(`/dokter/${user.id}/profil`, { // ✅ no /api prefix
       method: 'PUT',
       body: formData  // ✅ remove manual Authorization header
@@ -43,6 +55,7 @@ export default function DokterProfil() {
     setSaving(false);
     if (res?.success) alert('Profil berhasil diupdate!'); // ✅ res already parsed, no .json()
   }
+
 
   async function logout() { const rt = localStorage.getItem('refreshToken'); if (rt) { await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); } sessionStorage.clear(); localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); navigate('/dokter/login'); }
 
@@ -81,6 +94,7 @@ export default function DokterProfil() {
         </div>
       </div>
       {popup}
+      <FotoAdjustModal src={adjustSrc} onCancel={() => setAdjustSrc(null)} onSave={handleFotoAdjustSave} />
     </div>
   );
 }
