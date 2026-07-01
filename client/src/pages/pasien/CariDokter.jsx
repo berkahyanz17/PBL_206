@@ -202,7 +202,7 @@ export default function PasienCari() {
             {!loadingUlasan && ulasan.length === 0 && (
               <div style={{ color: '#9CA3AF', fontSize: 13, marginBottom: 12 }}>Belum ada ulasan untuk dokter ini.</div>
             )}
-            {ulasan.map((u, i) => (
+            {ulasan.slice(0, 3).map((u, i) => (
               <div key={i} style={{ background: '#F9FAFB', borderRadius: 10, padding: '12px 14px', marginBottom: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                   <span style={{ fontSize: 13, fontWeight: 600 }}>{u.pasien_nama}</span>
@@ -214,6 +214,11 @@ export default function PasienCari() {
                 </div>
               </div>
             ))}
+            {totalUlasan > 3 && (
+              <div style={{ fontSize: 11, color: '#9CA3AF', textAlign: 'center', marginBottom: 8 }}>
+                Menampilkan 3 ulasan terbaru dari {totalUlasan} ulasan
+              </div>
+            )}
 
             <hr style={{ border: 'none', borderTop: '1.5px solid #E5E7EB', margin: '16px 0' }} />
 
