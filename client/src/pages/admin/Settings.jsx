@@ -118,12 +118,12 @@ export default function AdminSettings() {
           </div>
         </div>
         <div className="content-area">
-          <div className="card" style={{ maxWidth: 600 }}>
+          <div className="card" style={{ width: '100%' }}>
 
             {/* ── Ganti Password ── */}
             <div style={{ marginBottom: 28 }}>
               <div style={sectionTitleStyle}>🔑 Ganti Password</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 480 }}>
                 {[
                   ['Password Lama',              pwLama,    setPwLama   ],
                   ['Password Baru',              pwBaru,    setPwBaru   ],
