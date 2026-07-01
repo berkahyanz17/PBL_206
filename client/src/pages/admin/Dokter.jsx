@@ -16,13 +16,51 @@ export default function AdminDokter() {
   const [showPw, setShowPw] = useState(false);
   const { bellButton, popup } = useNotif('notif-admin');
 
+  // Rating & ulasan per dokter (dimuat sekali untuk semua dokter di tabel)
+  const [ratingMap, setRatingMap] = useState({}); // { [dokterId]: { rata_rata, total, data: [] } }
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingDokter, setRatingDokter] = useState(null); // { id, nama }
+  const [loadingRating, setLoadingRating] = useState(false);
+
   useEffect(() => { loadDokters(); }, []);
 
   async function loadDokters() {
     setLoading(true);
     const res = await apiFetch('/dokter');
-    if (res?.success) setDokters(res.data);
+    if (res?.success) {
+      setDokters(res.data);
+      loadRatingSemuaDokter(res.data);
+    }
     setLoading(false);
+  }
+
+  // Ambil rata-rata rating + total ulasan untuk tiap dokter (dipakai buat badge di kolom Rating)
+  async function loadRatingSemuaDokter(list) {
+    const entries = await Promise.all(
+      list.map(async (d) => {
+        const res = await apiFetch(`/ulasan/dokter/${d.id}`);
+        return [d.id, { rata_rata: res?.rata_rata, total: res?.total || 0, data: res?.data || [] }];
+      })
+    );
+    setRatingMap(Object.fromEntries(entries));
+  }
+
+  function renderBintang(nilai, ukuran = 14) {
+    return [1, 2, 3, 4, 5].map((n) => (
+      <span key={n} style={{ fontSize: ukuran, color: n <= Math.round(nilai) ? '#FBBF24' : '#D1D5DB' }}>★</span>
+    ));
+  }
+
+  async function bukaRatingDokter(d) {
+    setRatingDokter(d);
+    setShowRatingModal(true);
+    // Kalau belum ada di cache, ambil dari server
+    if (!ratingMap[d.id]) {
+      setLoadingRating(true);
+      const res = await apiFetch(`/ulasan/dokter/${d.id}`);
+      setRatingMap((prev) => ({ ...prev, [d.id]: { rata_rata: res?.rata_rata, total: res?.total || 0, data: res?.data || [] } }));
+      setLoadingRating(false);
+    }
   }
 
   async function hapus(id, nama) {
@@ -70,18 +108,32 @@ export default function AdminDokter() {
             <div className="table-wrap">
               {loading ? <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Memuat data...</div> : (
                 <table>
-                  <thead><tr><th>Nama</th><th>Spesialisasi</th><th>No. STR</th><th>Harga</th><th>Aksi</th></tr></thead>
+                  <thead><tr><th>Nama</th><th>Spesialisasi</th><th>No. STR</th><th>Harga</th><th>Rating</th><th>Aksi</th></tr></thead>
                   <tbody>
-                    {filtered.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Tidak ada data.</td></tr>}
-                    {filtered.map((d, i) => (
-                      <tr key={d.id}>
-                        <td><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><div className="avatar" style={{ background: colors[i % colors.length] }}>{d.nama?.charAt(0)}</div><span style={{ fontWeight: 600 }}>{d.nama}</span></div></td>
-                        <td>{d.spesialis}</td>
-                        <td style={{ color: 'var(--text-muted)' }}>{d.no_str}</td>
-                        <td style={{ fontWeight: 700 }}>Rp {Number(d.harga).toLocaleString('id-ID')}</td>
-                        <td><button className="btn-del" onClick={() => hapus(d.id, d.nama)}>🗑️</button></td>
-                      </tr>
-                    ))}
+                    {filtered.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Tidak ada data.</td></tr>}
+                    {filtered.map((d, i) => {
+                      const r = ratingMap[d.id];
+                      return (
+                        <tr key={d.id}>
+                          <td><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><div className="avatar" style={{ background: colors[i % colors.length] }}>{d.nama?.charAt(0)}</div><span style={{ fontWeight: 600 }}>{d.nama}</span></div></td>
+                          <td>{d.spesialis}</td>
+                          <td style={{ color: 'var(--text-muted)' }}>{d.no_str}</td>
+                          <td style={{ fontWeight: 700 }}>Rp {Number(d.harga).toLocaleString('id-ID')}</td>
+                          <td>
+                            {r && r.total > 0 ? (
+                              <button type="button" onClick={() => bukaRatingDokter(d)} style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 8, padding: '5px 10px', display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                <span style={{ fontWeight: 800, color: '#D97706', fontSize: 13 }}>{r.rata_rata}</span>
+                                <span style={{ color: '#FBBF24', fontSize: 12 }}>★</span>
+                                <span style={{ color: '#92400E', fontSize: 11, fontWeight: 600 }}>({r.total})</span>
+                              </button>
+                            ) : (
+                              <button type="button" onClick={() => bukaRatingDokter(d)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', fontSize: 12, fontFamily: 'inherit' }}>Belum ada ulasan</button>
+                            )}
+                          </td>
+                          <td><button className="btn-del" onClick={() => hapus(d.id, d.nama)}>🗑️</button></td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
@@ -126,6 +178,62 @@ export default function AdminDokter() {
             <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
               <button onClick={() => setShowModal(false)} className="btn-batal" style={{ flex: 1 }}>Batal</button>
               <button onClick={tambah} style={{ flex: 1, padding: 12, background: 'var(--navy)', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRatingModal && ratingDokter && (
+        <div className="modal-overlay open" onClick={() => setShowRatingModal(false)}>
+          <div style={{ background: 'white', borderRadius: 20, padding: 0, width: '100%', maxWidth: 560, maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', animation: 'slideUp 0.3s ease' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid #F3F4F6' }}>
+              <h3 style={{ fontSize: 16, fontWeight: 800 }}>⭐ Rating &amp; Ulasan — {ratingDokter.nama}</h3>
+              <button onClick={() => setShowRatingModal(false)} style={{ background: '#F3F4F6', border: 'none', width: 34, height: 34, borderRadius: '50%', fontSize: 18, cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ padding: 24, overflowY: 'auto' }}>
+              {loadingRating ? (
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 20 }}>Memuat ulasan...</div>
+              ) : (
+                <>
+                  {(() => {
+                    const r = ratingMap[ratingDokter.id] || { rata_rata: null, total: 0, data: [] };
+                    return (
+                      <>
+                        <div style={{ background: '#FFF7ED', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                          <span style={{ fontSize: 32, fontWeight: 800, color: '#D97706' }}>{r.rata_rata ?? '–'}</span>
+                          <div>
+                            <div style={{ fontSize: 18 }}>{renderBintang(r.rata_rata || 0, 18)}</div>
+                            <div style={{ fontSize: 12, color: '#92400E', marginTop: 2 }}>{r.total} ulasan</div>
+                          </div>
+                        </div>
+                        <div className="table-wrap">
+                          <table>
+                            <thead><tr><th>Pasien</th><th>Rating</th><th>Komentar</th><th>Tanggal</th></tr></thead>
+                            <tbody>
+                              {r.data.length === 0 && (
+                                <tr><td colSpan={4} style={{ textAlign: 'center', color: '#9CA3AF', padding: 16 }}>Belum ada ulasan untuk dokter ini.</td></tr>
+                              )}
+                              {r.data.map((u) => (
+                                <tr key={u.id}>
+                                  <td style={{ fontWeight: 600 }}>{u.pasien_nama}</td>
+                                  <td>{renderBintang(u.bintang, 13)}</td>
+                                  <td style={{ color: 'var(--text-muted)' }}>{u.komentar || '-'}</td>
+                                  <td style={{ color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                                    {u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </>
+              )}
+            </div>
+            <div style={{ padding: '16px 24px', borderTop: '1px solid #F3F4F6' }}>
+              <button onClick={() => setShowRatingModal(false)} className="btn-batal" style={{ width: '100%' }}>Tutup</button>
             </div>
           </div>
         </div>
