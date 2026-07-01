@@ -59,6 +59,7 @@ export default function DokterJadwal() {
           {pending.length > 0 && (
             <div className="card">
               <div className="card-title" style={{ marginBottom: 16 }}>📅 Perlu Konfirmasi <span className="badge-pill badge-yellow">{pending.length}</span></div>
+              <div className="table-wrap">
               <table>
                 <thead><tr><th>Pasien</th><th>Keluhan</th><th>Tgl & Jam</th><th>Aksi</th></tr></thead>
                 <tbody>
@@ -75,6 +76,7 @@ export default function DokterJadwal() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
           {aktif.length === 0 && pending.length === 0 && (
