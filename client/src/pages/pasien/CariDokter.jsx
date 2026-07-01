@@ -136,9 +136,9 @@ export default function PasienCari() {
               <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Tidak ada dokter.</div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 16 }}>
+            <div className="dokter-grid">
               {filtered.map(d => (
-                <div key={d.id} style={{ background: 'white', borderRadius: 14, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                <div key={d.id} className="dokter-card">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
                     <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
                       {d.foto ? <img src={d.foto} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} alt="" /> : '👤'}
