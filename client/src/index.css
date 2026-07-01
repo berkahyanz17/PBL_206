@@ -390,3 +390,33 @@ tr:hover td { background: #F9FAFB; }
   margin-right: 6px;
   color: inherit;
 }
+
+/* ===== FOTO PROFIL — MODAL ADJUST (crop/zoom) ===== */
+.foto-modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  z-index: 99990; align-items: center; justify-content: center;
+  flex-direction: column; gap: 16px; padding: 20px;
+}
+.foto-modal-overlay.open { display: flex; }
+.foto-modal-box {
+  background: white; border-radius: 20px; padding: 20px; width: 100%; max-width: 380px;
+  display: flex; flex-direction: column; gap: 14px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+.foto-modal-title { font-size: 15px; font-weight: 700; text-align: center; }
+.foto-crop-wrap {
+  width: 100%; aspect-ratio: 1; border-radius: 50%; overflow: hidden;
+  background: #E5E7EB; position: relative; cursor: grab; user-select: none; touch-action: none;
+}
+.foto-crop-wrap:active { cursor: grabbing; }
+.foto-crop-img { position: absolute; transform-origin: center; will-change: transform; max-width: none; }
+.foto-zoom-row { display: flex; align-items: center; gap: 10px; }
+.foto-zoom-row label { font-size: 12px; color: #6B7280; flex-shrink: 0; }
+.foto-zoom-row input[type=range] { flex: 1; accent-color: var(--navy); }
+.foto-modal-btns { display: flex; gap: 10px; }
+.btn-foto-batal { flex: 1; padding: 10px; background: #F3F4F6; border: none; border-radius: 9px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; }
+.btn-foto-simpan { flex: 2; padding: 10px; background: var(--navy); color: white; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; }
+.btn-foto-simpan:hover { opacity: .88; }
+
+@media (max-width: 768px) {
+  .foto-modal-box { max-width: 100%; border-radius: 16px; }
+}
