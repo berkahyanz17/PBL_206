@@ -60,10 +60,10 @@ export default function DokterSettings() {
           </div>
         </div>
         <div className="content-area">
-          <div className="card" style={{ maxWidth: 600 }}>
+          <div className="card" style={{ width: '100%' }}>
             <div style={{ marginBottom: 28 }}>
               <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', marginBottom: 16 }}>🔑 Ganti Password</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 480 }}>
                 {[['Password Lama', pwLama, setPwLama], ['Password Baru', pwBaru, setPwBaru], ['Konfirmasi Password Baru', pwKonfirm, setPwKonfirm]].map(([label, val, set]) => (
                   <div key={label}>
                     <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>{label}</label>
