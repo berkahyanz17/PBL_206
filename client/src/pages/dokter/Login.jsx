@@ -25,6 +25,7 @@ export default function DokterLogin() {
         localStorage.setItem('refreshToken', data.refreshToken);
         localStorage.setItem('dokterUser', JSON.stringify(data.user));
         localStorage.setItem('dokterNama', data.user.nama);
+        if (!data.user.password_changed) sessionStorage.setItem('pwReminder_dokter', '1');
         navigate('/dokter/jadwal');
       } else {
         setError(data.message || 'Login gagal.');
