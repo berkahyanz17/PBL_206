@@ -15,6 +15,7 @@ CREATE TABLE `admins` (
   `notif_pasien_baru` tinyint(1) DEFAULT 1,
   `notif_appointment` tinyint(1) DEFAULT 1,
   `notif_chat_dokter` tinyint(1) DEFAULT 0,
+  `password_changed` tinyint(1) DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
@@ -90,6 +91,7 @@ CREATE TABLE `dokters` (
   `notif_chat_admin` tinyint(1) DEFAULT 1,
   `notif_appointment` tinyint(1) DEFAULT 1,
   `last_active` timestamp NULL DEFAULT NULL,
+  `password_changed` tinyint(1) DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `no_str` (`no_str`)
@@ -168,6 +170,7 @@ CREATE TABLE `pasiens` (
   `foto` varchar(255) DEFAULT NULL,
   `notif_approve` tinyint(1) DEFAULT 1,
   `notif_pengingat` tinyint(1) DEFAULT 1,
+  `password_changed` tinyint(1) DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
