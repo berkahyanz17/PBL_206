@@ -4,6 +4,7 @@ import PasienSidebar from '../../components/PasienSidebar';
 import { useNotif } from '../../components/NotifPopup';
 import { apiFetch } from '../../utils/api';
 import MamoruChat from './Mamoruchat';
+import ReminderBanner from '../../components/ReminderBanner';
 
 export default function PasienHome() {
   const navigate = useNavigate();
@@ -84,6 +85,19 @@ export default function PasienHome() {
           </div>
         </div>
         <div className="content-area">
+          <ReminderBanner
+            storageKey="pwReminder_pasien"
+            message="Anda belum mengganti password sejak akun ini dibuat. Segera ganti password demi keamanan."
+            actionLabel="Ganti Password"
+            actionTo="/pasien/settings"
+          />
+          <ReminderBanner
+            storageKey="profilReminder_pasien"
+            message="Lengkapi profil Anda dulu sebelum bisa booking dokter (No. HP, NIK, tanggal lahir, gender, alamat)."
+            actionLabel="Lengkapi Profil"
+            actionTo="/pasien/profil"
+            color="#3b82f6"
+          />
           <div style={{ background: 'linear-gradient(135deg,#bfdbfe,#93c5fd)', borderRadius: 14, padding: '24px 28px', marginBottom: 24 }}>
             <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1e3a5f' }}>Selamat Datang, {nama}! 👋</h2>
             <p style={{ fontSize: 14, color: '#3b5a8a', marginTop: 4 }}>Kelola kesehatan Anda dengan mudah</p>
