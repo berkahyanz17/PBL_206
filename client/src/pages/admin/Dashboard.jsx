@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '../../components/AdminSidebar';
 import { apiFetch } from '../../utils/api';
 import { useNotif } from '../../components/NotifPopup';
+import ReminderBanner from '../../components/ReminderBanner';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -50,6 +51,12 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="content-area">
+          <ReminderBanner
+            storageKey="pwReminder_admin"
+            message="Anda belum mengganti password sejak akun ini dibuat. Segera ganti password demi keamanan."
+            actionLabel="Ganti Password"
+            actionTo="/admin/settings"
+          />
           <div className="stat-grid">
             {[{ icon: '👥', label: 'Total Pasien', value: stats.pasien, cls: 'blue' },
               { icon: '🩺', label: 'Total Dokter', value: stats.dokter, cls: 'green' },
