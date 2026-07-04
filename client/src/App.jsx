@@ -10,6 +10,7 @@ import AdminChat from './pages/admin/Chat';
 import AdminSettings from './pages/admin/Settings';
 import DokterLogin from './pages/dokter/Login';
 import DokterLupa from './pages/dokter/LupaPassword';
+import DokterReset from './pages/dokter/ResetPassword';
 import DokterJadwal from './pages/dokter/Jadwal';
 import DokterRiwayat from './pages/dokter/Riwayat';
 import DokterRekam from './pages/dokter/RekamMedis';
@@ -44,6 +45,7 @@ export default function App() {
       <Route path="/admin/settings" element={<A><AdminSettings /></A>} />
       <Route path="/dokter/login" element={<DokterLogin />} />
       <Route path="/dokter/lupa-password" element={<DokterLupa />} />
+      <Route path="/dokter/reset-password" element={<DokterReset />} />
       <Route path="/dokter/jadwal" element={<D><DokterJadwal /></D>} />
       <Route path="/dokter/riwayat" element={<D><DokterRiwayat /></D>} />
       <Route path="/dokter/rekam-medis" element={<D><DokterRekam /></D>} />
