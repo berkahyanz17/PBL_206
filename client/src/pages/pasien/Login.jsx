@@ -25,6 +25,8 @@ export default function PasienLogin() {
         localStorage.setItem('refreshToken', data.refreshToken);
         localStorage.setItem('pasienUser', JSON.stringify(data.user));
         localStorage.setItem('pasienNama', data.user.nama);
+        if (!data.user.password_changed) sessionStorage.setItem('pwReminder_pasien', '1');
+        if (!data.user.profil_lengkap) sessionStorage.setItem('profilReminder_pasien', '1');
         navigate('/pasien/home');
       } else {
         setError(data.message || 'Login gagal.');
