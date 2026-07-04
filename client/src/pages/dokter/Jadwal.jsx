@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DokterSidebar from '../../components/DokterSidebar';
 import { apiFetch } from '../../utils/api';
 import { useNotif } from '../../components/NotifPopup';
+import ReminderBanner from '../../components/ReminderBanner';
 
 export default function DokterJadwal() {
   const navigate = useNavigate();
@@ -56,6 +57,12 @@ export default function DokterJadwal() {
           </div>
         </div>
         <div className="content-area">
+          <ReminderBanner
+            storageKey="pwReminder_dokter"
+            message="Anda belum mengganti password sejak akun ini dibuat. Segera ganti password demi keamanan."
+            actionLabel="Ganti Password"
+            actionTo="/dokter/settings"
+          />
           {pending.length > 0 && (
             <div className="card">
               <div className="card-title" style={{ marginBottom: 16 }}>📅 Perlu Konfirmasi <span className="badge-pill badge-yellow">{pending.length}</span></div>
