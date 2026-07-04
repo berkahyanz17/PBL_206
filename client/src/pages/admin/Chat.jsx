@@ -141,7 +141,13 @@ export default function AdminChat() {
       };
     }).sort((a, b) => new Date(b.lastTime || 0) - new Date(a.lastTime || 0));
     setDokters(merged);
-    setActive(prev => prev ?? merged[0] ?? null);
+    setActive(prev => {
+      if (prev) return prev;
+      // Di HP: jangan auto-buka chat, biarkan user pilih dokter dulu dari daftar.
+      // Di desktop: tetap auto-pilih dokter pertama biar langsung kelihatan.
+      const isMobile = window.matchMedia('(max-width: 768px)').matches;
+      return isMobile ? null : (merged[0] ?? null);
+    });
   }
 
   async function loadMessages(showLoading) {
