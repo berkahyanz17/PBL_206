@@ -30,6 +30,7 @@ export default function AdminLogin() {
         localStorage.setItem('accessToken', data.accessToken);
         localStorage.setItem('refreshToken', data.refreshToken);
         localStorage.setItem('adminUser', JSON.stringify(data.user));
+        if (!data.user.password_changed) sessionStorage.setItem('pwReminder_admin', '1');
         console.log('tokens saved, navigating to dashboard');
         navigate('/admin/dashboard');
       } else {
