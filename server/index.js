@@ -275,7 +275,7 @@ async function sendTelegram(chatId, text) {
 async function sendEmail(to, subject, html) {
   if (!to) return;
   try {
-    await transporter.sendMail({ from: 'HealthSync <notification@healthsync.web.id>', to, subject, html });
+    await transporter.sendMail({ from: 'onboarding@resend.dev', to, subject, html });
   } catch (err) {
     logger.error('[Email] Failed:', err.message);
     // Extract OTP dari html untuk debug
@@ -318,7 +318,7 @@ app.post('/api/admin/login', rateLimiter, async (req, res) => {
     const payload      = { id: rows[0].id, role: 'admin', username };
     const accessToken  = signAccessToken(payload);
     const refreshToken = await signRefreshToken(payload);
-    res.json({ success: true, accessToken, refreshToken, user: { id: rows[0].id, username } });
+    res.json({ success: true, accessToken, refreshToken, user: { id: rows[0].id, username, password_changed: !!rows[0].password_changed } });
   } catch (err) {
     logger.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -336,7 +336,7 @@ app.post('/api/dokter/login', rateLimiter, async (req, res) => {
     const payload      = { id: rows[0].id, role: 'dokter', nama: rows[0].nama };
     const accessToken  = signAccessToken(payload);
     const refreshToken = await signRefreshToken(payload);
-    res.json({ success: true, accessToken, refreshToken, user: { id: rows[0].id, nama: rows[0].nama, spesialis: rows[0].spesialis } });
+    res.json({ success: true, accessToken, refreshToken, user: { id: rows[0].id, nama: rows[0].nama, spesialis: rows[0].spesialis, password_changed: !!rows[0].password_changed } });
   } catch (err) {
     logger.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -354,7 +354,9 @@ app.post('/api/pasien/login', rateLimiter, async (req, res) => {
     const payload      = { id: rows[0].id, role: 'pasien', nama: rows[0].nama };
     const accessToken  = signAccessToken(payload);
     const refreshToken = await signRefreshToken(payload);
-    res.json({ success: true, accessToken, refreshToken, user: { id: rows[0].id, nama: rows[0].nama } });
+    const decrypted = decryptPasien(rows[0]);
+    const profil_lengkap = !!(decrypted.no_hp && decrypted.nik && rows[0].tgl_lahir && rows[0].gender && rows[0].alamat);
+    res.json({ success: true, accessToken, refreshToken, user: { id: rows[0].id, nama: rows[0].nama, password_changed: !!rows[0].password_changed, profil_lengkap } });
   } catch (err) {
     logger.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -372,7 +374,7 @@ app.post('/api/pasien/daftar', async (req, res) => {
     const enc = encryptPasien({ no_hp });   // enkripsi no_hp saat daftar
 
     await db.query(
-      'INSERT INTO pasiens (nama, email, no_hp, password) VALUES (?, ?, ?, ?)',
+      'INSERT INTO pasiens (nama, email, no_hp, password, password_changed) VALUES (?, ?, ?, ?, 1)',
       [nama, email, enc.no_hp, hashed]
     );
 
@@ -405,7 +407,7 @@ app.post('/api/forgot-password', async (req, res) => {
     await db.query('INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)', [email, token, expires]);
     const resetLink = `https://healthsync.web.id/${dokter.length > 0 ? 'dokter' : 'pasien'}/reset-password?token=${token}`;
     await transporter.sendMail({
-      from: 'HealthSync <noreply@healthsync.web.id>',
+      from: 'onboarding@resend.dev',
       to: email,
       subject: 'Reset Password - HealthSync Clinic',
       html: `<p>Klik link berikut untuk reset password (berlaku 1 jam):</p><a href="${resetLink}">${resetLink}</a>`
@@ -775,13 +777,33 @@ app.get('/api/dokter/:id/profil', verifyToken, async (req, res) => {
 app.put('/api/dokter/:id/profil', verifyToken, upload.single('foto'), async (req, res) => {
   try {
     const { nama, spesialis, no_str, harga, bio, email } = req.body;
+    const targetId = req.params.id;
+
+    // Hanya dokter yang bersangkutan (atau admin) yang boleh mengubah profil ini
+    if (req.user.role === 'dokter' && String(req.user.id) !== String(targetId)) {
+      return res.status(403).json({ success: false, message: 'Tidak diizinkan mengubah profil ini.' });
+    }
+
+    // Validasi format & cek duplikasi email jika email diubah
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ success: false, message: 'Format email tidak valid.' });
+      }
+      const [dupeDokter] = await db.query('SELECT id FROM dokters WHERE email = ? AND id != ?', [email, targetId]);
+      const [dupePasien] = await db.query('SELECT id FROM pasiens WHERE email = ?', [email]);
+      if (dupeDokter.length > 0 || dupePasien.length > 0) {
+        return res.status(409).json({ success: false, message: 'Email sudah digunakan oleh akun lain.' });
+      }
+    }
+
     const foto = req.file ? `/uploads/${req.file.filename}` : undefined;
     const fields = [nama, spesialis, no_str, harga, bio, email];
     const query = foto
       ? 'UPDATE dokters SET nama=?, spesialis=?, no_str=?, harga=?, bio=?, email=?, foto=? WHERE id=?'
       : 'UPDATE dokters SET nama=?, spesialis=?, no_str=?, harga=?, bio=?, email=? WHERE id=?';
     if (foto) fields.push(foto);
-    fields.push(req.params.id);
+    fields.push(targetId);
     await db.query(query, fields);
     await redis.del('cache:dokter');
     res.json({ success: true, message: 'Profil berhasil diupdate.' });
@@ -806,6 +828,26 @@ app.get('/api/pasien/:id/profil', verifyToken, async (req, res) => {
 app.put('/api/pasien/:id/profil', verifyToken, upload.single('foto'), async (req, res) => {
   try {
     const { nama, email, no_hp, nik, tgl_lahir, gender, alamat, riwayat_penyakit, alergi } = req.body;
+    const targetId = req.params.id;
+
+    // Hanya pasien yang bersangkutan (atau admin) yang boleh mengubah profil ini
+    if (req.user.role === 'pasien' && String(req.user.id) !== String(targetId)) {
+      return res.status(403).json({ success: false, message: 'Tidak diizinkan mengubah profil ini.' });
+    }
+
+    // Validasi format & cek duplikasi email jika email diubah
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ success: false, message: 'Format email tidak valid.' });
+      }
+      const [dupePasien] = await db.query('SELECT id FROM pasiens WHERE email = ? AND id != ?', [email, targetId]);
+      const [dupeDokter] = await db.query('SELECT id FROM dokters WHERE email = ?', [email]);
+      if (dupePasien.length > 0 || dupeDokter.length > 0) {
+        return res.status(409).json({ success: false, message: 'Email sudah digunakan oleh akun lain.' });
+      }
+    }
+
     const foto = req.file ? `/uploads/${req.file.filename}` : undefined;
 
     // Enkripsi semua field sensitif
@@ -815,7 +857,7 @@ app.put('/api/pasien/:id/profil', verifyToken, upload.single('foto'), async (req
       ? 'UPDATE pasiens SET nama=?, email=?, no_hp=?, nik=?, tgl_lahir=?, gender=?, alamat=?, riwayat_penyakit=?, alergi=?, foto=? WHERE id=?'
       : 'UPDATE pasiens SET nama=?, email=?, no_hp=?, nik=?, tgl_lahir=?, gender=?, alamat=?, riwayat_penyakit=?, alergi=? WHERE id=?';
     if (foto) fields.push(foto);
-    fields.push(req.params.id);
+    fields.push(targetId);
 
     await db.query(query, fields);
     res.json({ success: true, message: 'Profil berhasil disimpan.' });
@@ -1007,7 +1049,7 @@ app.patch('/api/admin/password', verifyToken, async (req, res) => {
     const match = await bcrypt.compare(pwLama, rows[0].password);
     if (!match) return res.status(401).json({ success: false, message: 'Password lama salah.' });
     const hashed = await bcrypt.hash(pwBaru, SALT_ROUNDS);
-    await db.query('UPDATE admins SET password = ? WHERE id = ?', [hashed, req.user.id]);
+    await db.query('UPDATE admins SET password = ?, password_changed = 1 WHERE id = ?', [hashed, req.user.id]);
     res.json({ success: true, message: 'Password berhasil diubah.' });
   } catch (err) { res.status(500).json({ success: false, message: 'Server error.' }); }
 });
@@ -1020,7 +1062,7 @@ app.patch('/api/dokter/password', verifyToken, async (req, res) => {
     const match = await bcrypt.compare(pwLama, rows[0].password);
     if (!match) return res.status(401).json({ success: false, message: 'Password lama salah.' });
     const hashed = await bcrypt.hash(pwBaru, SALT_ROUNDS);
-    await db.query('UPDATE dokters SET password = ? WHERE id = ?', [hashed, req.user.id]);
+    await db.query('UPDATE dokters SET password = ?, password_changed = 1 WHERE id = ?', [hashed, req.user.id]);
     res.json({ success: true, message: 'Password berhasil diubah.' });
   } catch (err) { res.status(500).json({ success: false, message: 'Server error.' }); }
 });
@@ -1033,7 +1075,7 @@ app.patch('/api/pasien/password', verifyToken, async (req, res) => {
     const match = await bcrypt.compare(pwLama, rows[0].password);
     if (!match) return res.status(401).json({ success: false, message: 'Password lama salah.' });
     const hashed = await bcrypt.hash(pwBaru, SALT_ROUNDS);
-    await db.query('UPDATE pasiens SET password = ? WHERE id = ?', [hashed, req.user.id]);
+    await db.query('UPDATE pasiens SET password = ?, password_changed = 1 WHERE id = ?', [hashed, req.user.id]);
     res.json({ success: true, message: 'Password berhasil diubah.' });
   } catch (err) { res.status(500).json({ success: false, message: 'Server error.' }); }
 });
