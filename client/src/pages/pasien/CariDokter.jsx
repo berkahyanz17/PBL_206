@@ -77,6 +77,18 @@ export default function PasienCari() {
   async function konfirmasi() {
     if (!tanggal) { alert('Pilih tanggal dulu!'); return; }
     if (!keluhan) { alert('Isi keluhan dulu!'); return; }
+
+    // Pastikan profil pasien sudah lengkap sebelum booking
+    const user = JSON.parse(localStorage.getItem('pasienUser') || '{}');
+    const profilRes = await apiFetch(`/pasien/${user.id}/profil`);
+    const p = profilRes?.data || {};
+    const lengkap = !!(p.no_hp && p.nik && p.tgl_lahir && p.gender && p.alamat);
+    if (!lengkap) {
+      alert('Lengkapi profil Anda dulu (No. HP, NIK, tanggal lahir, gender, alamat) sebelum booking dokter.');
+      navigate('/pasien/profil');
+      return;
+    }
+
     setLoading(true);
     const res = await apiFetch('/appointments', {
       method: 'POST',
