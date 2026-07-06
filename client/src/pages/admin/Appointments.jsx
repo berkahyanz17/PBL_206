@@ -46,8 +46,11 @@ export default function AdminAppointments() {
     loadAppts();
   }
 
-  async function tolak(id, nama) {
-    if (!window.confirm('Tolak appointment ' + nama + '?')) return;
+  async function tolak(id, nama, paid) {
+    const pesan = paid
+      ? `Tolak appointment ${nama}? Pasien ini sudah bayar, jadi akan otomatis dibuatkan tiket REFUND (bukan sekadar Ditolak).`
+      : `Tolak appointment ${nama}? (Belum ada pembayaran masuk, jadi tidak perlu refund)`;
+    if (!window.confirm(pesan)) return;
     await apiFetch(`/appointments/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status: 'ditolak' })
@@ -57,7 +60,7 @@ export default function AdminAppointments() {
 
   async function logout() { const rt = localStorage.getItem('refreshToken'); if (rt) { await fetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); } sessionStorage.clear(); localStorage.removeItem('accessToken'); localStorage.removeItem('refreshToken'); navigate('/admin/login'); }
   const filtered = appts.filter(a => filter === 'semua' || a.status === filter);
-  const statusLabel = { menunggu: 'Menunggu', dikonfirmasi: 'Dikonfirmasi Dokter', selesai: 'Selesai', ditolak: 'Ditolak' };
+  const statusLabel = { menunggu: 'Menunggu', dikonfirmasi: 'Dikonfirmasi Dokter', selesai: 'Selesai', ditolak: 'Ditolak', refund: 'Refund' };
 
   // Appointment dianggap "lewat jam" kalau tgl+jam sudah lampau tapi belum diproses/selesai.
   function sudahLewatJam(a) {
@@ -80,7 +83,7 @@ export default function AdminAppointments() {
         </div>
         <div className="content-area">
           <div className="filter-row">
-            {['semua', 'menunggu', 'dikonfirmasi', 'selesai', 'ditolak'].map(f => (
+            {['semua', 'menunggu', 'dikonfirmasi', 'selesai', 'ditolak', 'refund'].map(f => (
               <button key={f} className={`filter-btn${filter === f ? ' active' : ''}`}
                 style={filter === f ? { background: 'var(--navy)', color: 'white', borderColor: 'var(--navy)' } : {}}
                 onClick={() => setFilter(f)}>{f.charAt(0).toUpperCase() + f.slice(1)}</button>
@@ -103,11 +106,11 @@ export default function AdminAppointments() {
                           <div style={{ fontWeight: 600 }}>{new Date(a.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
                           <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{a.jam?.slice(0, 5)}{lewat && <span style={{ marginLeft: 6, color: '#9CA3AF' }}>⏱ lewat jam</span>}</div>
                         </td>
-                        <td><span className={`badge ${a.status === 'ditolak' ? 'tolak' : a.status}`}>{statusLabel[a.status]}</span></td>
+                        <td><span className={`badge ${a.status === 'ditolak' ? 'tolak' : a.status === 'refund' ? 'refund' : a.status}`}>{statusLabel[a.status]}</span></td>
                         <td>
                           {a.status === 'menunggu' ? (<>
                             <button className="btn-action btn-forward" onClick={() => forward(a.id)}>Forward</button>
-                            <button className="btn-action btn-tolak" style={{ marginLeft: 6 }} onClick={() => tolak(a.id, a.pasien_nama)}>Tolak</button>
+                            <button className="btn-action btn-tolak" style={{ marginLeft: 6 }} onClick={() => tolak(a.id, a.pasien_nama, a.paid)}>Tolak</button>
                           </>) : (
                             <button className="btn-action btn-detail" onClick={() => setDetail(a)}>Detail</button>
                           )}
