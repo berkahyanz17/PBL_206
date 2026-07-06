@@ -528,6 +528,7 @@ app.get('/api/appointments', verifyToken, async (req, res) => {
       FROM appointments a
       JOIN pasiens p ON a.pasien_id = p.id
       JOIN dokters d ON a.dokter_id = d.id
+      WHERE a.status != 'menunggu_bayar'
       ORDER BY a.created_at DESC
     `);
     res.json({ success: true, data: rows });
@@ -573,30 +574,52 @@ app.post('/api/appointments', verifyToken, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Jam tersebut sudah dibooking pasien lain.' });
     }
 
+    const [dokterHarga] = await db.query('SELECT harga FROM dokters WHERE id = ?', [dokter_id]);
+    const harga = dokterHarga[0]?.harga || 0;
+
     const [result] = await db.query(
-      'INSERT INTO appointments (pasien_id, dokter_id, keluhan, tgl, jam) VALUES (?, ?, ?, ?, ?)',
-      [pasien_id, dokter_id, keluhan, tgl, jam]
+      'INSERT INTO appointments (pasien_id, dokter_id, keluhan, tgl, jam, status, paid, harga) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [pasien_id, dokter_id, keluhan, tgl, jam, 'menunggu_bayar', 0, harga]
     );
 
-    // Notify admin and dokter
-    const [pasienRow] = await db.query('SELECT nama FROM pasiens WHERE id = ?', [pasien_id]);
-    const [dokterRow] = await db.query('SELECT nama FROM dokters WHERE id = ?', [dokter_id]);
-    const pnama = pasienRow[0]?.nama || 'Pasien';
-    const dnama = dokterRow[0]?.nama || 'Dokter';
-    const [admins] = await db.query('SELECT id, telegram_chat_id, notif_appointment FROM admins');
-    for (const a of admins) {
-      await createNotif('admin', a.id, '📅', 'blue', `Booking baru dari ${pnama} ke ${dnama}`);
-      if (a.notif_appointment && a.telegram_chat_id) {
-        await sendTelegram(a.telegram_chat_id, `📅 *Booking Baru*\nPasien: *${pnama}*\nDokter: ${dnama}\nTgl: ${new Date(tgl).toLocaleDateString('id-ID')} · ${jam?.slice(0,5)}`);
-      }
-    }
-    await createNotif('dokter', dokter_id, '📅', 'green', `Pasien baru booking: ${pnama} · ${new Date(tgl).toLocaleDateString('id-ID')} ${jam?.slice(0,5)}`);
-    const [dokterNotif] = await db.query('SELECT telegram_chat_id, notif_appointment FROM dokters WHERE id = ?', [dokter_id]);
-    if (dokterNotif[0]?.notif_appointment && dokterNotif[0]?.telegram_chat_id) {
-      await sendTelegram(dokterNotif[0].telegram_chat_id, `📅 *Booking Baru*\nPasien: *${pnama}*\nTgl: ${new Date(tgl).toLocaleDateString('id-ID')} · ${jam?.slice(0,5)}\nKeluhan: ${keluhan}`);
+    res.json({ success: true, message: 'Appointment berhasil dibuat. Silakan lanjutkan pembayaran.', id: result.insertId });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// POST /api/appointments/:id/bayar — pasien konfirmasi sudah bayar QRIS
+app.post('/api/appointments/:id/bayar', verifyToken, async (req, res) => {
+  if (req.user.role !== 'pasien') return res.status(403).json({ success: false, message: 'Forbidden.' });
+  try {
+    const [rows] = await db.query('SELECT * FROM appointments WHERE id = ? AND pasien_id = ?', [req.params.id, req.user.id]);
+    if (rows.length === 0) return res.status(404).json({ success: false, message: 'Appointment tidak ditemukan.' });
+    const appt = rows[0];
+    if (appt.status !== 'menunggu_bayar') {
+      return res.status(400).json({ success: false, message: 'Appointment ini tidak dalam status menunggu pembayaran.' });
     }
 
-    res.json({ success: true, message: 'Appointment berhasil dibuat.' });
+    await db.query("UPDATE appointments SET paid = 1, status = 'menunggu' WHERE id = ?", [req.params.id]);
+
+    const [pasienRow] = await db.query('SELECT nama FROM pasiens WHERE id = ?', [req.user.id]);
+    const [dokterRow] = await db.query('SELECT nama FROM dokters WHERE id = ?', [appt.dokter_id]);
+    const pnama = pasienRow[0]?.nama || 'Pasien';
+    const dnama = dokterRow[0]?.nama || 'Dokter';
+
+    const [admins] = await db.query('SELECT id, telegram_chat_id, notif_appointment FROM admins');
+    for (const a of admins) {
+      await createNotif('admin', a.id, '📅', 'blue', `Booking baru dari ${pnama} ke ${dnama} (sudah dibayar)`);
+      if (a.notif_appointment && a.telegram_chat_id) {
+        await sendTelegram(a.telegram_chat_id, `📅 *Booking Baru (Dibayar)*\nPasien: *${pnama}*\nDokter: ${dnama}\nTgl: ${new Date(appt.tgl).toLocaleDateString('id-ID')} · ${appt.jam?.slice(0,5)}`);
+      }
+    }
+    await createNotif('dokter', appt.dokter_id, '📅', 'green', `Pasien baru booking: ${pnama} · ${new Date(appt.tgl).toLocaleDateString('id-ID')} ${appt.jam?.slice(0,5)}`);
+    const [dokterNotif] = await db.query('SELECT telegram_chat_id, notif_appointment FROM dokters WHERE id = ?', [appt.dokter_id]);
+    if (dokterNotif[0]?.notif_appointment && dokterNotif[0]?.telegram_chat_id) {
+      await sendTelegram(dokterNotif[0].telegram_chat_id, `📅 *Booking Baru*\nPasien: *${pnama}*\nTgl: ${new Date(appt.tgl).toLocaleDateString('id-ID')} · ${appt.jam?.slice(0,5)}\nKeluhan: ${appt.keluhan}`);
+    }
+
+    res.json({ success: true, message: 'Pembayaran berhasil dikonfirmasi.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
   }
@@ -605,36 +628,64 @@ app.post('/api/appointments', verifyToken, async (req, res) => {
 app.patch('/api/appointments/:id/status', verifyToken, async (req, res) => {
   try {
     const { status } = req.body;
-    await db.query('UPDATE appointments SET status = ? WHERE id = ?', [status, req.params.id]);
+    const [apptRows] = await db.query('SELECT * FROM appointments WHERE id = ?', [req.params.id]);
+    if (apptRows.length === 0) return res.status(404).json({ success: false, message: 'Appointment tidak ditemukan.' });
+    const apptBefore = apptRows[0];
 
-    // Notify pasien on dikonfirmasi or ditolak
-    if (status === 'dikonfirmasi' || status === 'ditolak') {
+    // Kalau ditolak TAPI appointment-nya sudah dibayar -> otomatis jadi 'refund', bukan 'ditolak'
+    const finalStatus = (status === 'ditolak' && apptBefore.paid) ? 'refund' : status;
+
+    await db.query('UPDATE appointments SET status = ? WHERE id = ?', [finalStatus, req.params.id]);
+
+    if (finalStatus === 'dikonfirmasi' || finalStatus === 'ditolak' || finalStatus === 'refund') {
       const [rows] = await db.query(
-        `SELECT a.pasien_id, a.tgl, a.jam, d.nama as dnama
+        `SELECT a.pasien_id, a.tgl, a.jam, a.harga, d.nama as dnama
          FROM appointments a JOIN dokters d ON d.id = a.dokter_id
          WHERE a.id = ?`,
         [req.params.id]
       );
       if (rows.length > 0) {
-        const { pasien_id, tgl, jam, dnama } = rows[0];
+        const { pasien_id, tgl, jam, harga, dnama } = rows[0];
         const [pasienRow] = await db.query('SELECT email, nama, notif_approve FROM pasiens WHERE id = ?', [pasien_id]);
-        if (status === 'dikonfirmasi') {
+        if (finalStatus === 'dikonfirmasi') {
           await createNotif('pasien', pasien_id, '✅', 'green', `${dnama} menyetujui appointment kamu · ${new Date(tgl).toLocaleDateString('id-ID')} ${jam?.slice(0,5)}`);
           if (pasienRow[0]?.notif_approve && pasienRow[0]?.email) {
             await sendEmail(pasienRow[0].email, '✅ Appointment Dikonfirmasi — HealthSync',
               `<p>Halo <b>${pasienRow[0].nama}</b>,</p><p>Appointment kamu dengan <b>${dnama}</b> pada <b>${new Date(tgl).toLocaleDateString('id-ID')} · ${jam?.slice(0,5)}</b> telah dikonfirmasi.</p>`);
           }
-        } else {
+        } else if (finalStatus === 'ditolak') {
           await createNotif('pasien', pasien_id, '❌', 'orange', `${dnama} menolak appointment kamu · ${new Date(tgl).toLocaleDateString('id-ID')}`);
           if (pasienRow[0]?.notif_approve && pasienRow[0]?.email) {
             await sendEmail(pasienRow[0].email, '❌ Appointment Ditolak — HealthSync',
               `<p>Halo <b>${pasienRow[0].nama}</b>,</p><p>Mohon maaf, appointment kamu dengan <b>${dnama}</b> pada <b>${new Date(tgl).toLocaleDateString('id-ID')}</b> ditolak. Silakan booking ulang.</p>`);
           }
+        } else if (finalStatus === 'refund') {
+          await createNotif('pasien', pasien_id, '💸', 'pink', `${dnama} menolak appointment kamu, dana akan direfund · ${new Date(tgl).toLocaleDateString('id-ID')}`);
+          if (pasienRow[0]?.notif_approve && pasienRow[0]?.email) {
+            await sendEmail(pasienRow[0].email, '💸 Appointment Ditolak — Refund Diproses — HealthSync',
+              `<p>Halo <b>${pasienRow[0].nama}</b>,</p><p>Mohon maaf, appointment kamu dengan <b>${dnama}</b> pada <b>${new Date(tgl).toLocaleDateString('id-ID')}</b> ditolak setelah pembayaran masuk. Dana <b>Rp${(harga||0).toLocaleString('id-ID')}</b> akan kami refund. Cek tiket Chat CS kamu untuk info lebih lanjut.</p>`);
+          }
+
+          const [existingTicket] = await db.query(
+            "SELECT id FROM cs_tickets WHERE appointment_id = ? AND jenis = 'refund'",
+            [req.params.id]
+          );
+          if (existingTicket.length === 0) {
+            const [tResult] = await db.query(
+              "INSERT INTO cs_tickets (pasien_id, appointment_id, jenis, kategori, deskripsi, status) VALUES (?, ?, 'refund', 'Refund Otomatis', ?, 'aktif')",
+              [pasien_id, req.params.id, `Appointment dengan ${dnama} pada ${new Date(tgl).toLocaleDateString('id-ID')} ditolak setelah pembayaran masuk. Tiket refund dibuat otomatis oleh sistem.`]
+            );
+            await db.query(
+              "INSERT INTO cs_messages (ticket_id, sender_role, pesan) VALUES (?, 'admin', ?)",
+              [tResult.insertId, `Halo, kami lihat appointment kamu ditolak dokter setelah pembayaran masuk. Dana Rp${(harga||0).toLocaleString('id-ID')} akan kami proses refund ke rekening/e-wallet asal maksimal 3 hari kerja ya. Ada yang bisa dibantu lagi?`]
+            );
+            await createNotif('pasien', pasien_id, '🎫', 'pink', 'Tiket refund otomatis dibuat, cek Chat CS kamu.');
+          }
         }
       }
     }
 
-    res.json({ success: true, message: 'Status berhasil diupdate.' });
+    res.json({ success: true, message: 'Status berhasil diupdate.', finalStatus });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
   }
