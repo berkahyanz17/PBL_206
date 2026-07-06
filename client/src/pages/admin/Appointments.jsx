@@ -59,6 +59,14 @@ export default function AdminAppointments() {
   const filtered = appts.filter(a => filter === 'semua' || a.status === filter);
   const statusLabel = { menunggu: 'Menunggu', dikonfirmasi: 'Dikonfirmasi Dokter', selesai: 'Selesai', ditolak: 'Ditolak' };
 
+  // Appointment dianggap "lewat jam" kalau tgl+jam sudah lampau tapi belum diproses/selesai.
+  function sudahLewatJam(a) {
+    if (!a.tgl || !a.jam) return false;
+    if (a.status !== 'menunggu' && a.status !== 'dikonfirmasi') return false;
+    const waktu = new Date(`${new Date(a.tgl).toISOString().slice(0, 10)}T${a.jam.length === 5 ? a.jam + ':00' : a.jam}`);
+    return waktu < new Date();
+  }
+
   return (
     <div className="dashboard-layout">
       <AdminSidebar />
@@ -85,13 +93,15 @@ export default function AdminAppointments() {
                   <thead><tr><th>Pasien</th><th>Dokter</th><th>Tgl &amp; Jam</th><th>Status</th><th>Aksi</th></tr></thead>
                   <tbody>
                     {filtered.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Tidak ada data.</td></tr>}
-                    {filtered.map(a => (
-                      <tr key={a.id}>
+                    {filtered.map(a => {
+                      const lewat = sudahLewatJam(a);
+                      return (
+                      <tr key={a.id} style={lewat ? { opacity: 0.55, filter: 'grayscale(0.5)' } : {}}>
                         <td><div style={{ fontWeight: 600 }}>{a.pasien_nama}</div><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{a.keluhan}</div></td>
                         <td><div style={{ fontWeight: 600 }}>{a.dokter_nama}</div><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{a.spesialis}</div></td>
                         <td>
                           <div style={{ fontWeight: 600 }}>{new Date(a.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
-                          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{a.jam?.slice(0, 5)}</div>
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{a.jam?.slice(0, 5)}{lewat && <span style={{ marginLeft: 6, color: '#9CA3AF' }}>⏱ lewat jam</span>}</div>
                         </td>
                         <td><span className={`badge ${a.status === 'ditolak' ? 'tolak' : a.status}`}>{statusLabel[a.status]}</span></td>
                         <td>
@@ -103,7 +113,8 @@ export default function AdminAppointments() {
                           )}
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
