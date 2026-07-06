@@ -4,6 +4,7 @@ const navItems = [
   { icon: '🏠', label: 'Home', path: '/pasien/home' },
   { icon: '🔍', label: 'Cari Dokter', path: '/pasien/cari-dokter' },
   { icon: '📅', label: 'Riwayat Konsultasi', path: '/pasien/riwayat' },
+  { icon: '🎧', label: 'Chat CS', path: '/pasien/chat-cs' },
   { icon: '👤', label: 'Profil Saya', path: '/pasien/profil' },
   { icon: '⚙️', label: 'Pengaturan', path: '/pasien/settings' },
 ];
