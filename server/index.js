@@ -558,6 +558,13 @@ app.post('/api/appointments', verifyToken, async (req, res) => {
       return res.status(400).json({ success: false, message: `Jam praktik dokter ${mulai}–${selesai}.` });
     }
 
+    // Booking minimal 1 jam sebelum jam praktik dimulai (tidak berlaku untuk tanggal di masa depan)
+    const waktuBooking = new Date(`${tgl}T${jam.length === 5 ? jam + ':00' : jam}`);
+    const batasMinimal = new Date(Date.now() + 60 * 60 * 1000); // now + 1 jam
+    if (waktuBooking < batasMinimal) {
+      return res.status(400).json({ success: false, message: 'Booking minimal 1 jam sebelum jam yang dipilih. Silakan pilih jam lain.' });
+    }
+
     const [exist] = await db.query(
       'SELECT id FROM appointments WHERE dokter_id = ? AND tgl = ? AND jam = ? AND status != "ditolak"',
       [dokter_id, tgl, jam]
@@ -1566,6 +1573,194 @@ app.post('/api/ulasan', verifyToken, async (req, res) => {
     }
     logger.error('[Ulasan] POST error:', err.message);
     res.status(500).json({ success: false, message: 'Gagal mengirim ulasan.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// CHAT CS PASIEN (tiket komplain / refund antara pasien & admin)
+// ════════════════════════════════════════════════════════════════════════════
+// Catatan: aplikasi ini belum punya sistem pembayaran/QRIS, jadi tiket "refund"
+// di sini adalah kategori yang dipilih pasien sendiri saat submit (bukan auto-
+// generated dari status pembayaran). Aturan: 1x submit tiket baru per hari
+// kalender, DAN tiket sebelumnya (apapun jenisnya) harus sudah admin tutup dulu
+// sebelum pasien bisa submit tiket baru.
+
+// GET /api/cs-tickets — daftar semua tiket (admin)
+app.get('/api/cs-tickets', verifyToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ success: false, message: 'Forbidden.' });
+  try {
+    const [rows] = await db.query(`
+      SELECT t.*, p.nama AS pasien_nama,
+        d.nama AS dokter_nama, a.tgl AS appt_tgl, a.jam AS appt_jam,
+        (SELECT pesan FROM cs_messages m WHERE m.ticket_id = t.id ORDER BY m.created_at DESC LIMIT 1) AS last_pesan,
+        (SELECT sender_role FROM cs_messages m WHERE m.ticket_id = t.id ORDER BY m.created_at DESC LIMIT 1) AS last_sender,
+        (SELECT created_at FROM cs_messages m WHERE m.ticket_id = t.id ORDER BY m.created_at DESC LIMIT 1) AS last_time
+      FROM cs_tickets t
+      JOIN pasiens p ON p.id = t.pasien_id
+      LEFT JOIN appointments a ON a.id = t.appointment_id
+      LEFT JOIN dokters d ON d.id = a.dokter_id
+      ORDER BY (t.status = 'ditutup') ASC, t.created_at DESC
+    `);
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    logger.error('[CS] GET /cs-tickets error:', err.message);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// GET /api/cs-tickets/mine — daftar tiket milik pasien yang sedang login
+app.get('/api/cs-tickets/mine', verifyToken, async (req, res) => {
+  if (req.user.role !== 'pasien') return res.status(403).json({ success: false, message: 'Forbidden.' });
+  try {
+    const [rows] = await db.query(`
+      SELECT t.*, d.nama AS dokter_nama, a.tgl AS appt_tgl, a.jam AS appt_jam
+      FROM cs_tickets t
+      LEFT JOIN appointments a ON a.id = t.appointment_id
+      LEFT JOIN dokters d ON d.id = a.dokter_id
+      WHERE t.pasien_id = ?
+      ORDER BY t.created_at DESC
+    `, [req.user.id]);
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    logger.error('[CS] GET /cs-tickets/mine error:', err.message);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// GET /api/cs-tickets/:id/messages — isi chat 1 tiket (admin bebas, pasien hanya tiketnya sendiri)
+app.get('/api/cs-tickets/:id/messages', verifyToken, async (req, res) => {
+  try {
+    const [trows] = await db.query('SELECT * FROM cs_tickets WHERE id = ?', [req.params.id]);
+    if (trows.length === 0) return res.status(404).json({ success: false, message: 'Tiket tidak ditemukan.' });
+    const ticket = trows[0];
+    if (req.user.role === 'pasien' && ticket.pasien_id !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Bukan tiket Anda.' });
+    }
+    const [messages] = await db.query('SELECT * FROM cs_messages WHERE ticket_id = ? ORDER BY created_at ASC', [req.params.id]);
+    res.json({ success: true, ticket, data: messages });
+  } catch (err) {
+    logger.error('[CS] GET /cs-tickets/:id/messages error:', err.message);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// POST /api/cs-tickets — pasien submit tiket baru (komplain / refund)
+app.post('/api/cs-tickets', verifyToken, async (req, res) => {
+  if (req.user.role !== 'pasien') return res.status(403).json({ success: false, message: 'Forbidden.' });
+  try {
+    const { jenis, kategori, deskripsi, appointment_id } = req.body;
+    if (!deskripsi || !deskripsi.trim()) {
+      return res.status(400).json({ success: false, message: 'Deskripsi wajib diisi.' });
+    }
+    const pasienId = req.user.id;
+
+    const [belumSelesai] = await db.query(
+      "SELECT id FROM cs_tickets WHERE pasien_id = ? AND status != 'ditutup'",
+      [pasienId]
+    );
+    if (belumSelesai.length > 0) {
+      return res.status(400).json({ success: false, message: 'Kamu masih punya tiket yang belum ditutup. Selesaikan tiket itu dulu sebelum membuat tiket baru.' });
+    }
+
+    const [hariIni] = await db.query(
+      "SELECT id FROM cs_tickets WHERE pasien_id = ? AND DATE(created_at) = CURDATE()",
+      [pasienId]
+    );
+    if (hariIni.length > 0) {
+      return res.status(400).json({ success: false, message: 'Kamu sudah menggunakan jatah tiket hari ini. Silakan coba lagi besok.' });
+    }
+
+    const [result] = await db.query(
+      'INSERT INTO cs_tickets (pasien_id, appointment_id, jenis, kategori, deskripsi, status) VALUES (?, ?, ?, ?, ?, ?)',
+      [pasienId, appointment_id || null, jenis === 'refund' ? 'refund' : 'komplain', kategori || null, deskripsi.trim(), 'menunggu_approval']
+    );
+    await db.query(
+      'INSERT INTO cs_messages (ticket_id, sender_role, pesan) VALUES (?, ?, ?)',
+      [result.insertId, 'pasien', deskripsi.trim()]
+    );
+
+    const [pasienRow] = await db.query('SELECT nama FROM pasiens WHERE id = ?', [pasienId]);
+    const pnama = pasienRow[0]?.nama || 'Pasien';
+    const [admins] = await db.query('SELECT id, telegram_chat_id FROM admins');
+    for (const a of admins) {
+      await createNotif('admin', a.id, '🎧', 'pink', `Tiket CS baru dari ${pnama} (${jenis === 'refund' ? 'Refund' : (kategori || 'Komplain')})`);
+      if (a.telegram_chat_id) {
+        await sendTelegram(a.telegram_chat_id, `🎧 *Tiket CS Baru*\nPasien: *${pnama}*\nJenis: ${jenis === 'refund' ? 'Refund' : (kategori || 'Komplain')}\nIsi: ${deskripsi.trim()}`);
+      }
+    }
+
+    res.json({ success: true, message: 'Tiket berhasil dikirim.', id: result.insertId });
+  } catch (err) {
+    logger.error('[CS] POST /cs-tickets error:', err.message);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// POST /api/cs-tickets/:id/messages — kirim pesan balasan (admin atau pasien pemilik tiket)
+app.post('/api/cs-tickets/:id/messages', verifyToken, async (req, res) => {
+  try {
+    const { pesan } = req.body;
+    if (!pesan || !pesan.trim()) return res.status(400).json({ success: false, message: 'Pesan tidak boleh kosong.' });
+
+    const [trows] = await db.query('SELECT * FROM cs_tickets WHERE id = ?', [req.params.id]);
+    if (trows.length === 0) return res.status(404).json({ success: false, message: 'Tiket tidak ditemukan.' });
+    const ticket = trows[0];
+
+    if (ticket.status === 'ditutup') {
+      return res.status(400).json({ success: false, message: 'Tiket ini sudah ditutup.' });
+    }
+
+    if (req.user.role === 'pasien') {
+      if (ticket.pasien_id !== req.user.id) return res.status(403).json({ success: false, message: 'Bukan tiket Anda.' });
+      if (ticket.status !== 'aktif') return res.status(400).json({ success: false, message: 'Tiket masih menunggu approval admin.' });
+      await db.query('INSERT INTO cs_messages (ticket_id, sender_role, pesan) VALUES (?, ?, ?)', [ticket.id, 'pasien', pesan.trim()]);
+      const [admins] = await db.query('SELECT id FROM admins');
+      for (const a of admins) await createNotif('admin', a.id, '🎧', 'pink', `Pesan baru di tiket CS #${ticket.id}`);
+    } else if (req.user.role === 'admin') {
+      await db.query('INSERT INTO cs_messages (ticket_id, sender_role, pesan) VALUES (?, ?, ?)', [ticket.id, 'admin', pesan.trim()]);
+      await createNotif('pasien', ticket.pasien_id, '🎧', 'blue', `CS membalas tiket kamu: ${pesan.trim().slice(0, 60)}`);
+    } else {
+      return res.status(403).json({ success: false, message: 'Forbidden.' });
+    }
+
+    res.json({ success: true, message: 'Pesan terkirim.' });
+  } catch (err) {
+    logger.error('[CS] POST /cs-tickets/:id/messages error:', err.message);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// PATCH /api/cs-tickets/:id/approve — admin approve tiket manual, ruang chat dibuka
+app.patch('/api/cs-tickets/:id/approve', verifyToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ success: false, message: 'Forbidden.' });
+  try {
+    const [trows] = await db.query('SELECT * FROM cs_tickets WHERE id = ?', [req.params.id]);
+    if (trows.length === 0) return res.status(404).json({ success: false, message: 'Tiket tidak ditemukan.' });
+    await db.query("UPDATE cs_tickets SET status = 'aktif' WHERE id = ?", [req.params.id]);
+    await db.query(
+      'INSERT INTO cs_messages (ticket_id, sender_role, pesan) VALUES (?, ?, ?)',
+      [req.params.id, 'admin', 'Halo, tiket kamu sudah kami approve. Ada yang bisa dibantu?']
+    );
+    await createNotif('pasien', trows[0].pasien_id, '✅', 'green', 'Tiket CS kamu sudah diapprove admin, chat sekarang bisa dimulai.');
+    res.json({ success: true, message: 'Tiket diapprove.' });
+  } catch (err) {
+    logger.error('[CS] PATCH /cs-tickets/:id/approve error:', err.message);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// PATCH /api/cs-tickets/:id/close — admin menutup tiket
+app.patch('/api/cs-tickets/:id/close', verifyToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ success: false, message: 'Forbidden.' });
+  try {
+    const [trows] = await db.query('SELECT * FROM cs_tickets WHERE id = ?', [req.params.id]);
+    if (trows.length === 0) return res.status(404).json({ success: false, message: 'Tiket tidak ditemukan.' });
+    await db.query("UPDATE cs_tickets SET status = 'ditutup', closed_at = NOW() WHERE id = ?", [req.params.id]);
+    await createNotif('pasien', trows[0].pasien_id, '🔒', 'gray', 'Tiket CS kamu telah ditutup admin.');
+    res.json({ success: true, message: 'Tiket ditutup.' });
+  } catch (err) {
+    logger.error('[CS] PATCH /cs-tickets/:id/close error:', err.message);
+    res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
 
