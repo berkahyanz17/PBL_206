@@ -5,6 +5,7 @@ import { useNotif } from '../../components/NotifPopup';
 import { apiFetch } from '../../utils/api';
 import MamoruChat from './Mamoruchat';
 import ReminderBanner from '../../components/ReminderBanner';
+import QRISModal from '../../components/QRISModal';
 
 export default function PasienHome() {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ export default function PasienHome() {
   const user = JSON.parse(localStorage.getItem('pasienUser') || '{}');
   const { bellButton, popup } = useNotif('notif-pasien', { background: 'rgba(255,255,255,0.4)' });
   const [appointments, setAppointments] = useState([]);
+  const [qrisTarget, setQrisTarget] = useState(null);
 
   // Rating popup state
   const [ratingPending, setRatingPending] = useState(null);
@@ -47,6 +49,17 @@ export default function PasienHome() {
     navigate('/pasien/login');
   }
 
+  async function konfirmasiBayar(id) {
+    const res = await apiFetch(`/appointments/${id}/bayar`, { method: 'POST' });
+    if (res?.success) {
+      setQrisTarget(null);
+      const updated = await apiFetch(`/appointments/pasien/${user.id}`);
+      if (updated?.success) setAppointments(updated.data);
+    } else {
+      alert(res?.message || 'Gagal konfirmasi pembayaran.');
+    }
+  }
+
   async function submitRating() {
     if (!bintang) { setRatingMsg('Pilih bintang dulu!'); return; }
     setRatingLoading(true);
@@ -70,7 +83,7 @@ export default function PasienHome() {
     }
   }
 
-  const upcoming = appointments.filter(a => a.status === 'dikonfirmasi' || a.status === 'menunggu');
+  const upcoming = appointments.filter(a => ['menunggu_bayar', 'menunggu', 'dikonfirmasi', 'refund'].includes(a.status));
   const recent = appointments.filter(a => a.status === 'selesai').slice(0, 1);
 
   return (
@@ -118,9 +131,29 @@ export default function PasienHome() {
                   {new Date(a.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} · {a.jam?.slice(0, 5)}
                 </div>
               </div>
-              <span style={{ background: '#1d4ed8', color: 'white', padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
-                {a.status === 'dikonfirmasi' ? 'Terkonfirmasi' : 'Menunggu'}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span
+                  onClick={() => a.status === 'refund' ? navigate('/pasien/chat-cs') : undefined}
+                  style={{
+                    background: a.status === 'refund' ? '#9D174D' : a.status === 'menunggu_bayar' ? '#f59e0b' : '#1d4ed8',
+                    color: 'white', padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                    cursor: a.status === 'refund' ? 'pointer' : 'default'
+                  }}
+                >
+                  {a.status === 'dikonfirmasi' ? 'Terkonfirmasi'
+                    : a.status === 'menunggu_bayar' ? 'Menunggu Pembayaran'
+                    : a.status === 'refund' ? 'Refund → Chat CS'
+                    : 'Menunggu'}
+                </span>
+                {a.status === 'menunggu_bayar' && (
+                  <button
+                    onClick={() => setQrisTarget(a)}
+                    style={{ background: '#1d4ed8', color: 'white', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    💳 Bayar Sekarang
+                  </button>
+                )}
+              </div>
             </div>
           ))}
 
@@ -189,6 +222,7 @@ export default function PasienHome() {
         </div>
       )}
 
+      <QRISModal appointment={qrisTarget} onClose={() => setQrisTarget(null)} onConfirm={konfirmasiBayar} />
       <MamoruChat />
       {popup}
     </div>
