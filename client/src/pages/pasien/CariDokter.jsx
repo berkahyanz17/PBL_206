@@ -27,6 +27,7 @@ export default function PasienCari() {
   const [loading, setLoading] = useState(false);
   const [jadwalDokter, setJadwalDokter] = useState([]);
   const [jamOptions, setJamOptions] = useState([]);
+  const [jamKosongKarenaLewat, setJamKosongKarenaLewat] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -46,7 +47,7 @@ export default function PasienCari() {
   async function bukaDetail(d) {
     setDetail(d);
     setShowBookingForm(false);
-    setTanggal(''); setJam(''); setKeluhan('');
+    setTanggal(''); setJam(''); setKeluhan(''); setJamKosongKarenaLewat(false);
     setLoadingUlasan(true);
     const [ulasanRes, jadwalRes] = await Promise.all([
       apiFetch(`/ulasan/dokter/${d.id}`),
@@ -62,6 +63,7 @@ export default function PasienCari() {
   function onTanggalChange(tgl) {
     setTanggal(tgl);
     setJam('');
+    setJamKosongKarenaLewat(false);
     const hariMap = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
     const [y, m, d] = tgl.split('-').map(Number);
     const hari = hariMap[new Date(y, m - 1, d).getDay()];
@@ -69,13 +71,24 @@ export default function PasienCari() {
     if (!jadwalHari) { setJamOptions([]); return; }
     const mulai = parseInt(jadwalHari.jam_mulai.slice(0, 2));
     const selesai = parseInt(jadwalHari.jam_selesai.slice(0, 2));
-    const opts = [];
+    let opts = [];
     for (let h = mulai; h < selesai; h++) opts.push(`${String(h).padStart(2, '0')}:00`);
+
+    // Booking minimal 1 jam sebelumnya: kalau tanggal yang dipilih hari ini,
+    // buang slot jam yang kurang dari 1 jam dari sekarang.
+    const todayStr = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
+    if (tgl === todayStr) {
+      const totalSebelum = opts.length;
+      const batasMinimal = new Date(Date.now() + 60 * 60 * 1000);
+      opts = opts.filter(j => new Date(`${tgl}T${j}:00`) >= batasMinimal);
+      if (totalSebelum > 0 && opts.length === 0) setJamKosongKarenaLewat(true);
+    }
     setJamOptions(opts);
   }
 
   async function konfirmasi() {
     if (!tanggal) { alert('Pilih tanggal dulu!'); return; }
+    if (!jam) { alert('Pilih jam dulu!'); return; }
     if (!keluhan) { alert('Isi keluhan dulu!'); return; }
 
     // Pastikan profil pasien sudah lengkap sebelum booking
@@ -266,7 +279,7 @@ export default function PasienCari() {
                   <label>Jam</label>
                   <select value={jam} onChange={e => setJam(e.target.value)} disabled={!tanggal}>
                     <option value="">-- Pilih jam --</option>
-                    {jamOptions.length === 0 && tanggal && <option disabled>Dokter tidak praktik hari ini</option>}
+                    {jamOptions.length === 0 && tanggal && <option disabled>{jamKosongKarenaLewat ? 'Tidak ada jam tersedia (minimal booking 1 jam sebelumnya)' : 'Dokter tidak praktik hari ini'}</option>}
                     {jamOptions.map(j => <option key={j} value={j}>{j}</option>)}
                   </select>
                 </div>
