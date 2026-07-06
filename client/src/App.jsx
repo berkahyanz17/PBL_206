@@ -7,6 +7,7 @@ import AdminAppointments from './pages/admin/Appointments';
 import AdminDokter from './pages/admin/Dokter';
 import AdminPasien from './pages/admin/Pasien';
 import AdminChat from './pages/admin/Chat';
+import AdminChatCS from './pages/admin/ChatCS';
 import AdminSettings from './pages/admin/Settings';
 import DokterLogin from './pages/dokter/Login';
 import DokterLupa from './pages/dokter/LupaPassword';
@@ -25,6 +26,7 @@ import PasienReset from './pages/pasien/ResetPassword';
 import PasienHome from './pages/pasien/Home';
 import PasienCari from './pages/pasien/CariDokter';
 import PasienRiwayat from './pages/pasien/Riwayat';
+import PasienChatCS from './pages/pasien/ChatCS';
 import PasienProfil from './pages/pasien/Profil';
 import PasienSettings from './pages/pasien/Settings';
 
@@ -42,6 +44,7 @@ export default function App() {
       <Route path="/admin/dokter" element={<A><AdminDokter /></A>} />
       <Route path="/admin/pasien" element={<A><AdminPasien /></A>} />
       <Route path="/admin/chat" element={<A><AdminChat /></A>} />
+      <Route path="/admin/chat-cs" element={<A><AdminChatCS /></A>} />
       <Route path="/admin/settings" element={<A><AdminSettings /></A>} />
       <Route path="/dokter/login" element={<DokterLogin />} />
       <Route path="/dokter/lupa-password" element={<DokterLupa />} />
@@ -60,6 +63,7 @@ export default function App() {
       <Route path="/pasien/home" element={<P><PasienHome /></P>} />
       <Route path="/pasien/cari-dokter" element={<P><PasienCari /></P>} />
       <Route path="/pasien/riwayat" element={<P><PasienRiwayat /></P>} />
+      <Route path="/pasien/chat-cs" element={<P><PasienChatCS /></P>} />
       <Route path="/pasien/profil" element={<P><PasienProfil /></P>} />
       <Route path="/pasien/settings" element={<P><PasienSettings /></P>} />
       <Route path="*" element={<Navigate to="/" />} />
