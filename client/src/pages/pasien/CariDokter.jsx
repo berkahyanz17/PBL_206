@@ -4,6 +4,7 @@ import PasienSidebar from '../../components/PasienSidebar';
 import MamoruChat from './Mamoruchat';
 import { apiFetch } from '../../utils/api';
 import { useNotif } from '../../components/NotifPopup';
+import QRISModal from '../../components/QRISModal';
 
 export default function PasienCari() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function PasienCari() {
   const [totalUlasan, setTotalUlasan] = useState(0);
   const [loadingUlasan, setLoadingUlasan] = useState(false);
   const [showBookingForm, setShowBookingForm] = useState(false);
+  const [qrisTarget, setQrisTarget] = useState(null);
 
   // State booking
   const [tanggal, setTanggal] = useState('');
@@ -109,10 +111,29 @@ export default function PasienCari() {
     });
     setLoading(false);
     if (res?.success) {
+      // Langsung buka QRIS: booking baru dibuat berstatus menunggu_bayar,
+      // biar pasien bisa langsung scan & bayar tanpa balik ke Home dulu.
+      setQrisTarget({
+        id: res.id,
+        dokter_nama: detail.nama,
+        harga: detail.harga,
+        tgl: tanggal,
+        jam
+      });
       setDetail(null);
-      alert('✅ Booking berhasil! Tunggu konfirmasi dari dokter.');
     } else {
       alert(res?.message || 'Booking gagal.');
+    }
+  }
+
+  async function konfirmasiBayar(id) {
+    const res = await apiFetch(`/appointments/${id}/bayar`, { method: 'POST' });
+    if (res?.success) {
+      setQrisTarget(null);
+      alert('✅ Pembayaran berhasil dikonfirmasi! Appointment kamu sekarang menunggu konfirmasi dari klinik.');
+      navigate('/pasien/home');
+    } else {
+      alert(res?.message || 'Gagal konfirmasi pembayaran.');
     }
   }
 
@@ -300,6 +321,7 @@ export default function PasienCari() {
         </div>
       )}
 
+      <QRISModal appointment={qrisTarget} onClose={() => setQrisTarget(null)} onConfirm={konfirmasiBayar} />
       <MamoruChat />
       {popup}
     </div>
