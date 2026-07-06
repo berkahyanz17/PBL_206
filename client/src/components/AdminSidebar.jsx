@@ -7,6 +7,7 @@ const navItems = [
   { icon: '🩺', label: 'Daftar Dokter', path: '/admin/dokter' },
   { icon: '👥', label: 'Data Pasien', path: '/admin/pasien' },
   { icon: '💬', label: 'Chat Dokter', path: '/admin/chat' },
+  { icon: '🎧', label: 'Chat CS Pasien', path: '/admin/chat-cs' },
   { icon: '⚙️', label: 'Pengaturan', path: '/admin/settings' },
 ];
 export default function AdminSidebar() {
