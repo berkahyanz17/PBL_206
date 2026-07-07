@@ -32,7 +32,9 @@ CREATE TABLE `appointments` (
   `keluhan` text DEFAULT NULL,
   `tgl` date DEFAULT NULL,
   `jam` time DEFAULT NULL,
-  `status` enum('menunggu','dikonfirmasi','selesai','ditolak') DEFAULT 'menunggu',
+  `status` enum('menunggu_bayar','menunggu','dikonfirmasi','selesai','ditolak','refund') NOT NULL DEFAULT 'menunggu_bayar',
+  `paid` tinyint(1) NOT NULL DEFAULT 0,
+  `harga` int(11) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `pasien_id` (`pasien_id`),
@@ -257,6 +259,9 @@ INSERT INTO `appointments` (`id`,`pasien_id`,`dokter_id`,`keluhan`,`tgl`,`jam`,`
 (18,11,6,'Kontrol tekanan darah','2026-05-27','10:00:00','selesai');
 UNLOCK TABLES;
 
+-- Data demo di atas semua statusnya bukan 'menunggu_bayar', jadi dianggap sudah lunas
+UPDATE `appointments` SET `paid` = 1 WHERE `status` IN ('menunggu','dikonfirmasi','selesai','ditolak');
+
 LOCK TABLES `rekam_medis` WRITE;
 INSERT INTO `rekam_medis` (`id`,`appointment_id`,`diagnosa`,`resep`,`catatan`) VALUES
 (1,1,'Sakit Kepala','Paracetamol 500mg x1','Kondisi baik, tekanan darah normal'),
@@ -301,6 +306,40 @@ INSERT INTO `notifications` (`role`,`user_id`,`icon`,`icon_color`,`text`,`time`,
 ('admin',1,'👤','orange','Pasien baru mendaftar: Teguh Prasetyo','12.50',0),
 ('admin',1,'📅','blue','Booking baru masuk dari Megumi ke dr. Ichinose','11.20',1);
 UNLOCK TABLES;
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- MIGRATION: Chat CS Pasien (komplain/refund)
+-- ════════════════════════════════════════════════════════════════════════════
+
+DROP TABLE IF EXISTS `cs_tickets`;
+CREATE TABLE `cs_tickets` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `pasien_id` int(11) NOT NULL,
+  `appointment_id` int(11) DEFAULT NULL,
+  `jenis` enum('refund','komplain') NOT NULL DEFAULT 'komplain',
+  `kategori` varchar(100) DEFAULT NULL,
+  `deskripsi` text DEFAULT NULL,
+  `status` enum('menunggu_approval','aktif','ditutup') NOT NULL DEFAULT 'menunggu_approval',
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `closed_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `pasien_id` (`pasien_id`),
+  KEY `appointment_id` (`appointment_id`),
+  CONSTRAINT `cs_tickets_ibfk_1` FOREIGN KEY (`pasien_id`) REFERENCES `pasiens` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `cs_tickets_ibfk_2` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+DROP TABLE IF EXISTS `cs_messages`;
+CREATE TABLE `cs_messages` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `ticket_id` int(11) NOT NULL,
+  `sender_role` enum('admin','pasien') NOT NULL,
+  `pesan` text NOT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `ticket_id` (`ticket_id`),
+  CONSTRAINT `cs_messages_ibfk_1` FOREIGN KEY (`ticket_id`) REFERENCES `cs_tickets` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- MIGRATION: Tambah tabel klinik_settings untuk Mamoru context
