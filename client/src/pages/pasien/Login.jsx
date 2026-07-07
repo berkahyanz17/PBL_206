@@ -10,7 +10,7 @@ export default function PasienLogin() {
   const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
-    if (!email || !password) { setError('Email/No.Hp dan password harus diisi.'); return; }
+    if (!email || !password) { setError('Email dan password harus diisi.'); return; }
     setError('');
     setLoading(true);
     try {
@@ -46,7 +46,7 @@ export default function PasienLogin() {
         <h2 style={{ textAlign: 'center', fontSize: 24, fontWeight: 800 }}>Pasien Login</h2>
         <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 14, marginTop: 6, marginBottom: 28 }}>Akses layanan kesehatan Anda</p>
         {error && <div style={{ background: '#FEE2E2', color: '#991B1B', borderRadius: 8, padding: '10px 14px', fontSize: 13, fontWeight: 600, marginBottom: 12, textAlign: 'center' }}>{error}</div>}
-        <div className="form-group"><label>Email / No.Hp</label><input type="text" placeholder="Masukkan Email / No.Hp" value={email} onChange={e => setEmail(e.target.value)} /></div>
+        <div className="form-group"><label>Email</label><input type="email" placeholder="Masukkan Email" value={email} onChange={e => setEmail(e.target.value)} /></div>
         <div className="form-group">
           <label>Password</label>
           <div style={{ position: 'relative' }}>
