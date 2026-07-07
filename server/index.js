@@ -446,7 +446,7 @@ app.post('/api/reset-password', async (req, res) => {
 
 app.get('/api/dokter', verifyToken, async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT id, nama, email, spesialis, no_str, harga, foto FROM dokters');
+    const [rows] = await db.query('SELECT id, nama, email, spesialis, no_str, harga, foto, qris_image FROM dokters');
     await redis.setex('cache:dokter', 300, JSON.stringify({ success: true, data: rows }));
     res.json({ success: true, data: rows });
   } catch (err) {
@@ -454,13 +454,14 @@ app.get('/api/dokter', verifyToken, async (req, res) => {
   }
 });
 
-app.post('/api/dokter', verifyToken, async (req, res) => {
+app.post('/api/dokter', verifyToken, upload.single('qris_image'), async (req, res) => {
   try {
     const { nama, email, password, spesialis, no_str, harga } = req.body;
     const hashed = await bcrypt.hash(password, SALT_ROUNDS);
+    const qrisImage = req.file ? `/uploads/${req.file.filename}` : null;
     await db.query(
-      'INSERT INTO dokters (nama, email, password, spesialis, no_str, harga) VALUES (?, ?, ?, ?, ?, ?)',
-      [nama, email, hashed, spesialis, no_str, harga]
+      'INSERT INTO dokters (nama, email, password, spesialis, no_str, harga, qris_image) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [nama, email, hashed, spesialis, no_str, harga, qrisImage]
     );
     res.json({ success: true, message: 'Dokter berhasil ditambahkan.' });
   } catch (err) {
@@ -694,7 +695,7 @@ app.patch('/api/appointments/:id/status', verifyToken, async (req, res) => {
 app.get('/api/appointments/pasien/:id', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(`
-      SELECT a.*, d.nama as dokter_nama, d.spesialis
+      SELECT a.*, d.nama as dokter_nama, d.spesialis, d.qris_image
       FROM appointments a
       JOIN dokters d ON a.dokter_id = d.id
       WHERE a.pasien_id = ?
