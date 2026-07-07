@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import QRCode from 'qrcode';
+import { useState } from 'react';
+import { DEFAULT_QRIS } from '../assets/qrisDefault';
 
 function formatRupiah(n) {
   return 'Rp. ' + (n || 0).toLocaleString('id-ID');
@@ -7,23 +7,13 @@ function formatRupiah(n) {
 
 export default function QRISModal({ appointment, onClose, onConfirm }) {
   const [loading, setLoading] = useState(false);
-  const [qrDataUrl, setQrDataUrl] = useState(null);
-  const [qrError, setQrError] = useState(false);
-
-  const a = appointment;
-
-  // Generate QR secara lokal di browser (gak butuh API eksternal / internet)
-  useEffect(() => {
-    if (!a) return;
-    setQrDataUrl(null);
-    setQrError(false);
-    const dataQr = `HEALTHSYNC|${a.id}|${a.dokter_nama}|${a.harga}`;
-    QRCode.toDataURL(dataQr, { width: 220, margin: 1 })
-      .then(setQrDataUrl)
-      .catch(() => setQrError(true));
-  }, [a?.id, a?.dokter_nama, a?.harga]);
 
   if (!appointment) return null;
+  const a = appointment;
+
+  // Kalau dokter sudah upload QRIS sendiri, pakai itu. Kalau belum, pakai QRIS klinik default.
+  const qrisSrc = a.qris_image ? a.qris_image : DEFAULT_QRIS;
+  const isCustom = !!a.qris_image;
 
   async function handleConfirm() {
     setLoading(true);
@@ -43,21 +33,14 @@ export default function QRISModal({ appointment, onClose, onConfirm }) {
         </div>
 
         <div style={{ textAlign: 'center' }}>
-          {qrDataUrl ? (
-            <img
-              src={qrDataUrl}
-              alt="QRIS Payment"
-              style={{ width: 220, height: 220, border: '1.5px solid #E5E7EB', borderRadius: 12, padding: 10, background: '#fff', display: 'block', margin: '0 auto' }}
-            />
-          ) : (
-            <div style={{
-              width: 220, height: 220, border: '1.5px solid #E5E7EB', borderRadius: 12,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto', background: '#F9FAFB', fontSize: 12, color: '#6B7280', textAlign: 'center', padding: 10
-            }}>
-              {qrError ? 'Gagal membuat QR. Coba tutup & buka lagi.' : 'Membuat QR...'}
-            </div>
-          )}
+          <img
+            src={qrisSrc}
+            alt="QRIS Payment"
+            style={{ width: 220, maxWidth: '100%', border: '1.5px solid #E5E7EB', borderRadius: 12, padding: 10, background: '#fff', display: 'block', margin: '0 auto' }}
+          />
+          <div style={{ fontSize: 11.5, color: '#9CA3AF', marginTop: 8 }}>
+            {isCustom ? `QRIS milik ${a.dokter_nama}` : 'QRIS HealthSync (klinik)'}
+          </div>
           <div style={{ fontSize: 22, fontWeight: 800, color: '#1d4ed8', margin: '14px 0 4px' }}>{formatRupiah(a.harga)}</div>
           <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 6 }}>
             {a.dokter_nama} · {new Date(a.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} · {a.jam?.slice(0, 5)} WIB
