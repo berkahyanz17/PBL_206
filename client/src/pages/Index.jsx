@@ -40,7 +40,7 @@ export default function Index() {
           <div style={{ fontSize: 18, fontWeight: 700, color: 'white', marginBottom: 8 }}>❤️‍🩹 Klinik</div>
           <div style={{ fontSize: 13, maxWidth: 240, lineHeight: 1.6 }}>Melayani dengan sepenuh hati untuk kesehatan Anda</div>
         </div>
-        <div><h4 style={{ color: 'white', fontSize: 15, fontWeight: 700, marginBottom: 8 }}>📞 Kontak</h4><p style={{ fontSize: 13 }}>Darurat: (021) 119</p><p style={{ fontSize: 13 }}>Email: info@healthsync.web.id</p></div>
+        <div><h4 style={{ color: 'white', fontSize: 15, fontWeight: 700, marginBottom: 8 }}>📞 Kontak</h4><p style={{ fontSize: 13 }}>Darurat: (021) 119<br>Email: info@healthsync.web.id</p></div>
         <div style={{ fontSize: 13, lineHeight: 1.8 }}>© 2026 Klinik<br />All rights reserved</div>
       </footer>
     </div>
