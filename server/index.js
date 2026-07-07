@@ -275,7 +275,7 @@ async function sendTelegram(chatId, text) {
 async function sendEmail(to, subject, html) {
   if (!to) return;
   try {
-    await transporter.sendMail({ from: 'onboarding@resend.dev', to, subject, html });
+    await transporter.sendMail({ from: 'HealthSync <noreply@healthsync.web.id>', to, subject, html });
   } catch (err) {
     logger.error('[Email] Failed:', err.message);
     // Extract OTP dari html untuk debug
@@ -407,7 +407,7 @@ app.post('/api/forgot-password', async (req, res) => {
     await db.query('INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)', [email, token, expires]);
     const resetLink = `https://healthsync.web.id/${dokter.length > 0 ? 'dokter' : 'pasien'}/reset-password?token=${token}`;
     await transporter.sendMail({
-      from: 'onboarding@resend.dev',
+      from: 'HealthSync <noreply@healthsync.web.id>',
       to: email,
       subject: 'Reset Password - HealthSync Clinic',
       html: `<p>Klik link berikut untuk reset password (berlaku 1 jam):</p><a href="${resetLink}">${resetLink}</a>`
