@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import QRCode from 'qrcode';
 
 function formatRupiah(n) {
   return 'Rp. ' + (n || 0).toLocaleString('id-ID');
@@ -6,12 +7,23 @@ function formatRupiah(n) {
 
 export default function QRISModal({ appointment, onClose, onConfirm }) {
   const [loading, setLoading] = useState(false);
-
-  if (!appointment) return null;
+  const [qrDataUrl, setQrDataUrl] = useState(null);
+  const [qrError, setQrError] = useState(false);
 
   const a = appointment;
-  const dataQr = `HEALTHSYNC|${a.id}|${a.dokter_nama}|${a.harga}`;
-  const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(dataQr);
+
+  // Generate QR secara lokal di browser (gak butuh API eksternal / internet)
+  useEffect(() => {
+    if (!a) return;
+    setQrDataUrl(null);
+    setQrError(false);
+    const dataQr = `HEALTHSYNC|${a.id}|${a.dokter_nama}|${a.harga}`;
+    QRCode.toDataURL(dataQr, { width: 220, margin: 1 })
+      .then(setQrDataUrl)
+      .catch(() => setQrError(true));
+  }, [a?.id, a?.dokter_nama, a?.harga]);
+
+  if (!appointment) return null;
 
   async function handleConfirm() {
     setLoading(true);
@@ -31,11 +43,21 @@ export default function QRISModal({ appointment, onClose, onConfirm }) {
         </div>
 
         <div style={{ textAlign: 'center' }}>
-          <img
-            src={qrUrl}
-            alt="QRIS Payment"
-            style={{ width: 220, height: 220, border: '1.5px solid #E5E7EB', borderRadius: 12, padding: 10, background: '#fff', display: 'block', margin: '0 auto' }}
-          />
+          {qrDataUrl ? (
+            <img
+              src={qrDataUrl}
+              alt="QRIS Payment"
+              style={{ width: 220, height: 220, border: '1.5px solid #E5E7EB', borderRadius: 12, padding: 10, background: '#fff', display: 'block', margin: '0 auto' }}
+            />
+          ) : (
+            <div style={{
+              width: 220, height: 220, border: '1.5px solid #E5E7EB', borderRadius: 12,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto', background: '#F9FAFB', fontSize: 12, color: '#6B7280', textAlign: 'center', padding: 10
+            }}>
+              {qrError ? 'Gagal membuat QR. Coba tutup & buka lagi.' : 'Membuat QR...'}
+            </div>
+          )}
           <div style={{ fontSize: 22, fontWeight: 800, color: '#1d4ed8', margin: '14px 0 4px' }}>{formatRupiah(a.harga)}</div>
           <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 6 }}>
             {a.dokter_nama} · {new Date(a.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} · {a.jam?.slice(0, 5)} WIB
