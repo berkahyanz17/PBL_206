@@ -13,6 +13,8 @@ export default function AdminDokter() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ nama: '', email: '', password: '', spesialis: '', no_str: '', harga: '' });
+  const [qrisFile, setQrisFile] = useState(null);
+  const [qrisPreview, setQrisPreview] = useState(null);
   const [showPw, setShowPw] = useState(false);
   const { bellButton, popup } = useNotif('notif-admin');
 
@@ -69,11 +71,25 @@ export default function AdminDokter() {
     loadDokters();
   }
 
+  function handleQrisChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setQrisFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setQrisPreview(ev.target.result);
+    reader.readAsDataURL(file);
+  }
+
   async function tambah() {
     if (!form.nama || !form.email || !form.password) return;
-    await apiFetch('/dokter', { method: 'POST', body: JSON.stringify(form) });
+    const fd = new FormData();
+    Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+    if (qrisFile) fd.append('qris_image', qrisFile);
+    await apiFetch('/dokter', { method: 'POST', body: fd });
     setShowModal(false);
     setForm({ nama: '', email: '', password: '', spesialis: '', no_str: '', harga: '' });
+    setQrisFile(null);
+    setQrisPreview(null);
     loadDokters();
   }
 
@@ -115,7 +131,7 @@ export default function AdminDokter() {
                       const r = ratingMap[d.id];
                       return (
                         <tr key={d.id}>
-                          <td><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><div className="avatar" style={{ background: colors[i % colors.length] }}>{d.nama?.charAt(0)}</div><span style={{ fontWeight: 600 }}>{d.nama}</span></div></td>
+                          <td><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><div className="avatar" style={{ background: colors[i % colors.length] }}>{d.nama?.charAt(0)}</div><span style={{ fontWeight: 600 }}>{d.nama}</span><span title={d.qris_image ? 'QRIS sudah di-upload' : 'QRIS belum di-upload'} style={{ fontSize: 13, opacity: d.qris_image ? 1 : 0.35 }}>{d.qris_image ? '✅' : '🧾'}</span></div></td>
                           <td>{d.spesialis}</td>
                           <td style={{ color: 'var(--text-muted)' }}>{d.no_str}</td>
                           <td style={{ fontWeight: 700 }}>Rp {Number(d.harga).toLocaleString('id-ID')}</td>
@@ -175,8 +191,26 @@ export default function AdminDokter() {
               )}
             </div>
           ))}
+            <div className="form-group">
+              <label>QRIS Pembayaran <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>(opsional)</span></label>
+              <div style={{ border: '1.5px dashed var(--border)', borderRadius: 12, padding: 14, textAlign: 'center', background: '#F9FAFB', cursor: 'pointer', position: 'relative' }}>
+                <input type="file" accept="image/*" onChange={handleQrisChange} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+                {qrisPreview ? (
+                  <div>
+                    <img src={qrisPreview} alt="Preview QRIS" style={{ width: 110, height: 110, objectFit: 'contain', borderRadius: 8, background: 'white', border: '1.5px solid var(--border)', padding: 6 }} />
+                    <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 6 }}>{qrisFile?.name} — klik lagi buat ganti</div>
+                  </div>
+                ) : (
+                  <div style={{ color: '#6B7280', fontSize: 12 }}>
+                    <span style={{ fontSize: 22, display: 'block', marginBottom: 4 }}>🧾</span>
+                    Klik buat upload gambar QRIS dokter ini
+                  </div>
+                )}
+              </div>
+              <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 6 }}>Kalau belum di-upload, pasien akan lihat pesan "QRIS belum tersedia" saat mau bayar — bisa ditambah belakangan.</div>
+            </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-              <button onClick={() => setShowModal(false)} className="btn-batal" style={{ flex: 1 }}>Batal</button>
+              <button onClick={() => { setShowModal(false); setQrisFile(null); setQrisPreview(null); }} className="btn-batal" style={{ flex: 1 }}>Batal</button>
               <button onClick={tambah} style={{ flex: 1, padding: 12, background: 'var(--navy)', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Simpan</button>
             </div>
           </div>
