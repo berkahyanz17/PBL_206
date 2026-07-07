@@ -347,10 +347,10 @@ app.post('/api/dokter/login', rateLimiter, async (req, res) => {
 app.post('/api/pasien/login', rateLimiter, async (req, res) => {
   try {
     const { email, password, captchaToken } = req.body;
-    const [rows] = await db.query('SELECT * FROM pasiens WHERE email = ? OR no_hp = ?', [email, email]);
-    if (rows.length === 0) return res.status(401).json({ success: false, message: 'Email/HP atau password salah.' });
+    const [rows] = await db.query('SELECT * FROM pasiens WHERE email = ?', [email]);
+    if (rows.length === 0) return res.status(401).json({ success: false, message: 'Email atau password salah.' });
     const match = await bcrypt.compare(password, rows[0].password);
-    if (!match) return res.status(401).json({ success: false, message: 'Email/HP atau password salah.' });
+    if (!match) return res.status(401).json({ success: false, message: 'Email atau password salah.' });
     const payload      = { id: rows[0].id, role: 'pasien', nama: rows[0].nama };
     const accessToken  = signAccessToken(payload);
     const refreshToken = await signRefreshToken(payload);
