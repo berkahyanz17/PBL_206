@@ -10,6 +10,15 @@ const initAppts = [
   { id: 3, pasien: 'Megumi', keluhan: 'Muntah, batuk pilek', dokter: 'dr. Kuro Tetsuro', spesialis: 'Umum', tgl: '24 Mei', jam: '13.30', status: 'dikonfirmasi' },
   { id: 4, pasien: 'Natsuki Seba', keluhan: 'Check up rutin', dokter: 'dr. Ichinose Guren', spesialis: 'Spesialis Dalam', tgl: '22 Mei', jam: '10.00', status: 'selesai' },
 ];*/
+// Daftar alasan tolak/refund standar. id 6 = "Lainnya", diisi manual oleh admin.
+const alasanRefundDaftar = [
+  { id: 1, judul: 'Jadwal tidak tersedia', desc: 'Dokter penuh, cuti, atau klinik tutup di waktu yang dipilih. Silakan reschedule ke jadwal lain.' },
+  { id: 2, judul: 'Data/Appointment tidak lengkap atau tidak valid', desc: 'Keluhan, riwayat penyakit, NIK, atau info pasien salah/kurang (data tampak palsu/asal).' },
+  { id: 3, judul: 'Masalah pembayaran', desc: 'Nominal pembayaran salah, bukti pembayaran tidak valid, atau pembayaran gagal.' },
+  { id: 4, judul: 'Ketidaksesuaian medis', desc: 'Layanan tidak cocok dengan spesialisasi dokter, butuh rujukan dulu, atau kondisi darurat yang harus ke IGD.' },
+  { id: 5, judul: 'Kebijakan sistem', desc: 'Melebihi batas waktu reschedule/cancel, pasien masuk daftar blokir, atau appointment dianggap spam.' },
+  { id: 6, judul: 'Lainnya', desc: 'Alasan lain di luar kategori di atas — tulis manual di bawah.' }
+];
 export default function AdminAppointments() {
   const navigate = useNavigate();
   const [appts, setAppts] = useState([]);
@@ -17,6 +26,9 @@ export default function AdminAppointments() {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showNotif, setShowNotif] = useState(false);
+  const [alasanTarget, setAlasanTarget] = useState(null); // { id, nama } appointment yg lagi ditolak & butuh alasan
+  const [alasanTerpilih, setAlasanTerpilih] = useState(null); // id 1-6
+  const [alasanLainnyaText, setAlasanLainnyaText] = useState('');
   const [notifList, setNotifList] = useState([
     { id: 1, icon: '👥', iconClass: 'blue', title: 'Pasien baru mendaftar', time: '5 menit lalu', unread: true },
     { id: 2, icon: '📅', iconClass: 'orange', title: 'Appointment masuk', time: '30 menit lalu', unread: true },
@@ -47,14 +59,43 @@ export default function AdminAppointments() {
   }
 
   async function tolak(id, nama, paid) {
-    const pesan = paid
-      ? `Tolak appointment ${nama}? Pasien ini sudah bayar, jadi akan otomatis dibuatkan tiket REFUND (bukan sekadar Ditolak).`
-      : `Tolak appointment ${nama}? (Belum ada pembayaran masuk, jadi tidak perlu refund)`;
-    if (!window.confirm(pesan)) return;
-    await apiFetch(`/appointments/${id}/status`, {
+    if (!paid) {
+      // Belum pernah bayar -> tolak biasa, gak ada uang jadi gak perlu refund
+      if (!window.confirm(`Tolak appointment ${nama}? (Belum ada pembayaran masuk, jadi tidak perlu refund)`)) return;
+      await apiFetch(`/appointments/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'ditolak' })
+      });
+      loadAppts();
+      return;
+    }
+    // Sudah bayar -> minta admin pilih alasan dulu sebelum tiket refund dibuat
+    setAlasanTarget({ id, nama });
+    setAlasanTerpilih(null);
+    setAlasanLainnyaText('');
+  }
+
+  function batalAlasanRefund() {
+    setAlasanTarget(null);
+    setAlasanTerpilih(null);
+    setAlasanLainnyaText('');
+  }
+
+  async function konfirmasiTolakRefund() {
+    if (!alasanTerpilih) { alert('Pilih salah satu alasan dulu ya!'); return; }
+    const opt = alasanRefundDaftar.find(a => a.id === alasanTerpilih);
+    let alasanDeskripsi;
+    if (alasanTerpilih === 6) {
+      if (!alasanLainnyaText.trim()) { alert('Isi dulu alasan lainnya di kotak teks!'); return; }
+      alasanDeskripsi = alasanLainnyaText.trim();
+    } else {
+      alasanDeskripsi = opt.desc;
+    }
+    await apiFetch(`/appointments/${alasanTarget.id}/status`, {
       method: 'PATCH',
-      body: JSON.stringify({ status: 'ditolak' })
+      body: JSON.stringify({ status: 'ditolak', alasanKategori: opt.judul, alasanDeskripsi })
     });
+    batalAlasanRefund();
     loadAppts();
   }
 
@@ -146,6 +187,38 @@ export default function AdminAppointments() {
               <div style={{ background: '#F9FAFB', borderRadius: 10, padding: 14, gridColumn: '1/-1' }}><div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>Keluhan</div><div style={{ fontSize: 14, color: '#374151', lineHeight: 1.6 }}>{detail.keluhan}</div></div>
             </div>
             <button onClick={() => setDetail(null)} style={{ width: '100%', padding: 13, background: '#F3F4F6', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Tutup</button>
+          </div>
+        </div>
+      )}
+
+      {alasanTarget && (
+        <div className="modal-overlay open" onClick={batalAlasanRefund}>
+          <div style={{ background: 'white', borderRadius: 20, padding: 24, width: '100%', maxWidth: 520, maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', animation: 'slideUp 0.3s ease' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <h3 style={{ fontSize: 17, fontWeight: 800 }}>💸 Alasan Tolak &amp; Refund — {alasanTarget.nama}</h3>
+              <button onClick={batalAlasanRefund} style={{ background: '#F3F4F6', border: 'none', width: 34, height: 34, borderRadius: '50%', fontSize: 18, cursor: 'pointer', flexShrink: 0 }}>✕</button>
+            </div>
+            <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginBottom: 12 }}>
+              Pasien ini sudah bayar, jadi akan otomatis dibuatkan tiket REFUND. Pilih alasan penolakan — alasan ini akan otomatis muncul di pesan pertama tiket refund pasien.
+            </div>
+            <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+              {alasanRefundDaftar.map(a => (
+                <label key={a.id} className={`alasan-opsi${alasanTerpilih === a.id ? ' selected' : ''}`} onClick={() => setAlasanTerpilih(a.id)}>
+                  <input type="radio" name="alasan-refund-radio" checked={alasanTerpilih === a.id} onChange={() => setAlasanTerpilih(a.id)} />
+                  <div>
+                    <div className="arf-title">{a.id}. {a.judul}</div>
+                    <div className="arf-desc">{a.desc}</div>
+                  </div>
+                </label>
+              ))}
+              {alasanTerpilih === 6 && (
+                <textarea className="alasan-lainnya-textarea" placeholder="Tulis alasan lainnya di sini..." value={alasanLainnyaText} onChange={e => setAlasanLainnyaText(e.target.value)} />
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+              <button onClick={batalAlasanRefund} style={{ flex: 1, padding: 12, background: '#F3F4F6', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Batal</button>
+              <button onClick={konfirmasiTolakRefund} style={{ flex: 1, padding: 12, background: '#9D174D', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Tolak &amp; Buat Tiket Refund</button>
+            </div>
           </div>
         </div>
       )}
