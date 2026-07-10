@@ -1,7 +1,7 @@
 # PBL_206
 Secure Mini Enterprise Infrastructure Deployment
 ```
-Mini PBL - RKS 2A Pagi
+Mini PBL - RKS 2A Pagi - PBL_206
 Berkah Yanuar Zulhiansyah - 4332501026
 Destin Olivia Rengganis   - 4332501032
 Muhamad Faris Kurniawan   - 4332501004
