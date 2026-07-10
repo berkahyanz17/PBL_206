@@ -10,7 +10,7 @@ function fmtTime(ts) {
 }
 
 function labelJenis(t) {
-  return t.jenis === 'refund' ? '💸 Refund' : `🎫 ${t.kategori || 'Komplain'}`;
+  return t.jenis === 'refund' ? `💸 Refund${t.kategori && t.kategori !== 'Refund Otomatis' ? ' — ' + t.kategori : ''}` : `🎫 ${t.kategori || 'Komplain'}`;
 }
 
 function labelStatus(t) {
