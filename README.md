@@ -1,5 +1,11 @@
 # PBL_206
 Secure Mini Enterprise Infrastructure Deployment
+Mini PBL - RKS 2A Pagi
+Berkah Yanuar Zulhiansyah - 4332501026
+Destin Olivia Rengganis   - 4332501032
+Muhamad Faris Kurniawan   - 4332501004
+Najib Muhammad Ikvan      - 4332501019
+Ghanni Adryan Pratama     - 4332501020
 
 # HealthSync Clinic
 
@@ -209,7 +215,7 @@ trivy image pbl_206-server:latest
 trivy image pbl_206-nginx:latest
 trivy image pbl_206-client:latest
 ```
-#### Or other tools in kali linux also do for active vuln scan
+###### Or other tools in kali linux also do for active vuln scan
 
 ### This is our project stack
 Frontend |     Backend     | Database | Cache | Deployment | Reverse Proxy | Networking/Gateway
