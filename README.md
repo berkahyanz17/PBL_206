@@ -219,7 +219,7 @@ trivy image pbl_206-client:latest
 ###### Or other tools in kali linux also do for active vuln scan
 
 ### This is our project stack
-Frontend |     Backend     | Database | Cache | Deployment | Reverse Proxy | Networking/Gateway
+Frontend |     Backend     | Database | Cache | Deployment | Reverse Proxy | Networking/Gateway<br>
 react.js + node.js express + mariadb  + redis +   docker   +     nginx     +     cloudflare
 
 ###### Thank you for reading to the end of the documentation
