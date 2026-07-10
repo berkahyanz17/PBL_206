@@ -132,9 +132,9 @@ berkah@uiserver:~/PBL_206$ tree
 └── tutorial-prometheus-grafana.md
 ```
 
-# Troubleshoot
+## Troubleshoot
 
-## Quick Access
+### Quick Access
 ssh dari wsl ke vm server
 ```
 ssh -i /mnt/d/TLID_SSH_KEY/tlid -p 2223 berkah@192.168.56.105
@@ -154,7 +154,7 @@ akses ke browser
 https://healthsync.web.id
 ```
 
-## Git and Docker
+### Git and Docker
 nambahin fitur dari vm server
 ```
 git add .
@@ -195,7 +195,7 @@ migrasi data lama ke data terenkripsi
 docker exec -it pbl_206-server-1 node migrate_encrypt_existing.js
 ```
 
-## Basic Vuln Scan
+### Basic Vuln Scan
 Trivy scan latest cve vulnerability
 ```
 # Check images name
@@ -209,7 +209,7 @@ trivy image pbl_206-server:latest
 trivy image pbl_206-nginx:latest
 trivy image pbl_206-client:latest
 ```
-Or other tools in kali linux also do for active vuln scan
+#### Or other tools in kali linux also do for active vuln scan
 
 ### This is our project stack
 Frontend |     Backend     | Database | Cache | Deployment | Reverse Proxy | Networking/Gateway
