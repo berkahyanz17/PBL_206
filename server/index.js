@@ -628,7 +628,7 @@ app.post('/api/appointments/:id/bayar', verifyToken, async (req, res) => {
 
 app.patch('/api/appointments/:id/status', verifyToken, async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, alasanKategori, alasanDeskripsi } = req.body;
     const [apptRows] = await db.query('SELECT * FROM appointments WHERE id = ?', [req.params.id]);
     if (apptRows.length === 0) return res.status(404).json({ success: false, message: 'Appointment tidak ditemukan.' });
     const apptBefore = apptRows[0];
@@ -672,13 +672,25 @@ app.patch('/api/appointments/:id/status', verifyToken, async (req, res) => {
             [req.params.id]
           );
           if (existingTicket.length === 0) {
+            // Kategori & deskripsi alasan diisi admin lewat modal alasan tolak di halaman Appointments.
+            // Kalau kosong (mis. dipanggil lewat cara lain), pakai teks generik lama.
+            const kategoriTicket = (alasanKategori && alasanKategori.trim())
+              ? alasanKategori.trim().slice(0, 100)
+              : 'Refund Otomatis';
+            const deskripsiTicket = (alasanDeskripsi && alasanDeskripsi.trim())
+              ? alasanDeskripsi.trim()
+              : `Appointment dengan ${dnama} pada ${new Date(tgl).toLocaleDateString('id-ID')} ditolak setelah pembayaran masuk. Tiket refund dibuat otomatis oleh sistem.`;
+            const pesanPembuka = (alasanDeskripsi && alasanDeskripsi.trim())
+              ? `Halo, appointment kamu dengan ${dnama} kami tolak dengan alasan: "${deskripsiTicket}". Karena pembayaran sudah masuk, dana Rp${(harga||0).toLocaleString('id-ID')} akan kami proses refund ke rekening/e-wallet asal maksimal 3 hari kerja ya. Ada yang bisa dibantu lagi?`
+              : `Halo, kami lihat appointment kamu ditolak dokter setelah pembayaran masuk. Dana Rp${(harga||0).toLocaleString('id-ID')} akan kami proses refund ke rekening/e-wallet asal maksimal 3 hari kerja ya. Ada yang bisa dibantu lagi?`;
+
             const [tResult] = await db.query(
-              "INSERT INTO cs_tickets (pasien_id, appointment_id, jenis, kategori, deskripsi, status) VALUES (?, ?, 'refund', 'Refund Otomatis', ?, 'aktif')",
-              [pasien_id, req.params.id, `Appointment dengan ${dnama} pada ${new Date(tgl).toLocaleDateString('id-ID')} ditolak setelah pembayaran masuk. Tiket refund dibuat otomatis oleh sistem.`]
+              "INSERT INTO cs_tickets (pasien_id, appointment_id, jenis, kategori, deskripsi, status) VALUES (?, ?, 'refund', ?, ?, 'aktif')",
+              [pasien_id, req.params.id, kategoriTicket, deskripsiTicket]
             );
             await db.query(
               "INSERT INTO cs_messages (ticket_id, sender_role, pesan) VALUES (?, 'admin', ?)",
-              [tResult.insertId, `Halo, kami lihat appointment kamu ditolak dokter setelah pembayaran masuk. Dana Rp${(harga||0).toLocaleString('id-ID')} akan kami proses refund ke rekening/e-wallet asal maksimal 3 hari kerja ya. Ada yang bisa dibantu lagi?`]
+              [tResult.insertId, pesanPembuka]
             );
             await createNotif('pasien', pasien_id, '🎫', 'pink', 'Tiket refund otomatis dibuat, cek Chat CS kamu.');
           }
