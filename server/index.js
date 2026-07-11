@@ -614,11 +614,9 @@ app.post('/api/appointments/:id/bayar', verifyToken, async (req, res) => {
         await sendTelegram(a.telegram_chat_id, `📅 *Booking Baru (Dibayar)*\nPasien: *${pnama}*\nDokter: ${dnama}\nTgl: ${new Date(appt.tgl).toLocaleDateString('id-ID')} · ${appt.jam?.slice(0,5)}`);
       }
     }
-    await createNotif('dokter', appt.dokter_id, '📅', 'green', `Pasien baru booking: ${pnama} · ${new Date(appt.tgl).toLocaleDateString('id-ID')} ${appt.jam?.slice(0,5)}`);
-    const [dokterNotif] = await db.query('SELECT telegram_chat_id, notif_appointment FROM dokters WHERE id = ?', [appt.dokter_id]);
-    if (dokterNotif[0]?.notif_appointment && dokterNotif[0]?.telegram_chat_id) {
-      await sendTelegram(dokterNotif[0].telegram_chat_id, `📅 *Booking Baru*\nPasien: *${pnama}*\nTgl: ${new Date(appt.tgl).toLocaleDateString('id-ID')} · ${appt.jam?.slice(0,5)}\nKeluhan: ${appt.keluhan}`);
-    }
+    // Catatan: dokter SENGAJA belum dinotif di sini. Alur klinik: pasien -> admin dulu.
+    // Dokter baru dinotif & baru bisa lihat appointment ini setelah admin klik "Forward"
+    // (lihat blok status === 'dikonfirmasi' di PATCH /api/appointments/:id/status di bawah).
 
     res.json({ success: true, message: 'Pembayaran berhasil dikonfirmasi.' });
   } catch (err) {
@@ -640,19 +638,28 @@ app.patch('/api/appointments/:id/status', verifyToken, async (req, res) => {
 
     if (finalStatus === 'dikonfirmasi' || finalStatus === 'ditolak' || finalStatus === 'refund') {
       const [rows] = await db.query(
-        `SELECT a.pasien_id, a.tgl, a.jam, a.harga, d.nama as dnama
-         FROM appointments a JOIN dokters d ON d.id = a.dokter_id
+        `SELECT a.pasien_id, a.dokter_id, a.tgl, a.jam, a.harga, a.keluhan, d.nama as dnama, p.nama as pnama
+         FROM appointments a
+         JOIN dokters d ON d.id = a.dokter_id
+         JOIN pasiens p ON p.id = a.pasien_id
          WHERE a.id = ?`,
         [req.params.id]
       );
       if (rows.length > 0) {
-        const { pasien_id, tgl, jam, harga, dnama } = rows[0];
+        const { pasien_id, dokter_id, tgl, jam, harga, keluhan, dnama, pnama } = rows[0];
         const [pasienRow] = await db.query('SELECT email, nama, notif_approve FROM pasiens WHERE id = ?', [pasien_id]);
         if (finalStatus === 'dikonfirmasi') {
-          await createNotif('pasien', pasien_id, '✅', 'green', `${dnama} menyetujui appointment kamu · ${new Date(tgl).toLocaleDateString('id-ID')} ${jam?.slice(0,5)}`);
+          await createNotif('pasien', pasien_id, '✅', 'green', `Appointment kamu dengan ${dnama} telah dikonfirmasi · ${new Date(tgl).toLocaleDateString('id-ID')} ${jam?.slice(0,5)}`);
           if (pasienRow[0]?.notif_approve && pasienRow[0]?.email) {
             await sendEmail(pasienRow[0].email, '✅ Appointment Dikonfirmasi — HealthSync',
               `<p>Halo <b>${pasienRow[0].nama}</b>,</p><p>Appointment kamu dengan <b>${dnama}</b> pada <b>${new Date(tgl).toLocaleDateString('id-ID')} · ${jam?.slice(0,5)}</b> telah dikonfirmasi.</p>`);
+          }
+
+          // Admin baru saja forward appointment ini -> sekarang giliran dokter dinotif & appointment muncul di dashboard-nya.
+          await createNotif('dokter', dokter_id, '📅', 'green', `Appointment baru diteruskan admin: ${pnama} · ${new Date(tgl).toLocaleDateString('id-ID')} ${jam?.slice(0,5)}`);
+          const [dokterNotif] = await db.query('SELECT telegram_chat_id, notif_appointment FROM dokters WHERE id = ?', [dokter_id]);
+          if (dokterNotif[0]?.notif_appointment && dokterNotif[0]?.telegram_chat_id) {
+            await sendTelegram(dokterNotif[0].telegram_chat_id, `📅 *Appointment Baru (dari Admin)*\nPasien: *${pnama}*\nTgl: ${new Date(tgl).toLocaleDateString('id-ID')} · ${jam?.slice(0,5)}\nKeluhan: ${keluhan}`);
           }
         } else if (finalStatus === 'ditolak') {
           await createNotif('pasien', pasien_id, '❌', 'orange', `${dnama} menolak appointment kamu · ${new Date(tgl).toLocaleDateString('id-ID')}`);
@@ -721,11 +728,13 @@ app.get('/api/appointments/pasien/:id', verifyToken, async (req, res) => {
 
 app.get('/api/appointments/dokter/:id', verifyToken, async (req, res) => {
   try {
+    // Dokter cuma boleh lihat appointment yang sudah diteruskan admin (status menunggu/menunggu_bayar
+    // masih di tahap pasien->admin, belum jadi urusan dokter).
     const [rows] = await db.query(`
       SELECT a.*, p.nama as pasien_nama
       FROM appointments a
       JOIN pasiens p ON a.pasien_id = p.id
-      WHERE a.dokter_id = ?
+      WHERE a.dokter_id = ? AND a.status NOT IN ('menunggu', 'menunggu_bayar')
       ORDER BY a.tgl DESC, a.jam ASC
     `, [req.params.id]);
     res.json({ success: true, data: rows });
