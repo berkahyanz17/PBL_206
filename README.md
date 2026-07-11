@@ -13,6 +13,30 @@ Ghanni Adryan Pratama     - 4332501020
 Full stack app of a clinic website
 
 ![Healthsync dashboard -role picker](img/rolepicker.png)
+![Healthsync dashboard -login admin](img/!.png)
+![Healthsync dashboard -](img/a.png)
+![Healthsync dashboard -](img/b.png)
+![Healthsync dashboard -](img/c.png)
+![Healthsync dashboard -](img/d.png)
+![Healthsync dashboard -](img/dd.png)
+![Healthsync dashboard -](img/ddd.png)
+![Healthsync dashboard -](img/e.png)
+![Healthsync dashboard -](img/f.png)
+![Healthsync dashboard -](img/g.png)
+![Healthsync dashboard -](img/h.png)
+![Healthsync dashboard -](img/i.png)
+![Healthsync dashboard -](img/ii.png)
+![Healthsync dashboard -](img/iii.png)
+![Healthsync dashboard -](img/iiii.png)
+![Healthsync dashboard -](img/j.png)
+![Healthsync dashboard -](img/k.png)
+![Healthsync dashboard -](img/l.png)
+![Healthsync dashboard -](img/m.png)
+![Healthsync dashboard -](img/n.png)
+![Healthsync dashboard -](img/o.png)
+![Healthsync dashboard -](img/p.png)
+![Healthsync dashboard -](img/q.png)
+![Healthsync dashboard -](img/r.png)
 
 ## URL Structure
 
