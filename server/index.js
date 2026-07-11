@@ -190,16 +190,6 @@ async function rateLimiter(req, res, next) {
   next();
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// PATCH — Ganti 3 helper function di index.js (baris 108–146)
-// Ganti dari:
-//   "// ─── Notification helper" (baris 108)
-// Sampai:
-//   "  } catch (err) {"  +  "    logger.error('[Notif]..." + "  }" + "}" (baris 143–146)
-//
-// Dengan kode di bawah ini.
-// ════════════════════════════════════════════════════════════════════════════
-
 // ─── Telegram helper ──────────────────────────────────────────────────────────
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
@@ -1227,18 +1217,6 @@ app.patch('/api/notif-settings', verifyToken, async (req, res) => {
 // MAMORU — AI Chatbot (Gemini Flash + Telegram Notification)
 // ════════════════════════════════════════════════════════════════════════════
 
-// ════════════════════════════════════════════════════════════════════════════
-// PATCH — Ganti seluruh section Mamoru di index.js dengan kode ini.
-// Section yang diganti: mulai dari baris "const GEMINI_API_KEY" sampai
-// akhir endpoint POST /api/mamoru (termasuk notifyTelegram & isAdminNotifyNeeded)
-//
-// TAMBAHKAN JUGA dua endpoint baru di bawah section NOTIF SETTINGS:
-//   GET  /api/klinik-settings        (public, untuk Mamoru load context)
-//   GET  /api/klinik-settings/admin  (private, untuk halaman admin)
-//   PATCH /api/klinik-settings       (private, admin update)
-// ════════════════════════════════════════════════════════════════════════════
-
-
 // ─── Klinik Settings endpoints ───────────────────────────────────────────────
 // Taruh di bawah section NOTIF SETTINGS, sebelum section MAMORU
 
@@ -1652,11 +1630,6 @@ app.post('/api/ulasan', verifyToken, async (req, res) => {
 // ════════════════════════════════════════════════════════════════════════════
 // CHAT CS PASIEN (tiket komplain / refund antara pasien & admin)
 // ════════════════════════════════════════════════════════════════════════════
-// Catatan: aplikasi ini belum punya sistem pembayaran/QRIS, jadi tiket "refund"
-// di sini adalah kategori yang dipilih pasien sendiri saat submit (bukan auto-
-// generated dari status pembayaran). Aturan: 1x submit tiket baru per hari
-// kalender, DAN tiket sebelumnya (apapun jenisnya) harus sudah admin tutup dulu
-// sebelum pasien bisa submit tiket baru.
 
 // GET /api/cs-tickets — daftar semua tiket (admin)
 app.get('/api/cs-tickets', verifyToken, async (req, res) => {
