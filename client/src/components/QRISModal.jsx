@@ -11,9 +11,8 @@ export default function QRISModal({ appointment, onClose, onConfirm }) {
   if (!appointment) return null;
   const a = appointment;
 
-  // Kalau dokter sudah upload QRIS sendiri, pakai itu. Kalau belum, pakai QRIS klinik default.
-  const qrisSrc = a.qris_image ? a.qris_image : DEFAULT_QRIS;
-  const isCustom = !!a.qris_image;
+  // Satu QRIS klinik untuk semua dokter — bukan QRIS pribadi per dokter.
+  const qrisSrc = DEFAULT_QRIS;
 
   async function handleConfirm() {
     setLoading(true);
@@ -39,7 +38,7 @@ export default function QRISModal({ appointment, onClose, onConfirm }) {
             style={{ width: 220, maxWidth: '100%', border: '1.5px solid #E5E7EB', borderRadius: 12, padding: 10, background: '#fff', display: 'block', margin: '0 auto' }}
           />
           <div style={{ fontSize: 11.5, color: '#9CA3AF', marginTop: 8 }}>
-            {isCustom ? `QRIS milik ${a.dokter_nama}` : 'QRIS HealthSync (klinik)'}
+            QRIS HealthSync (klinik)
           </div>
           <div style={{ fontSize: 22, fontWeight: 800, color: '#1d4ed8', margin: '14px 0 4px' }}>{formatRupiah(a.harga)}</div>
           <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 6 }}>
