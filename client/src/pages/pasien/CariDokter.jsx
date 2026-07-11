@@ -117,7 +117,6 @@ export default function PasienCari() {
         id: res.id,
         dokter_nama: detail.nama,
         harga: detail.harga,
-        qris_image: detail.qris_image,
         tgl: tanggal,
         jam
       });
