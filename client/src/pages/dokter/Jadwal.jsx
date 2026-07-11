@@ -22,11 +22,6 @@ export default function DokterJadwal() {
     if (res?.success) setAppointments(res.data);
   }
 
-  async function updateStatus(id, status) {
-    await apiFetch(`/appointments/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
-    loadAppts();
-  }
-
   async function submitRekam() {
     if (!diagnosa) { alert('Isi diagnosa dulu!'); return; }
     await apiFetch('/rekam-medis', {
@@ -43,7 +38,8 @@ export default function DokterJadwal() {
   const statusColor = { selesai: '#22c55e', dikonfirmasi: '#3b82f6', menunggu: 'var(--gold)', ditolak: '#ef4444' };
   const statusLabel = { selesai: '● Selesai', dikonfirmasi: '● Berjalan', menunggu: '● Menunggu', ditolak: '● Ditolak' };
 
-  const pending = appointments.filter(a => a.status === 'menunggu');
+  // Appointment yang masih status 'menunggu' itu belum diteruskan admin, jadi backend
+  // memang tidak pernah mengirimkannya ke dokter. Dokter hanya lihat yang sudah di-forward.
   const aktif = appointments.filter(a => a.status === 'dikonfirmasi' || a.status === 'selesai');
 
   return (
@@ -63,30 +59,7 @@ export default function DokterJadwal() {
             actionLabel="Ganti Password"
             actionTo="/dokter/settings"
           />
-          {pending.length > 0 && (
-            <div className="card">
-              <div className="card-title" style={{ marginBottom: 16 }}>📅 Perlu Konfirmasi <span className="badge-pill badge-yellow">{pending.length}</span></div>
-              <div className="table-wrap">
-              <table>
-                <thead><tr><th>Pasien</th><th>Keluhan</th><th>Tgl & Jam</th><th>Aksi</th></tr></thead>
-                <tbody>
-                  {pending.map(a => (
-                    <tr key={a.id}>
-                      <td>{a.pasien_nama}</td>
-                      <td>{a.keluhan}</td>
-                      <td>{new Date(a.tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} · {a.jam?.slice(0, 5)}</td>
-                      <td>
-                        <button className="btn-action btn-approve" onClick={() => updateStatus(a.id, 'dikonfirmasi')}>Approve</button>
-                        <button className="btn-action btn-tolak" onClick={() => { if (window.confirm('Tolak?')) updateStatus(a.id, 'ditolak'); }}>Tolak</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              </div>
-            </div>
-          )}
-          {aktif.length === 0 && pending.length === 0 && (
+          {aktif.length === 0 && (
             <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Tidak ada jadwal hari ini.</div>
           )}
           {aktif.map(j => (
