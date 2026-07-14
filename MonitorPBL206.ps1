@@ -1,8 +1,8 @@
 # ============================================
 # Monitoring Script PBL_206 - Telegram Alert
 # ============================================
-$TOKEN = "8913999451:AAFnbHUqE0NrdHvrRXlr5XmZgfTiT5QsanY"
-$CHAT_ID = "-5022288086"
+$TOKEN = "<redacted>"
+$CHAT_ID = "<redacted>"
 $API_URL = "https://api.telegram.org/bot$TOKEN/sendMessage"
 
 # Ambil data sistem
